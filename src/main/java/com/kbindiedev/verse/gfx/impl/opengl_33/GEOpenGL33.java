@@ -2,6 +2,8 @@ package com.kbindiedev.verse.gfx.impl.opengl_33;
 
 import com.kbindiedev.verse.AssetPool;
 import com.kbindiedev.verse.gfx.*;
+import com.kbindiedev.verse.input.keyboard.KeyboardInputManager;
+import com.kbindiedev.verse.profiling.Assertions;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.ARBDebugOutput;
@@ -62,7 +64,6 @@ public class GEOpenGL33 extends GraphicsEngine {
                 core.update(FPS);
             }
             if (oldDeltaTime >= FPS) {
-                System.out.println("new frame");
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
                 core.render(); //render once
                 glfwSwapBuffers(window);
@@ -103,7 +104,16 @@ public class GEOpenGL33 extends GraphicsEngine {
 
         glfwSetKeyCallback(window, (window, key, scancode, action, mods) -> {
             if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE) glfwSetWindowShouldClose(window, true);
-            System.out.println("EVENT KEY: " + key);
+            //System.out.println("EVENT KEY: " + key);
+            if (action == GLFW_PRESS) {
+                KeyboardInputManager.notifyKeydown(key);
+            } else if (action == GLFW_RELEASE) {
+                KeyboardInputManager.notifyKeyup(key);
+            } else if (action == GLFW_REPEAT) {
+                KeyboardInputManager.notifyKeytyped(key);
+            } else {
+                Assertions.error("unknown action: %d", action);
+            }
         });
 
         glfwSetWindowSizeCallback(window, (window, width, height) -> {

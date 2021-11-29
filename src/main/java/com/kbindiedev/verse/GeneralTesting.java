@@ -3,6 +3,8 @@ package com.kbindiedev.verse;
 import com.kbindiedev.verse.gfx.*;
 import com.kbindiedev.verse.gfx.impl.opengl_33.GEOpenGL33;
 import com.kbindiedev.verse.gfx.impl.opengl_33.GLTexture;
+import com.kbindiedev.verse.input.keyboard.IKeyboardInputProcessor;
+import com.kbindiedev.verse.input.keyboard.KeyboardInputManager;
 import org.joml.Matrix4f;
 import org.lwjgl.BufferUtils;
 
@@ -10,7 +12,7 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
 
-public class GeneralTesting implements GEOpenGL33.IRenderable {
+public class GeneralTesting implements GEOpenGL33.IRenderable, IKeyboardInputProcessor {
     private SpriteBatch spriteBatch;
 
 
@@ -51,6 +53,8 @@ public class GeneralTesting implements GEOpenGL33.IRenderable {
 
     public GeneralTesting(GEOpenGL33 gfx) {
 
+        KeyboardInputManager.setProcessor(this);
+
         spriteBatch = new SpriteBatch(gfx, 1, 8);
         //spriteBatch.setColor(new Pixel(255, 255, 0));
         Matrix4f proj = new Matrix4f();
@@ -66,11 +70,16 @@ public class GeneralTesting implements GEOpenGL33.IRenderable {
 
     @Override
     public void update(float dt) {
+        KeyboardInputManager.handleEvents(); //TODO: this should be put elsewhere
         System.out.println("Update: " + dt);
+        doKeyStates();
+        x += dx * dt;
+        y += dy * dt;
     }
 
     private Texture tex;
-    private float y = 0f;
+    private float x = 0f, y = 0f;
+    private float dx = 0f, dy = 0f;
 
     @Override
     public void render() {
@@ -78,12 +87,48 @@ public class GeneralTesting implements GEOpenGL33.IRenderable {
 
         spriteBatch.begin();
         //spriteBatch.draw(tex, 0, 0, 0, 0, 1f, 1f, 1f, 1f, 0, 0, 0, tex.getWidth(), tex.getHeight(), false, false);
-        spriteBatch.draw(tex, 0, y, 1f, 1f);
+        spriteBatch.draw(tex, x, y, 1f, 1f);
         spriteBatch.end();
 
-        y = (y + 0.01f) % 1;
-
         //System.exit(0);
+    }
+
+    private boolean w,a,s,d;
+    private void doKeyStates() {
+        dx = 0; dy = 0;
+        if (w) dy -= 1f;
+        if (s) dy += 1f;
+        if (a) dx -= 1f;
+        if (d) dx += 1f;
+
+    }
+
+    @Override
+    public boolean keyDown(int keycode) {
+        switch (keycode) {
+            case 87: w=true; break;
+            case 65: a=true; break;
+            case 83: s=true; break;
+            case 68: d=true; break;
+        }
+        System.out.println("keydown " + keycode);
+        return true;
+    }
+
+    @Override
+    public boolean keyUp(int keycode) {
+        switch (keycode) {
+            case 87: w=false; break;
+            case 65: a=false; break;
+            case 83: s=false; break;
+            case 68: d=false; break;
+        }
+        return true;
+    }
+
+    @Override
+    public boolean keyTyped(int keycode) {
+        return false;
     }
 
 

@@ -95,7 +95,7 @@ public class GLTexture extends Texture {
     public void bind(int slot) throws IndexOutOfBoundsException {
         //if (slot == boundSlot) return; //TODO: binding system (if another texture binds over this)
         if (slot < 0) { Assertions.warn("slot cannot be negative: %d", slot); return; } //TODO: or slot > max
-        if (boundSlot != -1) new EngineWarning("texture already bound to slot: %d. ignoring...", boundSlot).print();
+        //if (boundSlot != -1) new EngineWarning("texture already bound to slot: %d. ignoring...", boundSlot).print();    //TODO: texture binding system
         //TODO put in gl IMPL
         GL30.glActiveTexture(GL30.GL_TEXTURE0 + slot);
         boundSlot = slot;
