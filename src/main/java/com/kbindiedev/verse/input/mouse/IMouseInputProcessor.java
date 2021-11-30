@@ -39,7 +39,7 @@ public interface IMouseInputProcessor {
     /**
      * Called when the mouse moved while having a button pressed.
      * The button pressed is not specified since there may be multiple.
-     *      You can query which buttons are pressed {@see MouseInputHandler#isButtonDown(int)}.
+     *      You can query which buttons are pressed {@see MouseInputManager#isButtonDown(int)}.
      * @param screenX - The x coordinate, in pixels, of the new position. The origin is in the upper left corner.
      * @param screenY - The y coordinate, in pixels, of the new position. The origin is in the upper left corner.
      * @return true if the event was handled, false otherwise.

@@ -7,7 +7,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 /**
- * All mouse inputs from varying implementations are ultimately sent here, for this class to then dispatch
+ * All mouse inputs from varying implementations are ultimately sent here, for this class to then dispatch.
  * All events are dispatched right before the game .update function is run.
  * Note: comments and method names describe everything on a per-frame-basis, though the actual definition is
  *      per-handleEvents-method-is-run-basis. This SHOULD happen once per frame, right before the global game .update
@@ -125,7 +125,6 @@ public class MouseInputManager {
                 return;
             }
         }
-
 
         //update timestamp
         long unixNow = System.currentTimeMillis();
