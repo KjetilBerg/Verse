@@ -4,14 +4,20 @@ import com.kbindiedev.verse.profiling.Assertions;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 
 /**
  * All inputs from varying implementations are ultimately sent here, for this class to then dispatch
  * All keycode events are dispatched right before the game .update function is run.
+ * Note: comments and method names describe everything on a per-frame-basis, though the actual definition is
+ *      per-handleEvents-method-is-run-basis. This SHOULD happen once per frame, right before the global game .update
+ *      method is executed.
  */
+//TODO: maybe make non-static
 public class KeyboardInputManager {
 
     private static HashMap<Integer, Boolean> keyStates = new HashMap<>();
+    private static HashSet<Integer> keyChangesThisFrame = new HashSet<>();
     private static ArrayList<KeyEvent> unhandledEvents = new ArrayList<>();
 
     /** Initialize processor to blank */
@@ -21,7 +27,36 @@ public class KeyboardInputManager {
         @Override public boolean keyTyped(int keycode) { return false; }
     };
 
+    /** Set the IKeyboardInputProcessor system wide. */
     public static void setProcessor(IKeyboardInputProcessor p) { processor = p; }
+
+    /**
+     * Check whether a key is pressed.
+     * Note that if checked during event dispatch, registry may not be "up-to-date" with current state of final frame.
+     *      Things are guaranteed to be "up-to-date" once the global game .update method is executed, though.
+     * @return true if key by keycode is pressed, false otherwise
+     */
+    public static boolean isKeyDown(int keycode) { return keyStates.getOrDefault(keycode, false); }
+
+    /**
+     * Check whether a key was pressed this frame.
+     * Note that if checked during event dispatch, registry may not be "up-to-date" with current state of final frame.
+     *      Things are guaranteed to be "up-to-date" once the global game .update method is executed, though.
+     * @return true if key by keycode was pressed this frame
+     */
+    public static boolean wasKeyPressedThisFrame(int keycode) {
+        return keyChangesThisFrame.contains(keycode) && keyStates.get(keycode);
+    }
+
+    /**
+     * Check whether a key was released this frame.
+     * Note that if checked during event dispatch, registry may not be "up-to-date" with current state of final frame.
+     *      Things are guaranteed to be "up-to-date" once the global game .update method is executed, though.
+     * @return true if key by keycode was released this frame
+     */
+    public static boolean wasKeyReleasedThisFrame(int keycode) {
+        return keyChangesThisFrame.contains(keycode) && !keyStates.get(keycode);
+    }
 
 
     /**
@@ -32,6 +67,8 @@ public class KeyboardInputManager {
      *      that depend on the event registry, will NOT be "up-to-date" with events that are yet to be dispatched this frame.
      */
     public static void handleEvents() {
+        keyChangesThisFrame.clear();
+
         for (KeyEvent event : unhandledEvents) {
 
             //check registry
@@ -49,6 +86,9 @@ public class KeyboardInputManager {
             //update keyState registry
             if (event.type == KeyEvent.KeyEventType.KEYDOWN) keyStates.put(event.keycode, true);
             else if (event.type == KeyEvent.KeyEventType.KEYUP) keyStates.put(event.keycode, false);
+
+            //update keyChangesThisFrame registry
+            keyChangesThisFrame.add(event.keycode);
 
             //dispatch events
             switch (event.type) {

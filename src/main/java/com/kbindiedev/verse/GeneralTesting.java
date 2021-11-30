@@ -75,6 +75,8 @@ public class GeneralTesting implements GEOpenGL33.IRenderable, IKeyboardInputPro
         doKeyStates();
         x += dx * dt;
         y += dy * dt;
+
+        if (KeyboardInputManager.isKeyDown(87)) System.out.println("W IS DOWN");
     }
 
     private Texture tex;
