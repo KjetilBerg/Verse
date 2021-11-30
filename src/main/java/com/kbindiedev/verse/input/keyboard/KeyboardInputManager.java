@@ -88,7 +88,8 @@ public class KeyboardInputManager {
             else if (event.type == KeyEvent.KeyEventType.KEYUP) keyStates.put(event.keycode, false);
 
             //update keyChangesThisFrame registry
-            keyChangesThisFrame.add(event.keycode);
+            if (event.type == KeyEvent.KeyEventType.KEYDOWN || event.type == KeyEvent.KeyEventType.KEYUP)
+                keyChangesThisFrame.add(event.keycode);
 
             //dispatch events
             switch (event.type) {
