@@ -7,8 +7,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 /**
- * All inputs from varying implementations are ultimately sent here, for this class to then dispatch
- * All keycode events are dispatched right before the game .update function is run.
+ * All keyboard inputs from varying implementations are ultimately sent here, for this class to then dispatch
+ * All events are dispatched right before the game .update function is run.
  * Note: comments and method names describe everything on a per-frame-basis, though the actual definition is
  *      per-handleEvents-method-is-run-basis. This SHOULD happen once per frame, right before the global game .update
  *      method is executed.
@@ -17,8 +17,8 @@ import java.util.HashSet;
 public class KeyboardInputManager {
 
     private static HashMap<Integer, Boolean> keyStates = new HashMap<>();
-    private static HashSet<Integer> keyChangesThisFrame = new HashSet<>();
-    private static ArrayList<KeyEvent> unhandledEvents = new ArrayList<>();
+    private static HashSet<Integer> keyChangesThisFrame = new HashSet<>(); //map of keys that changed their state this frame
+    private static ArrayList<KeyEvent> unhandledEvents = new ArrayList<>(); //events are piled and handled once per frame
 
     /** Initialize processor to blank */
     private static IKeyboardInputProcessor processor = new IKeyboardInputProcessor() {
@@ -34,6 +34,7 @@ public class KeyboardInputManager {
      * Check whether a key is pressed.
      * Note that if checked during event dispatch, registry may not be "up-to-date" with current state of final frame.
      *      Things are guaranteed to be "up-to-date" once the global game .update method is executed, though.
+     * @param keycode - The keycode {@see Keys}
      * @return true if key by keycode is pressed, false otherwise
      */
     public static boolean isKeyDown(int keycode) { return keyStates.getOrDefault(keycode, false); }
@@ -42,6 +43,7 @@ public class KeyboardInputManager {
      * Check whether a key was pressed this frame.
      * Note that if checked during event dispatch, registry may not be "up-to-date" with current state of final frame.
      *      Things are guaranteed to be "up-to-date" once the global game .update method is executed, though.
+     * @param keycode - The keycode {@see Keys}
      * @return true if key by keycode was pressed this frame
      */
     public static boolean wasKeyPressedThisFrame(int keycode) {
@@ -52,6 +54,7 @@ public class KeyboardInputManager {
      * Check whether a key was released this frame.
      * Note that if checked during event dispatch, registry may not be "up-to-date" with current state of final frame.
      *      Things are guaranteed to be "up-to-date" once the global game .update method is executed, though.
+     * @param keycode - The keycode {@see Keys}
      * @return true if key by keycode was released this frame
      */
     public static boolean wasKeyReleasedThisFrame(int keycode) {
@@ -63,8 +66,8 @@ public class KeyboardInputManager {
      * Handle all unhandled events. Should happen once per frame.
      * This will also notify the processor of all events that have happened since last call to this function.
      * Note that all events are handled "in-order".
-     *      This means if there are several input events during a single frame, the .isKeyPressed and such functions
-     *      that depend on the event registry, will NOT be "up-to-date" with events that are yet to be dispatched this frame.
+     *      This means if there are several events during a single frame, the .isKeyPressed and such functions
+     *      that depend on the event registry, may not be "up-to-date" with events that are yet to be dispatched this frame.
      */
     public static void handleEvents() {
         keyChangesThisFrame.clear();
@@ -110,20 +113,20 @@ public class KeyboardInputManager {
     }
 
     /**
-     * Notify that a certain key was pressed. MUST not be called again before .notifyKeyup has been called.
+     * Notify that a certain key was pressed. MUST not be called again before .notifyKeyUp has been called.
      * The keycode is in accordance to the Keys class {@see Keys}.
-     * @param keycode - The keycode.
+     * @param keycode - The keycode {@see Keys}
      */
-    public static void notifyKeydown(int keycode) {
+    public static void notifyKeyDown(int keycode) {
         unhandledEvents.add(new KeyEvent(KeyEvent.KeyEventType.KEYDOWN, keycode));
     }
 
     /**
-     * Notify that a certain key was released. MUST not be called again before .notifyKeydown has been called.
+     * Notify that a certain key was released. MUST not be called again before .notifyKeyDown has been called.
      * The keycode is in accordance to the Keys class {@see Keys}.
-     * @param keycode - The keycode.
+     * @param keycode - The keycode {@see Keys}
      */
-    public static void notifyKeyup(int keycode) {
+    public static void notifyKeyUp(int keycode) {
         unhandledEvents.add(new KeyEvent(KeyEvent.KeyEventType.KEYUP, keycode));
     }
 
@@ -132,7 +135,7 @@ public class KeyboardInputManager {
      * Notify that a certain key was typed. A key is 'typed' when a keyboard sends an event to OS system input.
      *                                          (may vary between keyboard, and maybe some operating systems)
      * The keycode is in accordance to the Keys class {@see Keys}.
-     * @param keycode - The keycode.
+     * @param keycode - The keycode {@see Keys}
      */
     public static void notifyKeytyped(int keycode) {
         unhandledEvents.add(new KeyEvent(KeyEvent.KeyEventType.KEYTYPED, keycode));

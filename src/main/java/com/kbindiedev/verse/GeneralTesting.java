@@ -6,6 +6,9 @@ import com.kbindiedev.verse.gfx.impl.opengl_33.GLTexture;
 import com.kbindiedev.verse.input.keyboard.IKeyboardInputProcessor;
 import com.kbindiedev.verse.input.keyboard.KeyboardInputManager;
 import com.kbindiedev.verse.input.keyboard.Keys;
+import com.kbindiedev.verse.input.mouse.IMouseInputProcessor;
+import com.kbindiedev.verse.input.mouse.MouseButtons;
+import com.kbindiedev.verse.input.mouse.MouseInputManager;
 import org.joml.Matrix4f;
 import org.lwjgl.BufferUtils;
 
@@ -13,7 +16,7 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
 
-public class GeneralTesting implements GEOpenGL33.IRenderable, IKeyboardInputProcessor {
+public class GeneralTesting implements GEOpenGL33.IRenderable, IKeyboardInputProcessor, IMouseInputProcessor {
     private SpriteBatch spriteBatch;
 
 
@@ -52,13 +55,19 @@ public class GeneralTesting implements GEOpenGL33.IRenderable, IKeyboardInputPro
 
     //TODO: decouple material and shader completely?
 
+    //TODO: following https://www.glfw.org/docs/3.3/input_guide.html#input_keyboard, look into keyboard text input? (for special characters)
+    //TODO: potentially other input systems, such as .onWindowFocused(), or cursor leave/enter window area
+    //TODO: can poll / use glfwGetCursorPos to get mouse coordinates outside window area (tested, works)
+    //TODO: glfw can set cursor position (have implement some cursor-lock?)
+
     public GeneralTesting(GEOpenGL33 gfx) {
 
         KeyboardInputManager.setProcessor(this);
+        MouseInputManager.setProcessor(this);
 
         spriteBatch = new SpriteBatch(gfx, 1, 8);
         //spriteBatch.setColor(new Pixel(255, 255, 0));
-        Matrix4f proj = new Matrix4f();
+        proj = new Matrix4f();
         proj.ortho(-2f, 2f, 2f, -2f, -1f, 1f);
         spriteBatch.setProjectionMatrix(proj);
         //spriteBatch.setGlobalFlipSettings(false, true);
@@ -72,16 +81,20 @@ public class GeneralTesting implements GEOpenGL33.IRenderable, IKeyboardInputPro
     @Override
     public void update(float dt) {
         KeyboardInputManager.handleEvents(); //TODO: this should be put elsewhere
-        System.out.println("Update: " + dt);
+        MouseInputManager.handleEvents();
+        //System.out.println("Update: " + dt);
         doKeyStates();
         x += dx * dt;
         y += dy * dt;
 
         if (KeyboardInputManager.wasKeyPressedThisFrame(Keys.KEY_S)) y += 0.5f;
 
-        if (KeyboardInputManager.isKeyDown(Keys.KEY_W)) System.out.println("W IS DOWN");
+        //if (KeyboardInputManager.isKeyDown(Keys.KEY_W)) System.out.println("W IS DOWN");
+        if (MouseInputManager.isButtonDown(MouseButtons.LEFT)) System.out.printf("LEFT is down at: %d %d\n", MouseInputManager.getMouseX(), MouseInputManager.getMouseY());
+        if (MouseInputManager.wasButtonPressedThisFrame(MouseButtons.RIGHT)) System.out.println("RIGHT was pressed this frame");
     }
 
+    private Matrix4f proj;
     private Texture tex;
     private float x = 0f, y = 0f;
     private float dx = 0f, dy = 0f;
@@ -89,6 +102,8 @@ public class GeneralTesting implements GEOpenGL33.IRenderable, IKeyboardInputPro
     @Override
     public void render() {
         //mesh.render();
+
+        spriteBatch.setProjectionMatrix(proj);
 
         spriteBatch.begin();
         //spriteBatch.draw(tex, 0, 0, 0, 0, 1f, 1f, 1f, 1f, 0, 0, 0, tex.getWidth(), tex.getHeight(), false, false);
@@ -134,6 +149,48 @@ public class GeneralTesting implements GEOpenGL33.IRenderable, IKeyboardInputPro
     @Override
     public boolean keyTyped(int keycode) {
         return false;
+    }
+
+    @Override
+    public boolean mouseDown(int screenX, int screenY, int button) {
+        System.out.printf("BDOWN: x: %d, y: %d, btn: %d\n", screenX, screenY, button);
+        return true;
+    }
+
+    @Override
+    public boolean mouseUp(int screenX, int screenY, int button) {
+        System.out.printf("BUP: x: %d, y: %d, btn: %d\n", screenX, screenY, button);
+        return true;
+    }
+
+    @Override
+    public boolean mouseClicked(int screenX, int screenY, int button, float holdDuration) {
+        System.out.printf("CLICK: x: %d, y: %d, btn: %d, duration: %f\n", screenX, screenY, button, holdDuration);
+        return true;
+    }
+
+    @Override
+    public boolean mouseDragged(int screenX, int screenY) {
+        System.out.printf("DRAGGED: x: %d, y: %d\n", screenX, screenY);
+        return true;
+    }
+
+    @Override
+    public boolean mouseMoved(int screenX, int screenY) {
+        System.out.printf("MOVED: x: %d, y: %d\n", screenX, screenY);
+        return true;
+    }
+
+    @Override
+    public boolean mouseScrolled(float amountX, float amountY) {
+        System.out.printf("SCROLLED: x: %f, y: %f\n", amountX, amountY);
+
+        //ugly zoom function, but works for testing
+        float scale = 1f;
+        while (amountY < 0) { amountY += 1; scale *= 0.9; }
+        while (amountY > 0) { amountY -= 1; scale *= 1.1; }
+        proj.scale(scale, scale, 1f);
+        return true;
     }
 
 

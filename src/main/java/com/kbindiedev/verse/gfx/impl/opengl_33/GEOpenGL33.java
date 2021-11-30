@@ -3,6 +3,7 @@ package com.kbindiedev.verse.gfx.impl.opengl_33;
 import com.kbindiedev.verse.AssetPool;
 import com.kbindiedev.verse.gfx.*;
 import com.kbindiedev.verse.input.keyboard.KeyboardInputManager;
+import com.kbindiedev.verse.input.mouse.MouseInputManager;
 import com.kbindiedev.verse.profiling.Assertions;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWVidMode;
@@ -106,15 +107,23 @@ public class GEOpenGL33 extends GraphicsEngine {
             if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE) glfwSetWindowShouldClose(window, true);
             //System.out.println("EVENT KEY: " + key);
             if (action == GLFW_PRESS) {
-                KeyboardInputManager.notifyKeydown(key);
+                KeyboardInputManager.notifyKeyDown(key);
             } else if (action == GLFW_RELEASE) {
-                KeyboardInputManager.notifyKeyup(key);
+                KeyboardInputManager.notifyKeyUp(key);
             } else if (action == GLFW_REPEAT) {
                 KeyboardInputManager.notifyKeytyped(key);
             } else {
-                Assertions.error("unknown action: %d", action);
+                Assertions.warn("unknown action: %d", action);
             }
         });
+
+        glfwSetCursorPosCallback(window, (window, xpos, ypos) -> MouseInputManager.notifyMouseMove((int)xpos, (int)ypos));
+        glfwSetMouseButtonCallback(window, (window, button, action, mods) -> {
+            if (action == GLFW_PRESS) MouseInputManager.notifyButtonDown(button);
+            else if (action == GLFW_RELEASE) MouseInputManager.notifyButtonUp(button);
+            else Assertions.warn("unknown action: %d", action);
+        });
+        glfwSetScrollCallback(window, (window, xoffset, yoffset) -> MouseInputManager.notifyMouseScrolled((float)xoffset, (float)yoffset));
 
         glfwSetWindowSizeCallback(window, (window, width, height) -> {
             DISPLAY_WIDTH = width;
