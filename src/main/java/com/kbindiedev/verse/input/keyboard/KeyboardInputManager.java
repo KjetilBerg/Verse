@@ -110,8 +110,7 @@ public class KeyboardInputManager {
 
     /**
      * Notify that a certain key was pressed. MUST not be called again before .notifyKeyup has been called.
-     * The keycode is in accordance to whatever is described in this file {@see Keys}.
-     *      Keycodes are inspired by the GLFW standard https://www.glfw.org/docs/3.3/group__keys.html.
+     * The keycode is in accordance to the Keys class {@see Keys}.
      * @param keycode - The keycode.
      */
     public static void notifyKeydown(int keycode) {
@@ -120,8 +119,7 @@ public class KeyboardInputManager {
 
     /**
      * Notify that a certain key was released. MUST not be called again before .notifyKeydown has been called.
-     * The keycode is in accordance to whatever is described in this file {@see Keys}.
-     *      Keycodes are inspired by the GLFW standard https://www.glfw.org/docs/3.3/group__keys.html.
+     * The keycode is in accordance to the Keys class {@see Keys}.
      * @param keycode - The keycode.
      */
     public static void notifyKeyup(int keycode) {
@@ -132,8 +130,7 @@ public class KeyboardInputManager {
     /**
      * Notify that a certain key was typed. A key is 'typed' when a keyboard sends an event to OS system input.
      *                                          (may vary between keyboard, and maybe some operating systems)
-     * The keycode is in accordance to whatever is described in this file {@see Keys}.
-     *      Keycodes are inspired by the GLFW standard https://www.glfw.org/docs/3.3/group__keys.html.
+     * The keycode is in accordance to the Keys class {@see Keys}.
      * @param keycode - The keycode.
      */
     public static void notifyKeytyped(int keycode) {

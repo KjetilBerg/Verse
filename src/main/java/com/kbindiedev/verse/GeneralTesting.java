@@ -5,6 +5,7 @@ import com.kbindiedev.verse.gfx.impl.opengl_33.GEOpenGL33;
 import com.kbindiedev.verse.gfx.impl.opengl_33.GLTexture;
 import com.kbindiedev.verse.input.keyboard.IKeyboardInputProcessor;
 import com.kbindiedev.verse.input.keyboard.KeyboardInputManager;
+import com.kbindiedev.verse.input.keyboard.Keys;
 import org.joml.Matrix4f;
 import org.lwjgl.BufferUtils;
 
@@ -76,7 +77,7 @@ public class GeneralTesting implements GEOpenGL33.IRenderable, IKeyboardInputPro
         x += dx * dt;
         y += dy * dt;
 
-        if (KeyboardInputManager.isKeyDown(87)) System.out.println("W IS DOWN");
+        if (KeyboardInputManager.isKeyDown(Keys.KEY_W)) System.out.println("W IS DOWN");
     }
 
     private Texture tex;
