@@ -22,7 +22,7 @@ public class MouseInputManager {
 
     private static HashMap<Integer, Boolean> buttonStates = new HashMap<>();
     private static HashMap<Integer, Long> buttonStatesTimestamps = new HashMap<>();  //timestamps (unix) for when state last changed
-    private static HashSet<Integer> stateChangesThisFrame = new HashSet<>();    //map of buttons that changed their state this frame
+    private static HashSet<Integer> buttonChangesThisFrame = new HashSet<>();    //map of buttons that changed their state this frame
     private static ArrayList<MouseEvent> unhandledEvents = new ArrayList<>();   //events are piled and handled once per frame
     private static int currentMouseX = 0, currentMouseY = 0;
 
@@ -76,7 +76,7 @@ public class MouseInputManager {
      * @return true if button by button code was pressed this frame
      */
     public static boolean wasButtonPressedThisFrame(int button) {
-        return stateChangesThisFrame.contains(button) && buttonStates.get(button);
+        return buttonChangesThisFrame.contains(button) && buttonStates.get(button);
     }
 
     /**
@@ -87,7 +87,7 @@ public class MouseInputManager {
      * @return true if button by button code was released this frame
      */
     public static boolean wasButtonReleasedThisFrame(int button) {
-        return stateChangesThisFrame.contains(button) && !buttonStates.get(button);
+        return buttonChangesThisFrame.contains(button) && !buttonStates.get(button);
     }
 
     /**
@@ -98,7 +98,7 @@ public class MouseInputManager {
      *      that depend on the event registry, may not be "up-to-date" with events that are yet to be dispatched this frame.
      */
     public static void handleEvents() {
-        stateChangesThisFrame.clear();
+        buttonChangesThisFrame.clear();
 
         for (MouseEvent event : unhandledEvents) {
 
@@ -135,8 +135,8 @@ public class MouseInputManager {
         if (event.type == MouseButtonEvent.MouseButtonEventType.BUTTONDOWN) buttonStates.put(event.button, true);
         else if (event.type == MouseButtonEvent.MouseButtonEventType.BUTTONUP) buttonStates.put(event.button, false);
 
-        //update stateChangesThisFrame registry
-        stateChangesThisFrame.add(event.button);
+        //update buttonChangesThisFrame registry
+        buttonChangesThisFrame.add(event.button);
 
         //check if any button is pressed
         isAnyButtonPressed = false;
