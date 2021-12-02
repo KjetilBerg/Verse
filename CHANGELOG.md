@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Keyboard input handling system (event dispatch and querying functionality)
 - Mouse input handling system (event dispatch and querying functionality)
 - Keys and MouseButtons list
+### WIP
+- Network REST interaction API
 
 ---
 ## 0.0.1-indev-1 - 2021-11-28 - The init commit

@@ -9,6 +9,7 @@ import com.kbindiedev.verse.input.keyboard.Keys;
 import com.kbindiedev.verse.input.mouse.IMouseInputProcessor;
 import com.kbindiedev.verse.input.mouse.MouseButtons;
 import com.kbindiedev.verse.input.mouse.MouseInputManager;
+import com.kbindiedev.verse.net.rest.RestApiConnection;
 import org.joml.Matrix4f;
 import org.lwjgl.BufferUtils;
 
@@ -73,6 +74,17 @@ public class GeneralTesting implements GEOpenGL33.IRenderable, IKeyboardInputPro
         //spriteBatch.setGlobalFlipSettings(false, true);
 
         tex = new GLTexture("assets/img/smile.png");
+
+        RestApiConnection api = new RestApiConnection("http://localhost:8080");
+        try {
+            //api.get("/hello");
+            api.newRequest().method("GET").path("/hello").param("file","true").execute();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        System.exit(0);
+
 
         gfx.renderLoop(this);
 
