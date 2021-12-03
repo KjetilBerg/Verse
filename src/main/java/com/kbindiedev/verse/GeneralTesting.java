@@ -10,9 +10,11 @@ import com.kbindiedev.verse.input.mouse.IMouseInputProcessor;
 import com.kbindiedev.verse.input.mouse.MouseButtons;
 import com.kbindiedev.verse.input.mouse.MouseInputManager;
 import com.kbindiedev.verse.net.rest.RestApiConnection;
+import com.kbindiedev.verse.net.rest.RestResponse;
 import org.joml.Matrix4f;
 import org.lwjgl.BufferUtils;
 
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
@@ -23,6 +25,41 @@ public class GeneralTesting implements GEOpenGL33.IRenderable, IKeyboardInputPro
 
     /** Gets run from Main */
     public static void run() {
+
+        RestApiConnection api = new RestApiConnection("http://localhost:8080");
+        try {
+            //api.get("/hello");
+            RestResponse response = api.newRequest().method("GET").path("/hello").param("file","true").execute();
+            System.out.println(response.contentAsString());
+
+            System.out.println("request 2...");
+
+            RestResponse response2 = api.newRequest().method("GET").path("/hello").execute();
+            //System.out.println(response2.contentAsString());
+
+            System.out.println("request 3...");
+
+            RestResponse response3 = api.newRequest().method("GET").path("/hello").execute();
+            System.out.println(response3.contentAsString());
+
+            System.out.println("streaming request 2...");
+            try (InputStream stream = response2.stream()) {
+                byte[] arr = new byte[8192];
+                int amountRead = stream.read(arr, 0, arr.length);
+                System.out.printf("Read '%d' bytes from request 2 body\n", amountRead);
+            }
+            response2.disconnect();
+
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        System.out.println("CHECKING COOKIES...");
+        api.tempPrintCookies("http://localhost:8080/banana");
+
+        System.exit(0);
+
         //GraphicsEngine gfx = new GEOpenGL33();
         GEOpenGL33 gfx = new GEOpenGL33();
         GraphicsEngineSettings settings = new GraphicsEngineSettings();
@@ -74,17 +111,6 @@ public class GeneralTesting implements GEOpenGL33.IRenderable, IKeyboardInputPro
         //spriteBatch.setGlobalFlipSettings(false, true);
 
         tex = new GLTexture("assets/img/smile.png");
-
-        RestApiConnection api = new RestApiConnection("http://localhost:8080");
-        try {
-            //api.get("/hello");
-            api.newRequest().method("GET").path("/hello").param("file","true").execute();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        System.exit(0);
-
 
         gfx.renderLoop(this);
 
