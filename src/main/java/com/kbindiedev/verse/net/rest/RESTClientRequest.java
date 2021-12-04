@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /** Class responsible for the nitty-gritty details of dealing with REST requests {@see RESTClient} */
-public class RESTRequest {
+public class RESTClientRequest {
 
     //Note on headers, from HTTP RFC 2616:
     /*
@@ -41,7 +41,7 @@ public class RESTRequest {
     //TODO: ability to view/get url before execute
 
     //intentionally package-private
-    RESTRequest(RESTClient apiProxy) {
+    RESTClientRequest(RESTClient apiProxy) {
         this.apiProxy = apiProxy;
 
         method = "GET";
@@ -83,12 +83,12 @@ public class RESTRequest {
      * @param sendCookies - If true, then I will set the 'Cookie' header to the list of cookies gotten by this
      *                    request's proxy's cookie store {@see RESTClient#getCookies()} before executing
      *                    the request.
-     * @param reportCookies - If true, then the generated RESTResponse shall report all cookies it receives
+     * @param reportCookies - If true, then the generated RESTClientResponse shall report all cookies it receives
      *                      in the 'Set-Cookie' header to the {@see RESTClient#reportSetCookie()} method.
      *                      Note that the proxy may still decide to not store the reported cookies.
      * @return self, for chaining calls.
      */
-    public RESTRequest cookieConfig(boolean sendCookies, boolean reportCookies) {
+    public RESTClientRequest cookieConfig(boolean sendCookies, boolean reportCookies) {
         this.sendCookies = sendCookies;
         this.reportCookies = reportCookies;
         return this;
@@ -99,7 +99,7 @@ public class RESTRequest {
      * @param method - This request's new method.
      * @return self, for chaining calls.
      */
-    public RESTRequest method(String method) {
+    public RESTClientRequest method(String method) {
         this.method = method;
         return this;
     }
@@ -112,7 +112,7 @@ public class RESTRequest {
      * @param value - The value (field-value) to set the header-value as, or append to the header-value if it exists.
      * @return self, for chaining calls.
      */
-    public RESTRequest header(String key, String value) {
+    public RESTClientRequest header(String key, String value) {
         if (headers.containsKey(key)) {
             String old = headers.get(key);
             headers.put(key, old + ", " + value);
@@ -127,7 +127,7 @@ public class RESTRequest {
      * @param toAppend - Path to append to the end of the current path.
      * @return self, for chaining calls.
      */
-    public RESTRequest path(String toAppend) {
+    public RESTClientRequest path(String toAppend) {
         path.append(toAppend);
         return this;
     }
@@ -145,7 +145,7 @@ public class RESTRequest {
      * @param value - The value of set the parameter to.
      * @return self, for chaining calls.
      */
-    public RESTRequest param(String key, String value) {
+    public RESTClientRequest param(String key, String value) {
         parameters.put(key, value);
         return this;
     }
@@ -156,8 +156,8 @@ public class RESTRequest {
      * Build and execute the request.
      * @return self, for chaining calls.
      */
-    //public RESTResponse execute() {
-    public RESTResponse execute() throws IOException {
+    //public RESTClientResponse execute() {
+    public RESTClientResponse execute() throws IOException {
 
         //stringify params
         StringBuilder sb = new StringBuilder();
@@ -222,12 +222,12 @@ public class RESTRequest {
                 stream.flush();
             } catch (IOException e) {
                 e.printStackTrace();
-                //TODO: throw e; or pass to RESTResponse
+                //TODO: throw e; or pass to RESTClientResponse
                 return null;
             }
         }
 
-        return new RESTResponse(this, connection);
+        return new RESTClientResponse(this, connection);
     }
 
     private boolean shouldPutParamsInBody() {

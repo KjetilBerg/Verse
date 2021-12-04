@@ -12,8 +12,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
-//TODO: write contract of what RESTResponse is responsible for (specifically regarding cookie handling)
-public class RESTResponse {
+//TODO: write contract of what RESTClientResponse is responsible for (specifically regarding cookie handling)
+public class RESTClientResponse {
 
     //according to HTTP 1.1, ISO-8859-1 is the default charset,
     //      however people have noted that a lot of implementations sway from this.
@@ -21,7 +21,7 @@ public class RESTResponse {
     //UTF-8 is also mentioned to be common.
     private static final String DEFAULT_CHARSET = "cp1252";
 
-    private RESTRequest request;
+    private RESTClientRequest request;
     private HttpURLConnection connection;
 
     private int status;
@@ -34,7 +34,7 @@ public class RESTResponse {
     private @Nullable String contentString = null;  //cached content
 
     /**
-     * Details this RESTResponse's streaming strategy.
+     * Details this RESTClientResponse's streaming strategy.
      * Describing this is necessary to avoid hiccups, since only one strategy may be used for this object.
      *
      * STREAM_MODE = the user reads the stream as they please (read as input-stream).
@@ -43,8 +43,8 @@ public class RESTResponse {
     private enum RestResponseStrategy { STREAM_MODE, STRING_CACHE_MODE }
     private @Nullable RestResponseStrategy streamingStategy = null;
 
-    /** Create a RESTResponse object. It is assumed that {@code connection} is in or entering the 'connected' state. */
-    RESTResponse(RESTRequest request, HttpURLConnection connection) throws IOException {
+    /** Create a RESTClientResponse object. It is assumed that {@code connection} is in or entering the 'connected' state. */
+    RESTClientResponse(RESTClientRequest request, HttpURLConnection connection) throws IOException {
         this.request = request;
         this.connection = connection;
 
@@ -86,7 +86,7 @@ public class RESTResponse {
     }
 
     /** @return the request object that created this response object. */
-    public RESTRequest getRequest() { return request; }
+    public RESTClientRequest getRequest() { return request; }
 
     /**
      * Set the charset (used in {@see #contentAsString()} and {@see getCharset()}).
@@ -246,7 +246,7 @@ public class RESTResponse {
         }
     }
 
-    //TODO: stream.close() should be redirected to RESTResponse.disconnect(); (also allows user to read stream elsewhere)
+    //TODO: stream.close() should be redirected to RESTClientResponse.disconnect(); (also allows user to read stream elsewhere)
 
 
 
