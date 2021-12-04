@@ -9,8 +9,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-/** Class responsible for the nitty-gritty details of dealing with REST requests {@see RestApiConnection} */
-public class RestRequest {
+/** Class responsible for the nitty-gritty details of dealing with REST requests {@see RESTClient} */
+public class RESTRequest {
 
     //Note on headers, from HTTP RFC 2616:
     /*
@@ -24,7 +24,7 @@ public class RestRequest {
     */
     //Aka this implementation has all its "sending-headers" values stored as comma separated strings.
 
-    private RestApiConnection apiProxy;
+    private RESTClient apiProxy;
 
     private String method;
     private HashMap<String, String> headers;
@@ -41,7 +41,7 @@ public class RestRequest {
     //TODO: ability to view/get url before execute
 
     //intentionally package-private
-    RestRequest(RestApiConnection apiProxy) {
+    RESTRequest(RESTClient apiProxy) {
         this.apiProxy = apiProxy;
 
         method = "GET";
@@ -53,10 +53,10 @@ public class RestRequest {
     }
 
     /** @return the proxy that created this request */
-    public RestApiConnection getApiProxy() { return apiProxy; }
+    public RESTClient getApiProxy() { return apiProxy; }
 
     /** @return whether this request's generated response should report cookies received in the 'Set-Cookie' header
-     *              to {@see RestApiConnection#reportSetCookie()}. */
+     *              to {@see RESTClient#reportSetCookie()}. */
     protected boolean shouldReportCookies() { return reportCookies; }
 
     /** @return the unix timestamp for when this request was created. */
@@ -81,14 +81,14 @@ public class RestRequest {
      *      {@code sendCookies} equals {@code true}.
      *      {@code reportCookies} equals {@code true}.
      * @param sendCookies - If true, then I will set the 'Cookie' header to the list of cookies gotten by this
-     *                    request's proxy's cookie store {@see RestApiConnection#getCookies()} before executing
+     *                    request's proxy's cookie store {@see RESTClient#getCookies()} before executing
      *                    the request.
-     * @param reportCookies - If true, then the generated RestResponse shall report all cookies it receives
-     *                      in the 'Set-Cookie' header to the {@see RestApiConnection#reportSetCookie()} method.
+     * @param reportCookies - If true, then the generated RESTResponse shall report all cookies it receives
+     *                      in the 'Set-Cookie' header to the {@see RESTClient#reportSetCookie()} method.
      *                      Note that the proxy may still decide to not store the reported cookies.
      * @return self, for chaining calls.
      */
-    public RestRequest cookieConfig(boolean sendCookies, boolean reportCookies) {
+    public RESTRequest cookieConfig(boolean sendCookies, boolean reportCookies) {
         this.sendCookies = sendCookies;
         this.reportCookies = reportCookies;
         return this;
@@ -99,7 +99,7 @@ public class RestRequest {
      * @param method - This request's new method.
      * @return self, for chaining calls.
      */
-    public RestRequest method(String method) {
+    public RESTRequest method(String method) {
         this.method = method;
         return this;
     }
@@ -112,7 +112,7 @@ public class RestRequest {
      * @param value - The value (field-value) to set the header-value as, or append to the header-value if it exists.
      * @return self, for chaining calls.
      */
-    public RestRequest header(String key, String value) {
+    public RESTRequest header(String key, String value) {
         if (headers.containsKey(key)) {
             String old = headers.get(key);
             headers.put(key, old + ", " + value);
@@ -127,7 +127,7 @@ public class RestRequest {
      * @param toAppend - Path to append to the end of the current path.
      * @return self, for chaining calls.
      */
-    public RestRequest path(String toAppend) {
+    public RESTRequest path(String toAppend) {
         path.append(toAppend);
         return this;
     }
@@ -136,7 +136,7 @@ public class RestRequest {
     /**
      * Set a query- or body-option for this request.
      * The type will depend on the request's method, calculated during the build step, or the apiProxy class's
-     * configuration {@see RestApiConnection#forceQueryParamsOnly}.
+     * configuration {@see RESTClient#forceQueryParamsOnly}.
      *      if 'forceQueryParamsOnly' is false and the method is one of: POST, PUT, OPTIONS,
      *      then the parameters will be sent as body payload (format: param1=value1&param2=value2).
      *      Otherwise they will be sent as query-string parameters (e.g. ?param1=value1&param2=value2).
@@ -145,7 +145,7 @@ public class RestRequest {
      * @param value - The value of set the parameter to.
      * @return self, for chaining calls.
      */
-    public RestRequest param(String key, String value) {
+    public RESTRequest param(String key, String value) {
         parameters.put(key, value);
         return this;
     }
@@ -156,8 +156,8 @@ public class RestRequest {
      * Build and execute the request.
      * @return self, for chaining calls.
      */
-    //public RestResponse execute() {
-    public RestResponse execute() throws IOException {
+    //public RESTResponse execute() {
+    public RESTResponse execute() throws IOException {
 
         //stringify params
         StringBuilder sb = new StringBuilder();
@@ -222,12 +222,12 @@ public class RestRequest {
                 stream.flush();
             } catch (IOException e) {
                 e.printStackTrace();
-                //TODO: throw e; or pass to RestResponse
+                //TODO: throw e; or pass to RESTResponse
                 return null;
             }
         }
 
-        return new RestResponse(this, connection);
+        return new RESTResponse(this, connection);
     }
 
     private boolean shouldPutParamsInBody() {

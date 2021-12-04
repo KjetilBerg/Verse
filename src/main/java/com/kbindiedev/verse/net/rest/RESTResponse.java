@@ -12,8 +12,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
-//TODO: write contract of what RestResponse is responsible for (specifically regarding cookie handling)
-public class RestResponse {
+//TODO: write contract of what RESTResponse is responsible for (specifically regarding cookie handling)
+public class RESTResponse {
 
     //according to HTTP 1.1, ISO-8859-1 is the default charset,
     //      however people have noted that a lot of implementations sway from this.
@@ -21,7 +21,7 @@ public class RestResponse {
     //UTF-8 is also mentioned to be common.
     private static final String DEFAULT_CHARSET = "cp1252";
 
-    private RestRequest request;
+    private RESTRequest request;
     private HttpURLConnection connection;
 
     private int status;
@@ -34,7 +34,7 @@ public class RestResponse {
     private @Nullable String contentString = null;  //cached content
 
     /**
-     * Details this RestResponse's streaming strategy.
+     * Details this RESTResponse's streaming strategy.
      * Describing this is necessary to avoid hiccups, since only one strategy may be used for this object.
      *
      * STREAM_MODE = the user reads the stream as they please (read as input-stream).
@@ -43,8 +43,8 @@ public class RestResponse {
     private enum RestResponseStrategy { STREAM_MODE, STRING_CACHE_MODE }
     private @Nullable RestResponseStrategy streamingStategy = null;
 
-    /** Create a RestResponse object. It is assumed that {@code connection} is in or entering the 'connected' state. */
-    RestResponse(RestRequest request, HttpURLConnection connection) throws IOException {
+    /** Create a RESTResponse object. It is assumed that {@code connection} is in or entering the 'connected' state. */
+    RESTResponse(RESTRequest request, HttpURLConnection connection) throws IOException {
         this.request = request;
         this.connection = connection;
 
@@ -86,7 +86,7 @@ public class RestResponse {
     }
 
     /** @return the request object that created this response object. */
-    public RestRequest getRequest() { return request; }
+    public RESTRequest getRequest() { return request; }
 
     /**
      * Set the charset (used in {@see #contentAsString()} and {@see getCharset()}).
@@ -160,7 +160,7 @@ public class RestResponse {
     }
 
 
-    //TODO: last statement, check RestApiConnection correctly spelled
+    //TODO: last statement, check RESTClient correctly spelled
     /*
      * There is a TON of conflicting documentation of this regarding the java JDK implementation
      *      of HttpURLConnection.disconnect().
@@ -183,7 +183,7 @@ public class RestResponse {
      *
      *       If this is wrong, then the fault is not breaking (just less efficient).
      *       Regardless, the Verse engine acts in accordance to its own definitions, and do not specifically
-     *       adhere to the java JDK implementation. (see RestApiConnection configuration regarding caching).
+     *       adhere to the java JDK implementation. (see RESTClient configuration regarding caching).
      */
 
     /**
@@ -246,7 +246,7 @@ public class RestResponse {
         }
     }
 
-    //TODO: stream.close() should be redirected to RestResponse.disconnect(); (also allows user to read stream elsewhere)
+    //TODO: stream.close() should be redirected to RESTResponse.disconnect(); (also allows user to read stream elsewhere)
 
 
 

@@ -9,8 +9,8 @@ import com.kbindiedev.verse.input.keyboard.Keys;
 import com.kbindiedev.verse.input.mouse.IMouseInputProcessor;
 import com.kbindiedev.verse.input.mouse.MouseButtons;
 import com.kbindiedev.verse.input.mouse.MouseInputManager;
-import com.kbindiedev.verse.net.rest.RestApiConnection;
-import com.kbindiedev.verse.net.rest.RestResponse;
+import com.kbindiedev.verse.net.rest.RESTClient;
+import com.kbindiedev.verse.net.rest.RESTResponse;
 import org.joml.Matrix4f;
 import org.lwjgl.BufferUtils;
 
@@ -26,20 +26,20 @@ public class GeneralTesting implements GEOpenGL33.IRenderable, IKeyboardInputPro
     /** Gets run from Main */
     public static void run() {
 
-        RestApiConnection api = new RestApiConnection("http://localhost:8080");
+        RESTClient api = new RESTClient("http://localhost:8080");
         try {
             //api.get("/hello");
-            RestResponse response = api.newRequest().method("GET").path("/hello").param("file","true").execute();
+            RESTResponse response = api.newRequest().method("GET").path("/hello").param("file","true").execute();
             System.out.println(response.contentAsString());
 
             System.out.println("request 2...");
 
-            RestResponse response2 = api.newRequest().method("GET").path("/hello").execute();
+            RESTResponse response2 = api.newRequest().method("GET").path("/hello").execute();
             //System.out.println(response2.contentAsString());
 
             System.out.println("request 3...");
 
-            RestResponse response3 = api.newRequest().method("GET").path("/hello").execute();
+            RESTResponse response3 = api.newRequest().method("GET").path("/hello").execute();
             System.out.println(response3.contentAsString());
 
             System.out.println("streaming request 2...");
