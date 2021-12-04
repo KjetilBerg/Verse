@@ -36,12 +36,6 @@ public class GeneralTesting implements GEOpenGL33.IRenderable, IKeyboardInputPro
 
             RESTClientResponse response2 = api.newRequest().method("GET").path("/hello").execute();
             //System.out.println(response2.contentAsString());
-
-            System.out.println("request 3...");
-
-            RESTClientResponse response3 = api.newRequest().method("GET").path("/hello").execute();
-            System.out.println(response3.contentAsString());
-
             System.out.println("streaming request 2...");
             try (InputStream stream = response2.stream()) {
                 byte[] arr = new byte[8192];
@@ -49,6 +43,13 @@ public class GeneralTesting implements GEOpenGL33.IRenderable, IKeyboardInputPro
                 System.out.printf("Read '%d' bytes from request 2 body\n", amountRead);
             }
             response2.disconnect();
+
+            System.out.println("request 3...");
+
+            RESTClientResponse response3 = api.newRequest().method("HEAD").path("/hello").followRedirects(false).cookieConfig(false, true).execute();
+            System.out.println("response 3: " + response3.contentAsString());
+
+
 
 
         } catch (Exception e) {

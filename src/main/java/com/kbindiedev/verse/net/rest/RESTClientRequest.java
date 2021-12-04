@@ -24,15 +24,16 @@ public class RESTClientRequest {
     */
     //Aka this implementation has all its "sending-headers" values stored as comma separated strings.
 
-    private RESTClient apiProxy;
+    private RESTClient client;
 
     private String method;
     private HashMap<String, String> headers;
     private StringBuilder path;
     private HashMap<String, String> parameters;
 
-    private boolean sendCookies = true;
-    private boolean reportCookies = true;
+    private boolean sendCookies;
+    private boolean reportCookies;
+    private boolean followRedirectsSameProtocol; //may be temporary value, see .followRedirects method comments
 
     private long unixCreation;
     private long unixExecution;
@@ -41,19 +42,23 @@ public class RESTClientRequest {
     //TODO: ability to view/get url before execute
 
     //intentionally package-private
-    RESTClientRequest(RESTClient apiProxy) {
-        this.apiProxy = apiProxy;
+    RESTClientRequest(RESTClient client) {
+        this.client = client;
 
         method = "GET";
         headers = new HashMap<>();
         path = new StringBuilder();
         parameters = new HashMap<>();
 
+        sendCookies = true;
+        reportCookies = true;
+        followRedirectsSameProtocol = true;
+
         unixCreation = System.currentTimeMillis();
     }
 
-    /** @return the proxy that created this request */
-    public RESTClient getApiProxy() { return apiProxy; }
+    /** @return the client that created this request */
+    public RESTClient getClient() { return client; }
 
     /** @return whether this request's generated response should report cookies received in the 'Set-Cookie' header
      *              to {@see RESTClient#reportSetCookie()}. */
@@ -81,16 +86,32 @@ public class RESTClientRequest {
      *      {@code sendCookies} equals {@code true}.
      *      {@code reportCookies} equals {@code true}.
      * @param sendCookies - If true, then I will set the 'Cookie' header to the list of cookies gotten by this
-     *                    request's proxy's cookie store {@see RESTClient#getCookies()} before executing
+     *                    request's client's cookie store {@see RESTClient#getCookies()} before executing
      *                    the request.
      * @param reportCookies - If true, then the generated RESTClientResponse shall report all cookies it receives
      *                      in the 'Set-Cookie' header to the {@see RESTClient#reportSetCookie()} method.
-     *                      Note that the proxy may still decide to not store the reported cookies.
+     *                      Note that the RESTClient may still decide to not store the reported cookies.
      * @return self, for chaining calls.
      */
     public RESTClientRequest cookieConfig(boolean sendCookies, boolean reportCookies) {
         this.sendCookies = sendCookies;
         this.reportCookies = reportCookies;
+        return this;
+    }
+
+    //TODO: implement a solution that accepts cross-protocol redirection. consider headers (esp. cookies). consider some .redirectHandler ? query parameters same probably
+    //TODO: if ever implement self, see https://stackoverflow.com/questions/1884230/httpurlconnection-doesnt-follow-redirect-from-http-to-https (answer by Nathan)
+    /**
+     * Set this request's option regarding the following of redirects.
+     * The default configuration is:
+     *      {@code follow} equals {@code true}.
+     * Redirects will <em>NOT</em> be followed if the original request protocol does not match the
+     *      redirect location's protocol (in other words, HTTPS -> HTTP and HTTP -> HTTPS do not work).
+     * @param follow - Whether or not this request should follow http redirects (code 3xx).
+     * @return self, for chaining calls.
+     */
+    public RESTClientRequest followRedirects(boolean follow) {
+        followRedirectsSameProtocol = follow;
         return this;
     }
 
@@ -123,7 +144,7 @@ public class RESTClientRequest {
     }
 
     /**
-     * Append to the end of the apiProxy's origin url, like a path. Appending multiple times will concatenate all provided inputs
+     * Append to the end of the RESTClient's origin url, like a path. Appending multiple times will concatenate all provided inputs
      * @param toAppend - Path to append to the end of the current path.
      * @return self, for chaining calls.
      */
@@ -135,11 +156,11 @@ public class RESTClientRequest {
     //TODO: update javadoc
     /**
      * Set a query- or body-option for this request.
-     * The type will depend on the request's method, calculated during the build step, or the apiProxy class's
+     * The type will depend on the request's method, calculated during the build step, or the RESTClient class's
      * configuration {@see RESTClient#forceQueryParamsOnly}.
      *      if 'forceQueryParamsOnly' is false and the method is one of: POST, PUT, OPTIONS,
      *      then the parameters will be sent as body payload (format: param1=value1&param2=value2).
-     *      Otherwise they will be sent as query-string parameters (e.g. ?param1=value1&param2=value2).
+     *      Otherwise they will be sent as query-string parameters (in other words: ?param1=value1&param2=value2).
      * If this parameter is already set, then the old value will be overwritten by the new value.
      * @param key - The key of the parameter to set the value for.
      * @param value - The value of set the parameter to.
@@ -150,7 +171,8 @@ public class RESTClientRequest {
         return this;
     }
 
-    //TODO: set domain ? (replace from apiProxy origin ?????)
+    //TODO: set domain ? (replace from client origin ?????)
+    //TODO: do proper url building (e.g. if client base contains path or something?
 
     /**
      * Build and execute the request.
@@ -176,7 +198,7 @@ public class RESTClientRequest {
         String params = sb.toString();
 
         //construct path
-        String url = apiProxy.getBaseUrl() + path;
+        String url = client.getBaseUrl() + path;
         if (params.length() > 0 && !shouldPutParamsInBody()) url += "?" + params;
 
         builtRequestURL = new URL(url);
@@ -191,12 +213,15 @@ public class RESTClientRequest {
 
         connection.setConnectTimeout(5000);
         connection.setReadTimeout(5000);    //TODO: timeouts
+        connection.setInstanceFollowRedirects(followRedirectsSameProtocol);
+
+        connection.setInstanceFollowRedirects(true);    //TODO: temp testing
 
         connection.setRequestMethod(method);
 
         if (sendCookies) {
-            //HttpCookie.toString() presents <cookie-name>=<cookie-value> (does not include e.g. Expires, Secure, HttpOnly, ...)
-            String cookies = apiProxy.getCookies(builtRequestURI).stream().map(HttpCookie::toString).collect(Collectors.joining("; "));
+            //HttpCookie.toString() presents <cookie-name>=<cookie-value> (in other words, does not include: Expires, Secure, HttpOnly, ...)
+            String cookies = client.getCookies(builtRequestURI).stream().map(HttpCookie::toString).collect(Collectors.joining("; "));
             connection.setRequestProperty("Cookie", cookies);
         }
 

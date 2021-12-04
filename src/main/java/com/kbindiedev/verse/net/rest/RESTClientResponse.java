@@ -1,7 +1,8 @@
 package com.kbindiedev.verse.net.rest;
 
 import com.kbindiedev.verse.profiling.Assertions;
-import com.kbindiedev.verse.profiling.EngineWarning;
+import com.kbindiedev.verse.util.CallbackInputStream;
+import com.kbindiedev.verse.util.StreamUtil;
 import com.sun.istack.internal.Nullable;
 
 import java.io.*;
@@ -13,7 +14,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 //TODO: write contract of what RESTClientResponse is responsible for (specifically regarding cookie handling)
-public class RESTClientResponse {
+public class RESTClientResponse implements Closeable {
 
     //according to HTTP 1.1, ISO-8859-1 is the default charset,
     //      however people have noted that a lot of implementations sway from this.
@@ -27,11 +28,13 @@ public class RESTClientResponse {
     private int status;
     private String reason;
     private HashMap<String, List<String>> headers;
-    private String charset;                         //will be parsed from first received 'Content-Type' header.
+    private String charset;         //will be parsed from first received 'Content-Type' header or set to default.
     private boolean didProvideCharset;
 
-    private BufferedInputStream responseStream;
+    private InputStream responseStream; //will be a CallbackInputStream of a BufferedInputStream
     private @Nullable String contentString = null;  //cached content
+    private boolean disconnected = false;
+    private boolean socketClosed = false;
 
     /**
      * Details this RESTClientResponse's streaming strategy.
@@ -52,7 +55,11 @@ public class RESTClientResponse {
         status = connection.getResponseCode();
         reason = connection.getResponseMessage();
 
-        responseStream = new BufferedInputStream(connection.getInputStream(), 8192);    //TODO: size
+        //prepare stream
+        BufferedInputStream bis = new BufferedInputStream(connection.getInputStream(), 8192);   //TODO: size
+        CallbackInputStream cis = new CallbackInputStream(bis);
+        cis.setCallback(CallbackInputStream.Event.POST_CLOSE, () -> { socketClosed = true; this.close(); });
+        responseStream = cis;
 
         //store headers
         headers = new HashMap<>();
@@ -76,17 +83,15 @@ public class RESTClientResponse {
                 //Due to the old and deprecated Set-Cookie2 header, HttpCookie.parse returns List<HttpCookie>
                 List<HttpCookie> cookies = cookieHeaders.stream().map(HttpCookie::parse).flatMap(Collection::stream).collect(Collectors.toList());
 
-                //the proxy may still determine whether or not to preserve the cookies
-                cookies.forEach(cookie -> request.getApiProxy().reportSetCookie(this, cookie));
+                //the client may still determine whether or not to preserve the cookies
+                cookies.forEach(cookie -> request.getClient().reportSetCookie(this, cookie));
             }
         }
 
-
-        //disconnect(true, false); //TODO: set to default. temp for testing
     }
 
     /** @return the request object that created this response object. */
-    public RESTClientRequest getRequest() { return request; }
+    public RESTClientRequest getRequest() { return request; } //TODO: protected ?
 
     /**
      * Set the charset (used in {@see #contentAsString()} and {@see getCharset()}).
@@ -112,8 +117,9 @@ public class RESTClientResponse {
      * Get the response from the server in InputStream (byte stream) form.
      * A SocketTimeoutException may be thrown when reading from the returned input stream if the read timeout
      *      defined by request configuration expires before data is available to read (also between read calls).
-     * Unless specified otherwise by {@see #configure(Object)}, the stream will automatically close upon reading a -1. //TODO: here
-     * @return an InputStream that reads binary data of a REST response to a REST request.
+     * Upon closing the provided stream with .close(), this RESTClientResponse's .disconnect() method
+     *      will automatically be run.
+     * @return an InputStream of the response data that came from the server (response to RESTClientRequest).
      */
     public InputStream stream() {
         if (streamingStategy == null) streamingStategy = RestResponseStrategy.STREAM_MODE;
@@ -128,39 +134,28 @@ public class RESTClientResponse {
      * This method is incompatible with {@see #stream()}.
      *      If either method is run, then the other will throw an exception.
      * Once this method runs successfully, the result is cached, and so no further exceptions will be thrown.
+     * @return the stringified value of the response stream.
      * @throws IllegalStateException - if {@see #stream()} has been called before this.
      * @throws IOException - if an I/O-error occurs.
-     * @return the stringified value of the response stream.
      */
     public String contentAsString() throws IOException {
         if (streamingStategy == null) streamingStategy = RestResponseStrategy.STRING_CACHE_MODE;
         if (streamingStategy != RestResponseStrategy.STRING_CACHE_MODE)
             throw new IllegalStateException("cannot use .contentAsString() after .stream() has been called!");
         if (contentString == null) {
-            contentString = streamToString(responseStream, charset, false);
+            contentString = StreamUtil.streamToString(responseStream, charset, false);
             responseStream.close();
         }
         return contentString;
     }
 
-    //TODO: auto close stream
-    //TODO: verse exceptions ?
-
-
-    //TODO: move another class
-    //https://stackoverflow.com/questions/309424/how-do-i-read-convert-an-inputstream-into-a-string-in-java?page=1&tab=votes#tab-top
-    //also throws UnsupportedEncodingException (sub of IOException)
-    //does not close stream
-    private String streamToString(InputStream stream, String charset, boolean buffer) throws IOException {
-        if (buffer) stream = new BufferedInputStream(stream);
-        ByteArrayOutputStream buf = new ByteArrayOutputStream();
-        int d;
-        while ((d = stream.read()) != -1) buf.write((byte)d);
-        return buf.toString(charset);
+    @Override
+    public void close() {
+        disconnect();
     }
 
 
-    //TODO: last statement, check RESTClient correctly spelled
+    //TODO: last statement, check RESTClient correctly spelled (remove statement?)
     /*
      * There is a TON of conflicting documentation of this regarding the java JDK implementation
      *      of HttpURLConnection.disconnect().
@@ -195,13 +190,18 @@ public class RESTClientResponse {
 
     /**
      * Close this connection to the server.
-     * This will close the InputStream from {@see #stream()} if it is open.
+     * This will also close the InputStream from {@see #stream()} if it is open.
+     * After running this method, running it again will have no effect.
+     *
+     * Whenever the InputStream from {@see #stream()} is closed, this method is automatically run.
+     *      Thereby it is not necessary to run this method if you close the stream yourself, however,
+     *      it is recommended you do so regardless for semantic reasons.
      *
      * The socket may be cached depending on the provided values.
      *
      * Note that the value of {@code cacheSocket} will be overwritten to {@code true} if:
-     *      - the stream from {@see #stream()} was closed prior to.disconnect being called (will be cached).//TODO: see global http.Keepalive settings
-     *      - {@code drainStream} is true.
+     *      - the stream from {@see #stream()} was closed prior to .disconnect being called (will be cached).//TODO: see global http.Keepalive settings
+     *      - {@code drainStream} is true (due to previous point).
      * @param drainStream - Whether or not to drain the stream of all data (read until end).
      *                    Does nothing if the socket is already closed or drained.
      * @param cacheSocket - Whether or not to cache the socket for future connections to the same server.
@@ -209,45 +209,39 @@ public class RESTClientResponse {
      */
     public void disconnect(boolean drainStream, boolean cacheSocket) {
 
-        //TODO: if closed, cacheSocket = true;
+        if (disconnected) return;
+        disconnected = true;
+
+        if (socketClosed) cacheSocket = true;
         if (drainStream) cacheSocket = true;
 
         //newer versions of java do not require streams to be drained to be cached (unsure version, but after java 6).
-        if (drainStream) drain();   //TODO: if .drain() calls .disconnect(), have some private version with boolean: disconnect=false
+        try { if (drainStream) drain(false); } catch (IOException e) {
+            Assertions.warn("error whilst draining stream: %s", e);
+        }
 
-        if (cacheSocket) {
-            try { connection.getInputStream().close(); } catch (IOException e) {
-                Assertions.warn("unable to close connection inputstream: %s", e);
+        //cache the socket by closing stream. if already closed, then no need to try again.
+        if (cacheSocket && !socketClosed) {
+            try { responseStream.close(); } catch (IOException e) {
+                Assertions.warn("unable to close the connection's InputStream: %s", e);
             }
         }
 
-        connection.disconnect();
+        connection.disconnect(); //will close the stream if not already closed.
     }
 
-    //TODO: clean
-    /** Drain the stream of this response {@see #stream()}. Will move onto the errorStream if stream unavailable. */
-    public void drain() {
-        InputStream stream;
+    /**
+     * Drain the stream of this response {@see #stream()}. Will move onto the errorStream if the stream is unavailable. //TODO: remove comment
+     * @param close - Whether or not to close the stream after draining it.
+     * @throws IOException - If there was an I/O error during the drainage or closing process.
+     */
+    public void drain(boolean close) throws IOException {
 
-        try {
-            stream = connection.getInputStream();
-        } catch (IOException e) {
-            new EngineWarning("connection .getInputStream caused an IOException: %s", e).print(); //TODO: Assertions.info ?
-            stream = connection.getErrorStream();
-        }
+        if (socketClosed) return;
 
-        if (stream == null) return;
-
-        try {
-            while (stream.read() != -1);
-        } catch (IOException e) {
-            System.out.println("ERR: " + e);
-            //Assertions.warn("unable to drain stream: %s", e); //TODO: stream "closed" tracker
-        }
+        //TODO: handle error stream?
+        while (responseStream.read() != -1);
+        if (close) responseStream.close();
     }
-
-    //TODO: stream.close() should be redirected to RESTClientResponse.disconnect(); (also allows user to read stream elsewhere)
-
-
 
 }
