@@ -1,5 +1,6 @@
 package com.kbindiedev.verse.net.rest;
 
+import java.io.IOException;
 import java.net.*;
 import java.util.List;
 
@@ -33,10 +34,18 @@ public class RESTClient {
      * @param cookie - The cookie being reported.
      */
     protected void reportSetCookie(RESTClientResponse origin, HttpCookie cookie) { //TODO: cookie callback to user ?
-        URI uri = origin.getRequest().getBuiltRequestURI(); //TODO: if followed redirect, then this URI may be wrong
-        cookieManager.getCookieStore().add(uri, cookie);
 
-        System.out.printf("reported cookie for uri: %s, cookie: %s\n", uri, cookie);
+        //TODO: if followed redirect, then this URI may be wrong
+        //TODO: clean (if URI immutable after request execution, then exceptions cannot occur)
+        try {
+            URI uri = origin.getRequest().getURI();
+            cookieManager.getCookieStore().add(uri, cookie);
+
+            System.out.printf("reported cookie for uri: %s, cookie: %s\n", uri, cookie);
+        } catch (MalformedURLException | URISyntaxException e) {
+            e.printStackTrace();
+        }
+
     }
 
     /**
