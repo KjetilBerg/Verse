@@ -126,14 +126,14 @@ public class RESTClientRequest {
 
     /**
      * Get a list of cookies gotten from this request's client's cookie store based on the current stated URI.
-     * These cookies will be added to the 'Cookie' header upon request execution if
+     * These cookies will only be added to the 'Cookie' header upon request execution if
      *      {@code settings.sendClientCookies} equals {@code true}.
      *      Any cookies you have added using {@see #addCookie()} will also be sent, but not returned by this method.
      * @return the cookies from this request's client's cookie store based on the current stated URI.
      * @throws MalformedURLException - If the current stated URL is malformed.
      * @throws URISyntaxException - If the current stated URI has a syntax error.
      */
-    public List<HttpCookie> getClientCookiesToSend() throws MalformedURLException, URISyntaxException {
+    public List<HttpCookie> getClientCookies() throws MalformedURLException, URISyntaxException {
         return client.getCookies(getURI());
     }
 
@@ -142,7 +142,7 @@ public class RESTClientRequest {
      * These cookies will be added to the 'Cookie' header upon request execution.
      * @return a list of all cookies the user has added using {@see #addCookie()}.
      */
-    public List<HttpCookie> getUserCookiesToSend() {
+    public List<HttpCookie> getUserCookies() {
         return userCookies;
     }
 
@@ -157,12 +157,12 @@ public class RESTClientRequest {
      *          in the 'Cookie' header if {@code settings.sendCookies} is true.
      * @throws MalformedURLException - If the current stated URL is malformed.
      * @throws URISyntaxException - If the current stated URI has a syntax error.
-     * @see #getClientCookiesToSend()
-     * @see #getUserCookiesToSend()
+     * @see #getClientCookies()
+     * @see #getUserCookies()
      */
-    public List<HttpCookie> getCookiesToSend(boolean sendOnly) throws MalformedURLException, URISyntaxException {
-        List<HttpCookie> list = new ArrayList<>(getUserCookiesToSend());
-        if (!sendOnly || settings.sendClientCookies) list.addAll(getClientCookiesToSend());
+    public List<HttpCookie> getCookies(boolean sendOnly) throws MalformedURLException, URISyntaxException {
+        List<HttpCookie> list = new ArrayList<>(getUserCookies());
+        if (!sendOnly || settings.sendClientCookies) list.addAll(getClientCookies());
         return list;
     }
 
