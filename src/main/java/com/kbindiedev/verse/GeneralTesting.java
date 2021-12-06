@@ -14,6 +14,7 @@ import com.kbindiedev.verse.net.rest.RESTClientResponse;
 import org.joml.Matrix4f;
 import org.lwjgl.BufferUtils;
 
+import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -26,17 +27,22 @@ public class GeneralTesting implements GEOpenGL33.IRenderable, IKeyboardInputPro
     /** Gets run from Main */
     public static void run() {
 
-        RESTClient api = new RESTClient("http://localhost:8080");
+        RESTClient.Settings apiSettings = new RESTClient.Settings();
+        apiSettings.setPreserveCookies(true);
+        RESTClient api = new RESTClient("http://localhost:8080", apiSettings);
+
+        RESTClient.Settings apiSettings2 = new RESTClient.Settings();
+        apiSettings2.setPreserveCookies(false);
+        api.setClientSettings(apiSettings2);
         try {
             //api.get("/hello");
+            System.out.println("request 1:");
             RESTClientResponse response = api.newRequest().method("GET").path("/hello").param("file","true").execute();
-            System.out.println(response.contentAsString());
+            System.out.println("Got length: " + response.contentAsString().length());
+            response.disconnect();
 
-            System.out.println("request 2...");
-
+            System.out.println("request 2 (stream):");
             RESTClientResponse response2 = api.newRequest().method("GET").path("/hello").execute();
-            //System.out.println(response2.contentAsString());
-            System.out.println("streaming request 2...");
             try (InputStream stream = response2.stream()) {
                 byte[] arr = new byte[8192];
                 int amountRead = stream.read(arr, 0, arr.length);
@@ -44,10 +50,26 @@ public class GeneralTesting implements GEOpenGL33.IRenderable, IKeyboardInputPro
             }
             response2.disconnect();
 
-            System.out.println("request 3...");
+            System.out.println("request 3:");
+            RESTClientResponse response3 = api.newRequest().method("GET").path("/file").execute();
+            //System.out.println("response 3: " + response3.contentAsString());
+            try (InputStream stream = response3.stream()) {
 
-            RESTClientResponse response3 = api.newRequest().method("HEAD").path("/hello").followRedirects(false).cookieConfig(false, true).execute();
-            System.out.println("response 3: " + response3.contentAsString());
+                FileOutputStream fos = new FileOutputStream("../downloaded-file.txt");
+
+                int d;
+                while ((d = stream.read()) != -1) fos.write(d);
+                fos.close();
+
+            }
+            response3.disconnect();
+
+            System.out.println("request 4:");
+            RESTClientResponse response4 = api.newRequest().method("GET").path("/redirect").execute();
+            System.out.println("response 4: " + response4.contentAsString());
+            System.out.println("response 4 destination url: " + response4.getDestinationURL());
+            System.out.println("response 4 destination uri: " + response4.getDestinationURI());
+            response4.disconnect();
 
 
 

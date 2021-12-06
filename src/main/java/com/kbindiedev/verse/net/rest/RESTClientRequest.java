@@ -2,7 +2,6 @@ package com.kbindiedev.verse.net.rest;
 
 import com.kbindiedev.verse.profiling.Assertions;
 import com.kbindiedev.verse.util.IOutputStreamWriter;
-import com.sun.istack.internal.Nullable;
 
 import java.io.*;
 import java.net.*;
@@ -11,6 +10,42 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+/*
+ * TODO FUTURE:
+ * java (HttpURLConnection) does not allow cross-protocol redirection. implement a solution that does.
+ * consider headers (esp. cookies). consider some .redirectHandler ? query parameters same probably
+ * see https://stackoverflow.com/questions/1884230/httpurlconnection-doesnt-follow-redirect-from-http-to-https (answer by Nathan)
+ * leaving this blank for now since there is no good reason a proper game should use http instead of https (even regarding redirects)
+ */
+
+/*
+ * TODO FUTURE:
+ * a custom implementation of redirection seems to be necessary regardless, because there seem to be no way of getting the
+ * 'Set-Cookie' header of requests that also end up in redirects (besides global CookieHandler, but this feels messy).
+ * These cookies should be considered.
+ */
+
+/*
+ * TODO FUTURE:
+ * support different body encodings (ex. multipart/form-data in addition to the default x-www-form-urlencoded)
+ * see https://stackoverflow.com/questions/8659808/how-does-http-file-upload-work for details.
+ * I don't see why it would be necessary for the game client to upload files specifically, so therefore this is
+ * not implemented (yet). A user could still define their own BodyWriter and use that to write multipart/form-data,
+ * thus allowing file uploads.
+ */
+
+/*
+ * TODO FUTURE:
+ * currently, https is the only SSL protocol that is supported. consider adding more? (e.g. SFTP).
+ * I don't think these are particularly useful in a game engine, but why not?
+ */
+
+/*
+ * TODO BUGS (known bugs):
+ * - cookies presented in a redirect will be ignored if that redirect was followed (due to java limitations: cannot set HttpURLConnection cookie handler)
+ * - status code 404 will result in FileNotFoundException in .execute(). this is considered a bug (or maybe have a setting for it?).
+ */
 
 /** Class responsible for the nitty-gritty details of dealing with REST requests {@see RESTClient} */
 public class RESTClientRequest {
@@ -31,12 +66,12 @@ public class RESTClientRequest {
 
     private String method;
     private HashMap<String, String> headers;
+    private String root;
     private StringBuilder path;
     private HashMap<String, String> parameters;
     private ArrayList<HttpCookie> userCookies;           //cookies the user has defined using addCookie().
 
-    //TODO: make visible to user
-    private Settings settings;
+    private RESTClientRequestSettings settings;
 
     private long unixCreation;
     private long unixExecution;
@@ -48,7 +83,7 @@ public class RESTClientRequest {
         stream.flush();
     };
 
-    //caching (getParamsAsString() and getURL() and getURI())
+    //caching (getParamsAsString() and getTargetURL() and getTargetURI())
     private boolean paramsDirty = true;     //describes that builtParams requires rebuilding
     private boolean URXDirty = true;        //describes that builtRequestURL and builtRequestURI requires rebuilding
     private String builtParams = "";
@@ -56,17 +91,19 @@ public class RESTClientRequest {
     private URI builtRequestURI = null;
 
     //intentionally package-private
+    /** Initializes fields for the request */
     RESTClientRequest(RESTClient client) {
         this.client = client;
 
         method = "GET";
         headers = new HashMap<>();
+        root = "";
         path = new StringBuilder();
         parameters = new HashMap<>();
 
         userCookies = new ArrayList<>();
 
-        settings = new Settings();
+        settings = client.getRequestSettings(); //derive from client
 
         unixCreation = System.currentTimeMillis();
     }
@@ -85,21 +122,21 @@ public class RESTClientRequest {
     public long getUnixExecution() { return unixExecution; }
 
     /**
-     * @return the current stated request URL to be used in {@see #execute()}.
-     * @throws MalformedURLException - If the current stated URL is malformed.
-     * @throws URISyntaxException - If the current stated URI has a syntax error.
+     * @return the current stated request URL (target) to be used in {@see #execute()}.
+     * @throws MalformedURLException - If the current stated target URL is malformed.
+     * @throws URISyntaxException - If the current stated target URI has a syntax error.
      */
-    public URL getURL() throws MalformedURLException, URISyntaxException {
+    public URL getTargetURL() throws MalformedURLException, URISyntaxException {
         if (URXDirty) buildRequestURX();
         return builtRequestURL;
     }
 
     /**
-     * @return the current stated request URI.
-     * @throws MalformedURLException - If the current stated URL is malformed.
-     * @throws URISyntaxException - If the current stated URI has a syntax error.
+     * @return the current stated request URI (target).
+     * @throws MalformedURLException - If the current stated target URL is malformed.
+     * @throws URISyntaxException - If the current stated target URI has a syntax error.
      */
-    public URI getURI() throws MalformedURLException, URISyntaxException {
+    public URI getTargetURI() throws MalformedURLException, URISyntaxException {
         if (URXDirty) buildRequestURX();
         return builtRequestURI;
     }
@@ -125,16 +162,16 @@ public class RESTClientRequest {
     public HashMap<String, String> getParameters() { return parameters; }
 
     /**
-     * Get a list of cookies gotten from this request's client's cookie store based on the current stated URI.
+     * Get a list of cookies gotten from this request's client's cookie store based on the current stated target URI.
      * These cookies will only be added to the 'Cookie' header upon request execution if
      *      {@code settings.sendClientCookies} equals {@code true}.
      *      Any cookies you have added using {@see #addCookie()} will also be sent, but not returned by this method.
-     * @return the cookies from this request's client's cookie store based on the current stated URI.
-     * @throws MalformedURLException - If the current stated URL is malformed.
-     * @throws URISyntaxException - If the current stated URI has a syntax error.
+     * @return the cookies from this request's client's cookie store based on the current stated target URI.
+     * @throws MalformedURLException - If the current stated target URL is malformed.
+     * @throws URISyntaxException - If the current stated target URI has a syntax error.
      */
     public List<HttpCookie> getClientCookies() throws MalformedURLException, URISyntaxException {
-        return client.getCookies(getURI());
+        return client.getCookies(getTargetURI());
     }
 
     /**
@@ -155,8 +192,8 @@ public class RESTClientRequest {
      *                 Otherwise, will return all cookies associated with this request.
      * @return a list of cookies associated with this request: all cookies, or only the ones that will be sent
      *          in the 'Cookie' header if {@code settings.sendCookies} is true.
-     * @throws MalformedURLException - If the current stated URL is malformed.
-     * @throws URISyntaxException - If the current stated URI has a syntax error.
+     * @throws MalformedURLException - If the current stated target URL is malformed.
+     * @throws URISyntaxException - If the current stated target URI has a syntax error.
      * @see #getClientCookies()
      * @see #getUserCookies()
      */
@@ -184,44 +221,14 @@ public class RESTClientRequest {
     //TODO: disallow change of headers etc after request executed ?
 
     /**
-     * Set this request's cookie configuration.
-     * The default configuration is:
-     *      {@code sendClientCookies} equals {@code true}.
-     *      {@code reportCookies} equals {@code true}.
-     * @param sendClientCookies - If true, then during {@see #execute()} I will add cookies the gotten by this
-     *                          request's client's cookie store by my then-to-be URI {@see RESTClient.getCookies(URI)}
-     *                          to the 'Cookie' header before executing the request.
-     *                          Note that all user-defined cookies {@see #addCookie()} will be added to the
-     *                          'Cookie' header regardless.
-     * @param reportCookies - If true, then the generated RESTClientResponse shall report all cookies it receives
-     *                      in the 'Set-Cookie' header to the {@see RESTClient#reportSetCookie()} method.
-     *                      Note that the RESTClient may still decide to not store the reported cookies.
+     * Set this request's internal "other" settings {@see RESTClientRequestSettings}.
+     *      Any existing settings will be overwritten.
+     * The original settings are set to the client's settings upon request creation.
+     * @param settings - The new settings.
      * @return self, for chaining calls.
      */
-    public RESTClientRequest cookieConfig(boolean sendClientCookies, boolean reportCookies) {
-        settings.sendClientCookies = sendClientCookies;
-        settings.reportCookies = reportCookies;
-        return this;
-    }
-
-    /*
-    * TODO FUTURE:
-    * java (HttpURLConnection) does not allow cross-protocol redirection. implement a solution that does.
-    * consider headers (esp. cookies). consider some .redirectHandler ? query parameters same probably
-    * see https://stackoverflow.com/questions/1884230/httpurlconnection-doesnt-follow-redirect-from-http-to-https (answer by Nathan)
-    * leaving this blank for now since there is no good reason a proper game should use http instead of https (even regarding redirects)
-    */
-    /**
-     * Set this request's option regarding the following of redirects.
-     * The default configuration is:
-     *      {@code follow} equals {@code true}.
-     * Redirects will <em>NOT</em> be followed if the original request protocol does not match the
-     *      redirect location's protocol (in other words, HTTPS -> HTTP and HTTP -> HTTPS do not work).
-     * @param follow - Whether or not this request should follow http redirects (code 3xx).
-     * @return self, for chaining calls.
-     */
-    public RESTClientRequest followRedirects(boolean follow) {
-        settings.followRedirectsSameProtocol = follow;
+    public RESTClientRequest setSettings(RESTClientRequestSettings settings) {
+        this.settings = settings;
         return this;
     }
 
@@ -253,6 +260,18 @@ public class RESTClientRequest {
         } else {
             headers.put(key, value);
         }
+        return this;
+    }
+
+    /**
+     * Set this request's root.
+     * The "root" comes between this request's client's "base" and this request's "path" values.
+     * The existing root will be overwritten.
+     * @param root - The root.
+     * @return self, for chaining calls.
+     */
+    public RESTClientRequest root(String root) {
+        this.root = root;
         return this;
     }
 
@@ -297,21 +316,25 @@ public class RESTClientRequest {
     }
 
     //TODO: set domain ? (replace from client origin ?????)
-    //TODO: do proper url building (?) (e.g. if client base contains path or something?)
+    //TODO: do proper url building (?) (e.g. if client base contains path or something? (avoid localhost:8080//path (double slash)))
 
     /**
      * Build and execute the request.
      * @return self, for chaining calls.
-     * @throws MalformedURLException - If the current stated URL is malformed.
-     * @throws URISyntaxException - If the current stated URI has a syntax error.
+     * @throws MalformedURLException - If the current stated target URL is malformed.
+     * @throws URISyntaxException - If the current stated target URI has a syntax error.
      * @throws IOException - If there was an I/O error during the request-connect or request-write step.
      */
-    //public RESTClientResponse execute() {
     public RESTClientResponse execute() throws MalformedURLException, URISyntaxException, IOException {
 
         //get the url
-        URL url = getURL(); //will also build the url.
-        URI uri = getURI();
+        URL url = getTargetURL(); //will also build the url.
+        URI uri = getTargetURI();
+
+        //check SSL flag
+        if (client.getClientSettings().shouldEnforceSSL()) {
+            if (!url.getProtocol().equals("https")) throw new IOException(String.format("client settings enforceSSL=true, however URL protocol is not https. url: %s", url.toString()));
+        }
 
         //open a connection
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -362,6 +385,7 @@ public class RESTClientRequest {
         return new RESTClientResponse(this, connection);
     }
 
+    //TODO: make URIs immutable after request execution (?)
     /**
      * Build and store {@code builtRequestURI} and {@code builtRequestURL} based on object state.
      * Does nothing if {@code URXDirty} equals {@code false}.
@@ -371,7 +395,7 @@ public class RESTClientRequest {
         String params = getParamsAsString();
 
         //construct path
-        String url = client.getBaseUrl() + path;
+        String url = client.getBase() + root + path;
         if (params.length() > 0 && !shouldPutParamsInBody()) url += "?" + params;
 
         builtRequestURL = new URL(url);
@@ -423,30 +447,6 @@ public class RESTClientRequest {
             default:
                 return false;
         }
-    }
-
-    private static class Settings {
-
-        //the amount of time, in milliseconds, a connection will be attempted to be made,
-        //  before throwing a SocketTimeoutException (after .execute())
-        private int connectTimeout = 5000;
-
-        //the maximum amount of time, in milliseconds, the socket will wait for data to become available
-        //  before throwing a SocketTimeoutException (after connection) (includes 'between reads')
-        private int readTimeout = 5000;
-
-        //should this request set the 'Cookie' header with the client's values ?
-        private boolean sendClientCookies = true;
-
-        //should the RESTResponse consider the 'Set-Cookie' header ?
-        private boolean reportCookies = true;
-
-        //should I follow redirects of the same protocol (http, https) ?
-        private boolean followRedirectsSameProtocol = true;
-
-        //should I ALWAYS put parameters in query string and NEVER in body ?
-        private boolean paramsInQueryOnly = false;
-
     }
 
 }

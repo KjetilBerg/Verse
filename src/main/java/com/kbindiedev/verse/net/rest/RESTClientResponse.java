@@ -6,8 +6,7 @@ import com.kbindiedev.verse.util.StreamUtil;
 import com.sun.istack.internal.Nullable;
 
 import java.io.*;
-import java.net.HttpCookie;
-import java.net.HttpURLConnection;
+import java.net.*;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -30,6 +29,11 @@ public class RESTClientResponse implements Closeable {
     private HashMap<String, List<String>> headers;
     private String charset;         //will be parsed from first received 'Content-Type' header or set to default.
     private boolean didProvideCharset;
+
+    private long unixCommunicationEstablished;  //gets set upon the first sign of communication.
+
+    private URL destinationURL;     //final destination URL (after considering all redirects, etc)
+    private URI destinationURI;     //final destination URI (after considering all redirects, etc)
 
     private InputStream responseStream; //will be a CallbackInputStream of a BufferedInputStream
     private @Nullable String contentString = null;  //cached content
@@ -54,6 +58,15 @@ public class RESTClientResponse implements Closeable {
         //immediate info
         status = connection.getResponseCode();
         reason = connection.getResponseMessage();
+
+        //communication established (got status and reason)
+        unixCommunicationEstablished = System.currentTimeMillis();
+
+        //urls
+        destinationURL = connection.getURL();
+        try { destinationURI = new URI(destinationURL.toString()); } catch (URISyntaxException e) {
+            Assertions.error("uri-creation fault from URL source: HttpURLConnection.getURL(). url was: %s", destinationURL.toString());
+        }   //TODO: Assertions.fatal
 
         //prepare stream
         BufferedInputStream bis = new BufferedInputStream(connection.getInputStream(), 8192);   //TODO: size
@@ -112,6 +125,15 @@ public class RESTClientResponse implements Closeable {
 
     /** @return the status reason, if any, the server responded with. may be null. */
     public String getReason() { return reason; }
+
+    /** @return the timestamp, in unix milliseconds, of when communication was established (status code was received). */
+    public long getUnixCommunicationEstablished() { return unixCommunicationEstablished; }
+
+    /** @return the URL of the site I am connected to (will reflect/update upon redirects). */
+    public URL getDestinationURL() { return destinationURL; }
+
+    /** @return the URI of the site I am connected to (will reflect/update upon redirects). */
+    public URI getDestinationURI() { return destinationURI; }
 
     /**
      * Get the response from the server in InputStream (byte stream) form.
