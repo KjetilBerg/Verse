@@ -10,12 +10,16 @@ import com.kbindiedev.verse.input.mouse.IMouseInputProcessor;
 import com.kbindiedev.verse.input.mouse.MouseButtons;
 import com.kbindiedev.verse.input.mouse.MouseInputManager;
 import com.kbindiedev.verse.net.rest.RESTClient;
+import com.kbindiedev.verse.net.rest.RESTClientRequestSettings;
 import com.kbindiedev.verse.net.rest.RESTClientResponse;
+import com.kbindiedev.verse.net.rest.RESTClientSettings;
 import org.joml.Matrix4f;
 import org.lwjgl.BufferUtils;
 
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.net.HttpCookie;
+import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
@@ -27,13 +31,18 @@ public class GeneralTesting implements GEOpenGL33.IRenderable, IKeyboardInputPro
     /** Gets run from Main */
     public static void run() {
 
-        RESTClient.Settings apiSettings = new RESTClient.Settings();
-        apiSettings.setPreserveCookies(true);
-        RESTClient api = new RESTClient("http://localhost:8080", apiSettings);
+        RESTClientRequestSettings requestSettings = new RESTClientRequestSettings();
+        requestSettings.setEnforceSSL(false);
+        RESTClient.setGlobalRequestSettings(requestSettings);
 
-        RESTClient.Settings apiSettings2 = new RESTClient.Settings();
+        RESTClientSettings apiSettings = new RESTClientSettings();
+        apiSettings.setPreserveCookies(true);
+        RESTClient api = new RESTClient("http://localhost:8080");
+        api.setClientSettings(apiSettings);
+
+        RESTClientSettings apiSettings2 = new RESTClientSettings();
         apiSettings2.setPreserveCookies(false);
-        api.setClientSettings(apiSettings2);
+        //api.setClientSettings(apiSettings2);
         try {
             //api.get("/hello");
             System.out.println("request 1:");
@@ -71,6 +80,21 @@ public class GeneralTesting implements GEOpenGL33.IRenderable, IKeyboardInputPro
             System.out.println("response 4 destination uri: " + response4.getDestinationURI());
             response4.disconnect();
 
+            System.out.println("request 5:");
+            RESTClientResponse response5 = api.newRequest().method("PUT").path("/put-test").param("hello", "okay").execute();
+            System.out.println("response 5: " + response5.contentAsString());
+            response5.disconnect();
+
+            System.out.println("request 6:");
+            RESTClientResponse response6 = api.newRequest().method("POST").path("/reflect").param("code", "205").execute();
+            System.out.println("response 6: " + response6.getStatusCode() + " " + response6.contentAsString());
+            response6.disconnect();
+
+            System.out.println("request 7:");
+            RESTClientResponse response7 = api.newRequest().method("GET").path("/reflect").param("code", "408").execute();
+            System.out.println("response 7: " + response7.getStatusCode() + " " + response7.contentAsString());
+            response7.disconnect();
+
 
 
 
@@ -79,7 +103,11 @@ public class GeneralTesting implements GEOpenGL33.IRenderable, IKeyboardInputPro
         }
 
         System.out.println("CHECKING COOKIES...");
-        api.tempPrintCookies("http://localhost:8080/banana");
+        try {
+            URI uri = new URI("http://localhost:8080/banana");
+            List<HttpCookie> cookies = api.getCookies(uri);
+            System.out.println(cookies);
+        } catch (Exception e) { e.printStackTrace(); }
 
         System.exit(0);
 

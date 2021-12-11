@@ -42,6 +42,45 @@ import java.util.stream.Collectors;
  */
 
 /*
+ * TODO FUTURE:
+ * consider making all fields immutable after the request has been executed. I suppose there is nothing wrong
+ * with executing about a single URI multiple times does not matter, however changing that URI feels really messy.
+ */
+
+/*
+ * TODO FUTURE:
+ * Use different streaming modes (e.g. Chunked or FixedLength). This link provides some good info (in general):
+ * https://stackoverflow.com/questions/2793150/how-to-use-java-net-urlconnection-to-fire-and-handle-http-requests
+ */
+
+/*
+ * TODO FUTURE:
+ * allow user to "install" SSL-certificates to be trusted by this program. Again, see link mentioned:
+ * https://stackoverflow.com/questions/2793150/how-to-use-java-net-urlconnection-to-fire-and-handle-http-requests
+ */
+
+/*
+ * TODO FUTURE:
+ * Provide some DefaultHeaderProvider or some client- or request setting to include certain headers automatically.
+ * Maybe some client.setHeaderForAllFuture(key, value)  ?? (would probably require ability to erase said header later...)
+ * Headers that come to mind:
+ * "Host"               (e.g. authority target and port (some setting to derive from URL ?))
+ * "Accept"             (is this really relevant? empty would imply "all", no?)
+ * "User-Agent"         (because "Verse Engine" is cool :)) (alternatively mimic browsers? don't really see how that's useful for a game engine)
+ * "Content-Length"
+ */
+
+/*
+ * TODO FUTURE (doubtfully):
+ * Support HTTP 2. HTTP 1.xxx is the only currently supported version(s).
+ */
+
+/*
+ * TODO FUTURE (unlikely):
+ * RESTClientRequestSettings getters and describe defaults in setters' javadoc
+ */
+
+/*
  * TODO BUGS (known bugs):
  * - cookies presented in a redirect will be ignored if that redirect was followed (due to java limitations: cannot set HttpURLConnection cookie handler)
  * - status code 404 will result in FileNotFoundException in .execute(). this is considered a bug (or maybe have a setting for it?).
@@ -108,18 +147,44 @@ public class RESTClientRequest {
         unixCreation = System.currentTimeMillis();
     }
 
-    /** @return the client that created this request */
-    public RESTClient getClient() { return client; }
+    /**
+     * Set a custom body-writer for this request.
+     * The default body writer writes all request parameters {@see #getParamsAsString()} to the body
+     *      if {@see shouldPutParamsInBody()} returns {@code true}.
+     * Note that if {@see shouldPutParamsInBody()} returns {@code true}, then the provided parameters will
+     *      <em>NOT</em> be written to the body. You must do this yourself if you want the server to receive
+     *      the provided parameters.
+     * The bodyWriter will be called after the URXs have been formed and headers have been applied.
+     * @param bodyWriter - The body writer object.
+     */
+    public void setCustomBodyWriter(IOutputStreamWriter bodyWriter) {
+        this.bodyWriter = bodyWriter;
+        customBodyWriter = true;
+    }
 
-    /** @return whether this request's generated response should report cookies received in the 'Set-Cookie' header
-     *              to {@see RESTClient#reportSetCookie()}. */
-    protected boolean shouldReportCookies() { return settings.reportCookies; }
+    /**
+     * Set this request's internal "other" settings {@see RESTClientRequestSettings}.
+     *      Any existing settings will be overwritten.
+     * The original settings are set to the client's settings upon request creation.
+     * @param settings - The new settings.
+     * @return self, for chaining calls.
+     */
+    public RESTClientRequest setSettings(RESTClientRequestSettings settings) {
+        this.settings = settings;
+        return this;
+    }
+
+    /** @return this request's currently set settings. used in {@see RESTClientResponse} */
+    protected RESTClientRequestSettings getSettings() { return settings; }
 
     /** @return the unix timestamp for when this request was created. */
     public long getUnixCreation() { return unixCreation; }
 
     /** @return the unix timestamp for when this request was executed. */
     public long getUnixExecution() { return unixExecution; }
+
+    /** @return the client that generated this request. */
+    public RESTClient getClient() { return client; }
 
     /**
      * @return the current stated request URL (target) to be used in {@see #execute()}.
@@ -150,7 +215,6 @@ public class RESTClientRequest {
     /** @return the currently set request METHOD. */
     public String getMethod() { return method; }
 
-    //TODO: immutable map ?
     /** @return the map containing all headers. changes to this map will affect request headers.
      *      note: does not contain 'cookie' header. Use {@see getCookiesToSend()} for that. */
     public HashMap<String, String> getHeaders() { return headers; }
@@ -204,31 +268,14 @@ public class RESTClientRequest {
     }
 
     /**
-     * Set a custom body-writer for this request.
-     * The default body writer writes all request parameters {@see #getParamsAsString()} to the body
-     *      if {@see shouldPutParamsInBody()} returns {@code true}.
-     * Note that if {@see shouldPutParamsInBody()} returns {@code true}, then the provided parameters will
-     *      <em>NOT</em> be written to the body. You must do this yourself if you want the server to receive
-     *      the provided parameters.
-     * The bodyWriter will be called after the URXs have been formed and headers have been applied.
-     * @param bodyWriter - The body writer object.
-     */
-    public void setCustomBodyWriter(IOutputStreamWriter bodyWriter) {
-        this.bodyWriter = bodyWriter;
-        customBodyWriter = true;
-    }
-
-    //TODO: disallow change of headers etc after request executed ?
-
-    /**
-     * Set this request's internal "other" settings {@see RESTClientRequestSettings}.
-     *      Any existing settings will be overwritten.
-     * The original settings are set to the client's settings upon request creation.
-     * @param settings - The new settings.
+     * Add a custom cookie to be sent with this request.
+     * This cookie will <em>NOT</em> be recorded by this request's client's cookie store.
+     * Note that this cookie will be sent regardless of the value of {@code settings.sendClientCookies}
+     * @param cookie - A cookie to send with this request.
      * @return self, for chaining calls.
      */
-    public RESTClientRequest setSettings(RESTClientRequestSettings settings) {
-        this.settings = settings;
+    public RESTClientRequest addCookie(HttpCookie cookie) {
+        userCookies.add(cookie);
         return this;
     }
 
@@ -285,13 +332,12 @@ public class RESTClientRequest {
         return this;
     }
 
-    //TODO: update javadoc
     /**
      * Set a query- or body-option for this request.
-     * The type will depend on the request's method, calculated during the build step, or the RESTClient class's
-     * configuration {@see RESTClient#forceQueryParamsOnly}.
+     * The type will depend on the request's method that is calculated during the build step
+     *      or the RESTClient class's configuration {@see RESTClient#forceQueryParamsOnly}.
      *      if 'paramsInQueryOnly' is false and the method is one of: POST, PUT, OPTIONS,
-     *      then the parameters will be sent as body payload (format: param1=value1&param2=value2).
+     *      then the parameters will be sent as body payload (x-www-form-urlencoded) (format: param1=value1&param2=value2).
      *      Otherwise they will be sent as query-string parameters (in other words: ?param1=value1&param2=value2).
      * If this parameter is already set, then the old value will be overwritten by the new value.
      * @param key - The key of the parameter to set the value for.
@@ -304,26 +350,12 @@ public class RESTClientRequest {
     }
 
     /**
-     * Add a custom cookie to be sent with this request.
-     * This cookie will <em>NOT</em> be recorded by this request's client's cookie store.
-     * Note that this cookie will be sent regardless of the value of {@code settings.sendClientCookies}
-     * @param cookie - A cookie to send with this request.
-     * @return self, for chaining calls.
-     */
-    public RESTClientRequest addCookie(HttpCookie cookie) {
-        userCookies.add(cookie);
-        return this;
-    }
-
-    //TODO: set domain ? (replace from client origin ?????)
-    //TODO: do proper url building (?) (e.g. if client base contains path or something? (avoid localhost:8080//path (double slash)))
-
-    /**
      * Build and execute the request.
-     * @return self, for chaining calls.
+     * @return a response to this request ({@see RESTClientResponse}).
      * @throws MalformedURLException - If the current stated target URL is malformed.
      * @throws URISyntaxException - If the current stated target URI has a syntax error.
-     * @throws IOException - If there was an I/O error during the request-connect or request-write step.
+     * @throws IOException - If there was an I/O error during the request-connect or request-write step,
+     *      or the request already has been executed.
      */
     public RESTClientResponse execute() throws MalformedURLException, URISyntaxException, IOException {
 
@@ -332,15 +364,14 @@ public class RESTClientRequest {
         URI uri = getTargetURI();
 
         //check SSL flag
-        if (client.getClientSettings().shouldEnforceSSL()) {
+        if (settings.enforceSSL) {
             if (!url.getProtocol().equals("https")) throw new IOException(String.format("client settings enforceSSL=true, however URL protocol is not https. url: %s", url.toString()));
         }
 
         //open a connection
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
-        //TODO: shuffing probably ok, but check again. This provides good info: https://stackoverflow.com/questions/10116961/can-you-explain-the-httpurlconnection-connection-process
-
+        //set settings
         connection.setConnectTimeout(settings.connectTimeout);
         connection.setReadTimeout(settings.readTimeout);
         connection.setInstanceFollowRedirects(settings.followRedirectsSameProtocol);
@@ -358,20 +389,12 @@ public class RESTClientRequest {
             connection.setRequestProperty("Cookie", cookies);
         }
 
-        //TODO: auto-set "Host" header ?
-        //TODO: auto-set "Content-Type" header ?
-        //TODO: auto-set "Accept" header ?
-        //TODO: auto-set "User-Agent" header ?      "Verse Engine" ?
-        //TODO: some "default header provider" method or interface to set headers.
-
-        //connection.setRequestProperty("Content-Type", "application/json");
-        //connection.setRequestProperty("host", "localhost:8080");
-        //connection.setRequestProperty("User-Agent", "Mozilla/5.0 ( compatible ) ");
-        //connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.45 Safari/537.36");
-        //connection.setRequestProperty("Accept", "*/*");
-
+        //execute request now
         unixExecution = System.currentTimeMillis();
-        connection.connect(); //connection is established automatically. this is just for semantics
+
+        //connection is established automatically, so this is just for semantics
+        //note: calling .connect before .setDoOutput will cause an IOException, so it has been disabled (unnecessary).
+        //connection.connect();
 
         //call body writer (default = write params if they belong in body)
         if (customBodyWriter || shouldPutParamsInBody()) {
@@ -385,7 +408,6 @@ public class RESTClientRequest {
         return new RESTClientResponse(this, connection);
     }
 
-    //TODO: make URIs immutable after request execution (?)
     /**
      * Build and store {@code builtRequestURI} and {@code builtRequestURL} based on object state.
      * Does nothing if {@code URXDirty} equals {@code false}.

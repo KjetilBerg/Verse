@@ -3,27 +3,44 @@ package com.kbindiedev.verse.net.rest;
 import java.net.*;
 import java.util.List;
 
-//TODO NOTE: supports HTTP 1.xxx
-//TODO: this may be useful to read: https://stackoverflow.com/questions/2793150/how-to-use-java-net-urlconnection-to-fire-and-handle-http-requests
-//TODO: document the overal structure
-/** A class that allows the user to define an api-endpoint that they then can execute REST requests towards easily. */
+/** A class that allows the user to define an api-endpoint that they then can execute REST requests towards easily.
+ * Note that only HTTP 1.x is supported (java limitation). */
 public class RESTClient {
 
     private static RESTClientSettings globalClientSettings = new RESTClientSettings();
     private static RESTClientRequestSettings globalRequestSettings = new RESTClientRequestSettings();
 
-    //TODO: javadocs
+    /** @return the current "Global client settings". These SHOULD not be modified. Instead {@see #setGlobalClientSettings} */
     public static RESTClientSettings getGlobalClientSettings() { return globalClientSettings; }
+
+    /** @return the current "Global request settings". These SHOULD not be modified. Instead {@see #setGlobalRequestSettings} */
     public static RESTClientRequestSettings getGlobalRequestSettings() { return globalRequestSettings; }
+
+    /**
+     * Set the global client settings.
+     * These will be assigned to any newly created RESTClient.
+     * You can overwrite these by using {@see RESTClient#setClientSettings()}.
+     */
     public static void setGlobalClientSettings(RESTClientSettings settings) { globalClientSettings = settings; }
+
+    /**
+     * Set the global request settings.
+     * These will be assigned to any newly created RESTClient (for use when it is creating new requests).
+     * You can overwrite these by using {@see RESTClient#setClientSettings()}.
+     */
     public static void setGlobalRequestSettings(RESTClientRequestSettings settings) { globalRequestSettings = settings; }
 
 
+    /**
+     * The default {@code cookieManager} operates by RFC 6265 (https://datatracker.ietf.org/doc/html/rfc6265)
+     *      (cookies will be stored by their URI, but cookies will be ignored if the client's
+     *      cookie-preservation setting dictates so).
+     * Note that every instance of a RESTClient uses a separate cookie store.
+     */
     private ICookieManager cookieManager = new ICookieManager() {
 
         private CookieManager cookieManager = new CookieManager();
 
-        //TODO: defaults explanations and javadocs
         @Override
         public void reportSetCookie(RESTClientResponse origin, HttpCookie cookie) {
             if (!clientSettings.shouldPreserveCookies()) return;
@@ -50,8 +67,8 @@ public class RESTClient {
     public RESTClient(String base) {
         this.base = base;
 
-        clientSettings = new RESTClientSettings();
-        requestSettings = new RESTClientRequestSettings();
+        clientSettings = globalClientSettings;
+        requestSettings = globalRequestSettings;
     }
 
     /**
@@ -70,32 +87,69 @@ public class RESTClient {
      */
     public void setBase(String base) { this.base = base; }
 
-    //TODO: javadoc
+    /**
+     * Set this client's "client settings".
+     * These default to whatever settings were the global settings {@see #setGlobalClientSettings()}
+     *      at the time of creation (which default to the ones defined as default by {@see RESTClientSettings}).
+     * @param settings - The settings.
+     * @see RESTClientSettings
+     */
     public void setClientSettings(RESTClientSettings settings) { this.clientSettings = settings; }
 
     /**
      * Set this client's "request settings".
-     * These default to the ones defined as default by {@see RESTClientRequestSettings}.
+     * These default to whatever settings were the global settings {@see #setGlobalRequestSettings()}
+     *      at the time of creation (which default to the ones defined as default by {@see RESTClientRequestSettings}).
      * These will be applied to all future generated requests.
-     *      You can manually override them by using the {@see RESTClientRequest#setSettings()} method.
+     *      You can manually override them per request by using the {@see RESTClientRequest#setSettings()} method.
      * @param settings - The settings.
+     * @see RESTClientRequestSettings
      */
     public void setRequestSettings(RESTClientRequestSettings settings) {
         this.requestSettings = settings;
     }
 
-//TODO: javadoc
+    /**
+     * Get the currently set {@code cookieManager}.
+     * The default {@code cookieManager} operates by RFC 6265 (https://datatracker.ietf.org/doc/html/rfc6265)
+     *      (cookies will be stored by their URI,
+     *      but cookies will be ignored if the client's cookie-preservation setting dictates so).
+     * @return the currently set {@code cookieManager}.
+     * @see #setCookieManager(ICookieManager)
+     */
     public ICookieManager getCookieManager() { return cookieManager; }
 
+    /**
+     * Set this client's {@code cookieManager}.
+     * The manager's ReportSetCookie event will be triggered by any RESTResponse objects that receive a
+     *      'Set-Cookie' header if that RESTResponse was generated while the requestSetting's
+     *      reportCookie field was set to {@code true}.
+     * The manager's GetCookies call may be triggered by any source. See further documentation up top about
+     *      what any {@code cookieManager} should do.
+     * The default {@code cookieManager} operates by RFC 6265 (https://datatracker.ietf.org/doc/html/rfc6265)
+     *      (cookies will be stored by their URI,
+     *      but cookies will be ignored if the client's cookie-preservation setting dictates so).
+     * @param manager - The manager to set.
+     * @see #setRequestSettings(RESTClientRequestSettings)
+     */
     public void setCookieManager(ICookieManager manager) { this.cookieManager = manager; }
 
-    //TODO: javadoc (package private)
+    /**
+     * Get the currently set "request settings".
+     * This method is intentionally package-private, as these methods are only to be used internally.
+     *      (Getting settings would be fine, but they should not be changed once set).
+     * @return this client's currently set "request settings".
+     */
     RESTClientRequestSettings getRequestSettings() { return requestSettings; }
+
+    /**
+     * Get the currently set "client settings".
+     * This method is intentionally package-private, as these methods are only to be used internally.
+     *      (Getting settings would be fine, but they should not be changed once set).
+     * @return this client's currently set "client settings".
+     */
     RESTClientSettings getClientSettings() { return clientSettings; }
 
-
-
-    //TODO: javadoc
     /**
      * Report that a response generated by this client received a 'Set-Cookie' header.
      * This method may be run several times by a {@see RESTClientResponse}.
@@ -104,7 +158,10 @@ public class RESTClient {
      * This will go by the currently set cookieManager {@see #setCookieManager()} and {@see #getCookieManager()}.
      * The default {@code cookieManager} operates by RFC 6265 (https://datatracker.ietf.org/doc/html/rfc6265)
      *      (cookies will be stored by their URI,
-     *      but cookies will be ignored if the cookie-preservation setting dictates so).    //TODO: setting
+     *      but cookies will be ignored if the client's cookie-preservation setting dictates so).
+     * This method should only be called internally. If you wish to inject your own cookies, you will have to
+     *      overwrite the {@code cookieManager} {@see #setCookieManager(ICookieManager)} or add user-cookies
+     *      per request via {@see RESTClientRequest#addCookie()}.
      * @param origin - The response that is reporting this cookie.
      * @param cookie - The cookie being reported.
      * @see #setCookieManager(ICookieManager)
@@ -124,18 +181,13 @@ public class RESTClient {
      * @see #setCookieManager(ICookieManager)
      * @see #getCookieManager()
      */
-    protected List<HttpCookie> getCookies(URI uri) { return cookieManager.getCookies(uri); }
+    public List<HttpCookie> getCookies(URI uri) { return cookieManager.getCookies(uri); }
 
-    //TODO: temp
-    public void tempPrintCookies(String url) {
-        try {
-            URI uri = new URI(url);
-            List<HttpCookie> cookies = getCookies(uri);
-            System.out.println(cookies);
-        } catch (Exception e) { e.printStackTrace(); }
-    }
-
-    /** Initialize a new request. */
+    /**
+     * Initialize a new request.
+     * The request settings will be cloned into the request, so any changes made to
+     *      them from here on will <em>NOT</em> affect this new request.
+     */
     public RESTClientRequest newRequest() { return new RESTClientRequest(this); }
 
 }

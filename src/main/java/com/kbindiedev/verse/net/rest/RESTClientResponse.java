@@ -35,6 +35,9 @@ public class RESTClientResponse implements Closeable {
     private URL destinationURL;     //final destination URL (after considering all redirects, etc)
     private URI destinationURI;     //final destination URI (after considering all redirects, etc)
 
+    private boolean shouldTryCache; //from request settings: .disconnect behaviour
+    private boolean shouldDrain;    //from request settings: .disconnect behaviour
+
     private InputStream responseStream; //will be a CallbackInputStream of a BufferedInputStream
     private @Nullable String contentString = null;  //cached content
     private boolean disconnected = false;
@@ -55,6 +58,8 @@ public class RESTClientResponse implements Closeable {
         this.request = request;
         this.connection = connection;
 
+        RESTClientRequestSettings requestSettings = request.getSettings();
+
         //immediate info
         status = connection.getResponseCode();
         reason = connection.getResponseMessage();
@@ -69,7 +74,9 @@ public class RESTClientResponse implements Closeable {
         }   //TODO: Assertions.fatal
 
         //prepare stream
-        BufferedInputStream bis = new BufferedInputStream(connection.getInputStream(), 8192);   //TODO: size
+        InputStream targetStream;
+        if (status < 400) targetStream = connection.getInputStream(); else targetStream = connection.getErrorStream();
+        BufferedInputStream bis = new BufferedInputStream(targetStream, requestSettings.bufferSize);
         CallbackInputStream cis = new CallbackInputStream(bis);
         cis.setCallback(CallbackInputStream.Event.POST_CLOSE, () -> { socketClosed = true; this.close(); });
         responseStream = cis;
@@ -89,7 +96,7 @@ public class RESTClientResponse implements Closeable {
         }
 
         //report cookies
-        if (request.shouldReportCookies()) {
+        if (requestSettings.reportCookies) {
             List<String> cookieHeaders = headers.get("Set-Cookie");
             if (cookieHeaders != null) {
 
@@ -101,10 +108,14 @@ public class RESTClientResponse implements Closeable {
             }
         }
 
+        //set behaviour settings
+        shouldDrain = requestSettings.shouldDrainSockets;
+        shouldTryCache = requestSettings.defaultCacheSockets;
+
     }
 
     /** @return the request object that created this response object. */
-    public RESTClientRequest getRequest() { return request; } //TODO: protected ?
+    public RESTClientRequest getRequest() { return request; }
 
     /**
      * Set the charset (used in {@see #contentAsString()} and {@see getCharset()}).
@@ -135,8 +146,9 @@ public class RESTClientResponse implements Closeable {
     /** @return the URI of the site I am connected to (will reflect/update upon redirects). */
     public URI getDestinationURI() { return destinationURI; }
 
+    //Note: per HttpURLConnection, this is the InputStream if status < 400, otherwise the error stream.
     /**
-     * Get the response from the server in InputStream (byte stream) form.
+     * Get the response (body content) from the server as an InputStream (streaming bytes).
      * A SocketTimeoutException may be thrown when reading from the returned input stream if the read timeout
      *      defined by request configuration expires before data is available to read (also between read calls).
      * Upon closing the provided stream with .close(), this RESTClientResponse's .disconnect() method
@@ -152,10 +164,11 @@ public class RESTClientResponse implements Closeable {
 
     /**
      * Read the contents of the response into a string.
-     * This will close the connection upon disconnect, with current disconnect-settings. //TODO: link to settings
+     * This will close the connection (and disconnect) upon finishing the stream.
      * This method is incompatible with {@see #stream()}.
      *      If either method is run, then the other will throw an exception.
-     * Once this method runs successfully, the result is cached, and so no further exceptions will be thrown.
+     * Once this method runs successfully, the result is cached, and so any further calls to this method
+     *      will return the cached content and no further exceptions will be thrown.
      * @return the stringified value of the response stream.
      * @throws IllegalStateException - if {@see #stream()} has been called before this.
      * @throws IOException - if an I/O-error occurs.
@@ -177,7 +190,6 @@ public class RESTClientResponse implements Closeable {
     }
 
 
-    //TODO: last statement, check RESTClient correctly spelled (remove statement?)
     /*
      * There is a TON of conflicting documentation of this regarding the java JDK implementation
      *      of HttpURLConnection.disconnect().
@@ -200,16 +212,19 @@ public class RESTClientResponse implements Closeable {
      *
      *       If this is wrong, then the fault is not breaking (just less efficient).
      *       Regardless, the Verse engine acts in accordance to its own definitions, and do not specifically
-     *       adhere to the java JDK implementation. (see RESTClient configuration regarding caching).
+     *       adhere to the java JDK implementation. (see .disconnect() comments regarding caching).
      */
 
     /**
-     * {@code drainStream} defaults to {@code false}
-     * {@code cacheSocket} defaults to {@code true}
+     * The default value of {@code drainStream} gets set to the request's setting
+     *      {@see RESTClientRequestSetting} regarding draining upon creation.
+     * The default value of {@code cacheSocket} gets set to the request's setting
+     *      {@see RESTClientRequestSetting} regarding caching upon creation.
      * @see #disconnect(boolean, boolean)
      */
-    public void disconnect() { disconnect(false, true); }
+    public void disconnect() { disconnect(shouldDrain, shouldTryCache); }
 
+    //Note (per java): This socket-caching is determined by the global system setting: "http.Keepalive".
     /**
      * Close this connection to the server.
      * This will also close the InputStream from {@see #stream()} if it is open.
@@ -222,7 +237,7 @@ public class RESTClientResponse implements Closeable {
      * The socket may be cached depending on the provided values.
      *
      * Note that the value of {@code cacheSocket} will be overwritten to {@code true} if:
-     *      - the stream from {@see #stream()} was closed prior to .disconnect being called (will be cached).//TODO: see global http.Keepalive settings
+     *      - the stream from {@see #stream()} was closed prior to .disconnect being called (will be cached).
      *      - {@code drainStream} is true (due to previous point).
      * @param drainStream - Whether or not to drain the stream of all data (read until end).
      *                    Does nothing if the socket is already closed or drained.
@@ -253,7 +268,7 @@ public class RESTClientResponse implements Closeable {
     }
 
     /**
-     * Drain the stream of this response {@see #stream()}. Will move onto the errorStream if the stream is unavailable. //TODO: remove comment
+     * Drain the stream of this response {@see #stream()}.
      * @param close - Whether or not to close the stream after draining it.
      * @throws IOException - If there was an I/O error during the drainage or closing process.
      */
@@ -261,7 +276,6 @@ public class RESTClientResponse implements Closeable {
 
         if (socketClosed) return;
 
-        //TODO: handle error stream?
         while (responseStream.read() != -1);
         if (close) responseStream.close();
     }
