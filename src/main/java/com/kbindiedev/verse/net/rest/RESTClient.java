@@ -20,6 +20,7 @@ public class RESTClient {
      * Set the global client settings.
      * These will be assigned to any newly created RESTClient.
      * You can overwrite these by using {@see RESTClient#setClientSettings()}.
+     * The settings-object you provided SHOULD NOT (but may) be changed after calling this method.
      */
     public static void setGlobalClientSettings(RESTClientSettings settings) { globalClientSettings = settings; }
 
@@ -27,6 +28,7 @@ public class RESTClient {
      * Set the global request settings.
      * These will be assigned to any newly created RESTClient (for use when it is creating new requests).
      * You can overwrite these by using {@see RESTClient#setClientSettings()}.
+     * The settings-object you provided SHOULD NOT (but may) be changed after calling this method.
      */
     public static void setGlobalRequestSettings(RESTClientRequestSettings settings) { globalRequestSettings = settings; }
 
@@ -91,6 +93,7 @@ public class RESTClient {
      * Set this client's "client settings".
      * These default to whatever settings were the global settings {@see #setGlobalClientSettings()}
      *      at the time of creation (which default to the ones defined as default by {@see RESTClientSettings}).
+     * The settings-object you provided SHOULD NOT (but may) be changed after calling this method.
      * @param settings - The settings.
      * @see RESTClientSettings
      */
@@ -102,6 +105,7 @@ public class RESTClient {
      *      at the time of creation (which default to the ones defined as default by {@see RESTClientRequestSettings}).
      * These will be applied to all future generated requests.
      *      You can manually override them per request by using the {@see RESTClientRequest#setSettings()} method.
+     * The settings-object you provided SHOULD NOT (but may) be changed after calling this method.
      * @param settings - The settings.
      * @see RESTClientRequestSettings
      */

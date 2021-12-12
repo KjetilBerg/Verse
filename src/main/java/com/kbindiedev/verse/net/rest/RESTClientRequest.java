@@ -17,6 +17,11 @@ import java.util.stream.Collectors;
  * consider headers (esp. cookies). consider some .redirectHandler ? query parameters same probably
  * see https://stackoverflow.com/questions/1884230/httpurlconnection-doesnt-follow-redirect-from-http-to-https (answer by Nathan)
  * leaving this blank for now since there is no good reason a proper game should use http instead of https (even regarding redirects)
+ *
+ * Notice: after coming back, I've realized there are some other problems regarding redirection.
+ * Specifically, cookies are not considered for redirect calls (because "global cookie handler" should not be a part of this implementation).
+ * It should be RESTClientResponse's responsibility to handle redirects in that case.
+ * For now: RESTClientRequest sets the "followRedirects" flag and does nothing else.
  */
 
 /*
@@ -83,11 +88,59 @@ import java.util.stream.Collectors;
 /*
  * TODO BUGS (known bugs):
  * - cookies presented in a redirect will be ignored if that redirect was followed (due to java limitations: cannot set HttpURLConnection cookie handler)
- * - status code 404 will result in FileNotFoundException in .execute(). this is considered a bug (or maybe have a setting for it?).
  */
 
-/** Class responsible for the nitty-gritty details of dealing with REST requests {@see RESTClient} */
-public class RESTClientRequest {
+
+/**
+ * The RESTClientResponse class is responsible for handling a HttpURLConnection after any request data has been written.
+ *      In other words: parse the response (like getting status code or body content).
+ *
+ * Note that RESTClientResponse is responsible for notifying the owning client of any cookies it encounters via
+ *      any 'Set-Cookie' header. See the settings section below (in this comment) for further details.
+ *
+ * Any RESTClientResponse SHOULD exist in accordance to the generating request's settings {@see RESTClientRequest#getSettings()}.
+ * Specifically, these fields should be considered:
+ * - bufferSize = the amount of bytes that should be buffered from the response body.
+ * - reportCookies = whether or not you should call the request's client's reportSetCookie method (report cookies).
+ * - defaultCacheSockets = whether or not to "cache by default" when .disconnect() is called without parameters.
+ * - shouldDrainSockets = whether or not to "drain by default" when .disconnect() is called without parameters.
+ */
+
+/**
+ * The RESTClientRequest class is responsible for handling the nitty-gritty details of dealing with REST requests.
+ * All RESTClientRequests must be generated from a {@see RESTClient}.
+ *
+ * RESTClientRequest's purpose is to generate RESTClientResponse objects. These are made by creating a HttpURLConnection,
+ * writing its body or other content, and then passing it to a mentioned RESTClientResponse object (do not read / parse
+ * the response content in the request class). Note that all details should be set by RESTClientRequest. This includes
+ * but is not limited to: full URL, headers, content body.
+ *
+ * Note that RESTClientRequest should ask its generating client for any cookies to send along in its request, unless
+ * its own "request settings" dictates otherwise. See the settings section below (in this comment) for further details.
+ *
+ * //TODO see TODO FUTURE about redirects. This section may not apply in the future
+ * Note that RESTClientRequest should not handle redirects itself, but for this version of RESTClientRequest,
+ *      the internal "setFollowRedirects" on HttpURLConnection should be set according to the followRedirectsSameProtocol setting.
+ *
+ * Any RESTClientRequest SHOULD exist in accordance to its settings {@see RESTClientRequest#getSettings()}.
+ * These settings may be overwritten by the user, but should be derived from the client upon generation.
+ * Specifically, these fields should be considered:
+ * - connectTimeout = the maximum amount of time to wait before aborting the request.
+ *                      This must be set by the RESTClientRequest before passing the HttpURLConnection onto RESTClientResponse.
+ * - readTimeout = the maximum amount of time to wait before data becomes available (including "between reads").
+ *                      This must be set by the RESTClientRequest before passing the HttpURLConnection onto RESTClientResponse.
+ * - sendClientCookies = whether or not you should ask the client for additional cookies to append to headers.
+ *                      User-defined cookies (not from client) should be unaffected by this setting.
+ * - followRedirectsSameProtocol = whether or not redirects (code 3xx) should be followed for the same protocol
+ *                      (http->http or https->https). cross-protocol should not be considered here.
+ *                      This must be set/handled by the RESTClientRequest before passing the final HttpURLConnection onto RESTClientResponse.
+ * - paramsInQueryOnly = whether or not parameters defined should ONLY appear in the query-string.
+ * - enforceSSL = whether or not all requests MUST be SSL. If a request is non-ssl and this setting is true, then the request
+ *                      MUST be aborted.
+ */
+
+
+public class RESTClientRequest implements Cloneable {
 
     //Note on headers, from HTTP RFC 2616:
     /*
@@ -145,6 +198,7 @@ public class RESTClientRequest {
         settings = client.getRequestSettings(); //derive from client
 
         unixCreation = System.currentTimeMillis();
+        unixExecution = -1;
     }
 
     /**
@@ -163,13 +217,14 @@ public class RESTClientRequest {
     }
 
     /**
-     * Set this request's internal "other" settings {@see RESTClientRequestSettings}.
+     * Set this request's internal "request settings" {@see RESTClientRequestSettings}.
      *      Any existing settings will be overwritten.
      * The original settings are set to the client's settings upon request creation.
+     * The settings-object you provided SHOULD NOT (but may) be changed after calling this method.
      * @param settings - The new settings.
      * @return self, for chaining calls.
      */
-    public RESTClientRequest setSettings(RESTClientRequestSettings settings) {
+    public RESTClientRequest setRequestSettings(RESTClientRequestSettings settings) {
         this.settings = settings;
         return this;
     }
@@ -180,8 +235,11 @@ public class RESTClientRequest {
     /** @return the unix timestamp for when this request was created. */
     public long getUnixCreation() { return unixCreation; }
 
-    /** @return the unix timestamp for when this request was executed. */
+    /** @return the unix timestamp for when this request was executed, or -1 if it has not been executed yet. */
     public long getUnixExecution() { return unixExecution; }
+
+    /** @return whether or not the request has been executed. */
+    public boolean hasExecuted() { return unixExecution != -1; }
 
     /** @return the client that generated this request. */
     public RESTClient getClient() { return client; }
@@ -319,6 +377,7 @@ public class RESTClientRequest {
      */
     public RESTClientRequest root(String root) {
         this.root = root;
+        URXDirty = true;
         return this;
     }
 
@@ -329,6 +388,7 @@ public class RESTClientRequest {
      */
     public RESTClientRequest path(String toAppend) {
         path.append(toAppend);
+        URXDirty = true;
         return this;
     }
 
@@ -346,11 +406,15 @@ public class RESTClientRequest {
      */
     public RESTClientRequest param(String key, String value) {
         parameters.put(key, value);
+        paramsDirty = true;
+        URXDirty = true;
         return this;
     }
 
     /**
      * Build and execute the request.
+     * If the request has already been executed, an IOException will be thrown.
+     *      If you wish the execute the request again, use {@see #clone()} to create a new one.
      * @return a response to this request ({@see RESTClientResponse}).
      * @throws MalformedURLException - If the current stated target URL is malformed.
      * @throws URISyntaxException - If the current stated target URI has a syntax error.
@@ -358,6 +422,9 @@ public class RESTClientRequest {
      *      or the request already has been executed.
      */
     public RESTClientResponse execute() throws MalformedURLException, URISyntaxException, IOException {
+
+        //one request = one execution
+        if (hasExecuted()) throw new IOException(String.format("request already executed at unix: %d, current unix: %d", unixExecution, System.currentTimeMillis()));
 
         //get the url
         URL url = getTargetURL(); //will also build the url.
@@ -406,6 +473,55 @@ public class RESTClientRequest {
         }
 
         return new RESTClientResponse(this, connection);
+    }
+
+    /*
+     * Cloning fields:
+     * client, method, headers, root, path, parameters, userCookies, settings, unixCreation, unixExecution,
+     * customBodyWriter, bodyWriter, paramsDirty, URXDirty, builtParams, builtRequestURL, builtRequestURI
+     *
+     * identical; don't clone:
+     * client, bodyWriter
+     *
+     * immutable or primitive; don't clone:
+     * method, root, customBodyWriter, paramsDirty, URXDirty, builtParams, unixCreation, unixExecution
+     *
+     * other:
+     * settings - Settings are supposed to be handled as immutable once set; don't clone.
+     * builtRequestURL, builtRequestURI - handled as immutable internally.
+     *
+     * clone (deep):
+     * headers, path, parameters, userCookies
+     *
+     * extra:
+     * reset unixCreation and unixExecution
+     */
+
+    /**
+     * Clone this request.
+     * If the request you cloned were already executed, then this new clone is "reset" so it can be executed freely.
+     * Note that {@code unixCreation} is set to the current timestamp and {@code unixExecution} is set to {@code -1}.
+     * Any changes made to either the original request or this new clone will <em>NOT</em> affect the other.
+     * The cloned request will be assigned the bodyWriter the original request was using upon cloning.
+     * This clone's "request settings"-object is the same as to the original.
+     *      As per the settings definitions, a settings object should not change after it has been set {@see #setRequestSettings}.
+     *      If it does then this new clone's settings will also change accordingly.
+     * @return a copy of this request.
+     */
+    @SuppressWarnings("unchecked")
+    @Override
+    public RESTClientRequest clone() throws CloneNotSupportedException {
+        RESTClientRequest copy = (RESTClientRequest)super.clone();
+
+        copy.headers = (HashMap<String, String>)headers.clone();
+        copy.path = new StringBuilder().append(path);
+        copy.parameters = (HashMap<String, String>)parameters.clone();
+        copy.userCookies = (ArrayList<HttpCookie>)userCookies.clone();
+
+        copy.unixCreation = System.currentTimeMillis();
+        copy.unixExecution = -1;
+
+        return copy;
     }
 
     /**

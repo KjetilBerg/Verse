@@ -12,7 +12,24 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
-//TODO: write contract of what RESTClientResponse is responsible for (specifically regarding cookie handling)
+/**
+ * The RESTClientResponse class is responsible for handling a HttpURLConnection after any request data has been written.
+ *      In other words: parse the response (like getting status code or body content).
+ *
+ * Note that RESTClientResponse is responsible for notifying the owning client of any cookies it encounters via
+ *      any 'Set-Cookie' header. See the settings section below (in this comment) for further details.
+ *
+ * //TODO see TODO FUTURE in RESTClientRequest (not implemented). This section does not apply for now
+ * Note that RESTClientResponse should handle any redirects (3xx) in accordance to the generating request's redirect settings.
+ *      Any countered cookies should be handled as normal (see section about cookies above).
+ *
+ * Any RESTClientResponse SHOULD exist in accordance to the generating request's settings {@see RESTClientRequest#getSettings()}.
+ * Specifically, these fields should be considered:
+ * - bufferSize = the amount of bytes that should be buffered from the response body.
+ * - reportCookies = whether or not you should call the request's client's reportSetCookie method (report cookies).
+ * - defaultCacheSockets = whether or not to "cache by default" when .disconnect() is called without parameters.
+ * - shouldDrainSockets = whether or not to "drain by default" when .disconnect() is called without parameters.
+ */
 public class RESTClientResponse implements Closeable {
 
     //according to HTTP 1.1, ISO-8859-1 is the default charset,

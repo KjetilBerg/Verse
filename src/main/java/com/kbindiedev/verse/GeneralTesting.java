@@ -9,10 +9,7 @@ import com.kbindiedev.verse.input.keyboard.Keys;
 import com.kbindiedev.verse.input.mouse.IMouseInputProcessor;
 import com.kbindiedev.verse.input.mouse.MouseButtons;
 import com.kbindiedev.verse.input.mouse.MouseInputManager;
-import com.kbindiedev.verse.net.rest.RESTClient;
-import com.kbindiedev.verse.net.rest.RESTClientRequestSettings;
-import com.kbindiedev.verse.net.rest.RESTClientResponse;
-import com.kbindiedev.verse.net.rest.RESTClientSettings;
+import com.kbindiedev.verse.net.rest.*;
 import org.joml.Matrix4f;
 import org.lwjgl.BufferUtils;
 
@@ -91,11 +88,15 @@ public class GeneralTesting implements GEOpenGL33.IRenderable, IKeyboardInputPro
             response6.disconnect();
 
             System.out.println("request 7:");
-            RESTClientResponse response7 = api.newRequest().method("GET").path("/reflect").param("code", "408").execute();
+            RESTClientRequest request7 = api.newRequest().method("GET").path("/reflect").param("code", "408");
+            RESTClientResponse response7 = request7.execute();
             System.out.println("response 7: " + response7.getStatusCode() + " " + response7.contentAsString());
             response7.disconnect();
 
-
+            System.out.println("request 8:");
+            RESTClientResponse response8 = request7.clone().param("code", "409").execute();
+            System.out.println("response 8: " + response8.getStatusCode() + " " + response8.contentAsString());
+            response8.disconnect();
 
 
         } catch (Exception e) {
