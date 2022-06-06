@@ -1,5 +1,7 @@
 package com.kbindiedev.verse;
 
+import com.kbindiedev.verse.ecs.EntityQueryDesc;
+import com.kbindiedev.verse.ecs.components.IComponent;
 import com.kbindiedev.verse.gfx.*;
 import com.kbindiedev.verse.gfx.impl.opengl_33.GEOpenGL33;
 import com.kbindiedev.verse.gfx.impl.opengl_33.GLTexture;
@@ -124,6 +126,7 @@ public class GeneralTesting implements GEOpenGL33.IRenderable, IKeyboardInputPro
         System.out.println("Checks ok. Starting program");
 
         new GeneralTesting(gfx);
+
     }
 
     //TODO: should only check for "currently-in-use" implementations. as for other testing, I suppose all would have to be tested individually, or alternatively some other registry. maybe some .hasFor(ShaderKey)
