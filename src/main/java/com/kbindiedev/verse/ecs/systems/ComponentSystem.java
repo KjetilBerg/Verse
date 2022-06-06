@@ -1,5 +1,8 @@
-package com.kbindiedev.verse.ecs;
+package com.kbindiedev.verse.ecs.systems;
 
+import com.kbindiedev.verse.ecs.ILogicBehaviour;
+import com.kbindiedev.verse.ecs.RenderContext;
+import com.kbindiedev.verse.ecs.Space;
 import com.kbindiedev.verse.system.SequenceRunner;
 
 /**
@@ -24,6 +27,8 @@ public abstract class ComponentSystem implements ILogicBehaviour {
     public void update(float dt) {}
 
     public void fixedUpdate(float dt) {}    // TODO: registration? how long is "fixed" ?
+
+    public void render(RenderContext context) {}
 
     // TODO: some registration method. systems may "run once", be "self managed" or "run on update"
     // TODO: with respect to awake/start/run, .dependsOn() should maybe exist

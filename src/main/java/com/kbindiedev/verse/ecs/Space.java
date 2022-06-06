@@ -1,5 +1,7 @@
 package com.kbindiedev.verse.ecs;
 
+import com.kbindiedev.verse.ecs.systems.ComponentSystem;
+import com.kbindiedev.verse.gfx.GraphicsEngine;
 import com.kbindiedev.verse.system.FastList;
 
 // TODO: integration tests
@@ -18,6 +20,7 @@ import com.kbindiedev.verse.system.FastList;
  */
 public class Space {
 
+    private GraphicsEngine gfxImplementation;
     private EntityManager entityManager;
     private FastList<ComponentSystem> systems;
     private long lastTimestamp;
@@ -25,11 +28,19 @@ public class Space {
 
     private Thread runner;
 
-    public Space() { this(new EntityManager()); }
-    public Space(EntityManager entityManager) { // TODO: remove manager ?
+    public Space(GraphicsEngine gfxImplementation) { this(gfxImplementation, new EntityManager()); }
+    public Space(GraphicsEngine gfxImplementation, EntityManager entityManager) { // TODO: remove manager ?
+        this.gfxImplementation = gfxImplementation;
         this.entityManager = entityManager;
         systems = new FastList<>();
+        lastTimestamp = System.currentTimeMillis();
     }
+
+    /**
+     * A Space may only have a single GraphicsEngine implementation. This defines how things are rendered.
+     * @return the GraphicsEngine implementation that this Space uses.
+     */
+    public GraphicsEngine getGfxImplementation() { return gfxImplementation; }
 
     public EntityManager getEntityManager() { return entityManager; }
 
@@ -40,6 +51,7 @@ public class Space {
         system.start();
     }  // TODO enable/disable ? TODO: activate, awake etc
 
+    // TODO: consider remove start and stop (self management unnecessary)
     public synchronized void start() {
         if (runner != null) return;
         runner = new Thread(this::run);
@@ -51,7 +63,12 @@ public class Space {
 
     private void run() { while (runner != null) tick(); }
 
-    private void tick() {
+    /***
+     * Do a single tick of this space.
+     * This may call "fixedUpdate" several times.
+     * This will call "update" once.
+     */
+    public void tick() {
         long timestamp = System.currentTimeMillis();
         float dt = (timestamp - lastTimestamp) / 1000f;
         lastTimestamp = timestamp;
@@ -63,6 +80,14 @@ public class Space {
         }
 
         for (ComponentSystem system : systems) system.update(dt);
+    }
+
+    /**
+     * Render the scene to/by the given context.
+     * @param context - The context (details) to take into account when rendering the scene.
+     */
+    public void render(RenderContext context) {
+        for (ComponentSystem system : systems) system.render(context);
     }
 
 }

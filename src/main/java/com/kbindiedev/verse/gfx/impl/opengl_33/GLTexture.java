@@ -98,6 +98,7 @@ public class GLTexture extends Texture {
         //if (boundSlot != -1) new EngineWarning("texture already bound to slot: %d. ignoring...", boundSlot).print();    //TODO: texture binding system
         //TODO put in gl IMPL
         GL30.glActiveTexture(GL30.GL_TEXTURE0 + slot);
+        glBindTexture(GL_TEXTURE_2D, texID);
         boundSlot = slot;
     }
 

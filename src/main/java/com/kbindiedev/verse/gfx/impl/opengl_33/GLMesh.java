@@ -40,14 +40,14 @@ public class GLMesh extends Mesh implements IMemoryOccupant {
 
     @Override
     public void bufferVertices(ByteBuffer data, long vertexOffset, long byteOffset, long length) {
-        if (data.limit() - data.position() > length) {
+        if (length > data.limit() - data.position()) {
             Assertions.warn("data size misalignment. limit: %d, position: %d, max length: %d, requested length: %d. setting to max length.",
                     data.limit(), data.position(), data.limit() - data.position(), length);
             length = data.limit() - data.position();
         }
 
         long finalOffset = vertexOffset * material.creator().getShader(GEOpenGL33.class).getAttributes().getStride() + byteOffset;
-        if (buffer.bufferByteSize() - finalOffset > length) {
+        if (length > buffer.bufferByteSize() - finalOffset) {
             Assertions.warn("data size too big. VBOSlice size: %d, finalOffset: %d, length: %d. setting to: %d",
                     buffer.bufferByteSize(), finalOffset, length, buffer.bufferByteSize() - finalOffset);
 
@@ -103,7 +103,8 @@ public class GLMesh extends Mesh implements IMemoryOccupant {
 
         //TODO: 0 and 3 are hardcoded. this is temporary
         //TODO: can use ebos for indices (?)
-        GEOpenGL33.gl33.glDrawRangeElementsBaseVertex(GL33.GL_TRIANGLES, 0, 3, GL33.GL_UNSIGNED_SHORT, indices, baseVertex);
+        //GEOpenGL33.gl33.glDrawRangeElementsBaseVertex(GL33.GL_TRIANGLES, 0, 3, GL33.GL_UNSIGNED_SHORT, indices, baseVertex);
+        GEOpenGL33.gl33.glDrawRangeElementsBaseVertex(GL33.GL_TRIANGLES, 0, indices.limit(), GL33.GL_UNSIGNED_SHORT, indices, baseVertex);
 
         StateTracker.popVertexArrayObject();
 

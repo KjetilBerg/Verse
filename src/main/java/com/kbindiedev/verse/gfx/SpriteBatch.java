@@ -139,6 +139,18 @@ public class SpriteBatch {
     }
 
 
+    public void draw(Sprite sprite, float x, float y) { draw(sprite, x, y, sprite.getWidth(), sprite.getHeight()); } // TODO below
+    public void draw(Sprite sprite, float x, float y, float width, float height) {
+        draw(sprite.getTexture(), x, y, width, height, sprite.getU1(), sprite.getV1(), sprite.getU2(), sprite.getV2());
+    }
+    public void draw(Sprite sprite, float x, float y, float width, float height, boolean flipX, boolean flipY) {
+        draw(sprite, x, y, 0, 0, width, height, 1f, 1f, 0, flipX, flipY);
+    }
+    public void draw(Sprite sprite, float x, float y, float originX, float originY, float width, float height,
+                     float scaleX, float scaleY, float rotation, boolean flipX, boolean flipY) {
+        draw(sprite.getTexture(), x, y, originX, originY, width, height, scaleX, scaleY, rotation, sprite.getU1(), sprite.getV1(), sprite.getU2(), sprite.getV2(), flipX, flipY);
+    }
+
     public void draw(Texture texture, float x, float y) { draw(texture, x, y, texture.getWidth(), texture.getHeight()); }
     public void draw(Texture texture, float x, float y, float width, float height) { draw(texture, x, y, width, height, 0f, 0f, 1f, 1f); }
     public void draw(Texture texture, float x, float y, float width, float height, float u1, float v1, float u2, float v2) {
@@ -169,7 +181,9 @@ public class SpriteBatch {
                      boolean flipX, boolean flipY) {
         if (!drawing) Assertions.warn("not drawing, call .begin() first");
 
-        //todo: if batch full, flush here
+        //TODO: storeOrGetSlotForTexture refactor: flush happens there too.
+        if (nextTextureSlot >= maxTextureSlots || vertexData.position() == vertexData.capacity()) flush();
+
         byte slot = (byte)storeOrGetSlotForTexture(texture);
 
         slot++; //TODO: bug in GLShader usematerial, doing +1 for slots. remove this line once that's fixed

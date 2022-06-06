@@ -59,11 +59,13 @@ public class GEOpenGL33 extends GraphicsEngine {
             deltaTime += (millis - start)/1000f;
             start = millis;
 
+            // TODO: update loop not needed. ECS handles this
             float oldDeltaTime = deltaTime;
             while (deltaTime >= FPS) {
                 deltaTime -= FPS;
                 core.update(FPS);
             }
+
             if (oldDeltaTime >= FPS) {
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
                 core.render(); //render once

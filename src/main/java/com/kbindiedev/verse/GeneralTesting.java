@@ -30,6 +30,7 @@ public class GeneralTesting implements GEOpenGL33.IRenderable, IKeyboardInputPro
     /** Gets run from Main */
     public static void run() {
 
+        /*
         RESTClientRequestSettings requestSettings = new RESTClientRequestSettings();
         requestSettings.setEnforceSSL(false);
         RESTClient.setGlobalRequestSettings(requestSettings);
@@ -113,6 +114,7 @@ public class GeneralTesting implements GEOpenGL33.IRenderable, IKeyboardInputPro
         } catch (Exception e) { e.printStackTrace(); }
 
         System.exit(0);
+        */
 
         //GraphicsEngine gfx = new GEOpenGL33();
         GEOpenGL33 gfx = new GEOpenGL33();

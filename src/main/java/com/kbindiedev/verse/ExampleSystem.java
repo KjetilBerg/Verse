@@ -1,6 +1,7 @@
 package com.kbindiedev.verse;
 
 import com.kbindiedev.verse.ecs.*;
+import com.kbindiedev.verse.ecs.systems.ComponentSystem;
 
 import java.util.Iterator;
 

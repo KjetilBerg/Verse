@@ -1,6 +1,7 @@
 package com.kbindiedev.verse.ecs;
 
 import com.kbindiedev.verse.ecs.components.IComponent;
+import com.kbindiedev.verse.ecs.components.Transform;
 import com.kbindiedev.verse.profiling.Assertions;
 import com.kbindiedev.verse.system.FastList;
 import com.kbindiedev.verse.util.Nullable;
@@ -30,6 +31,8 @@ import java.util.List;
  */
 public class Entity {
 
+    private static Transform identityTransform = new Transform();
+
     private EntityManager manager;
     private EntityArchetype archetype;
     private HashMap<Class<? extends IComponent>, FastList<IComponent>> components; // TODO: replace Class<...> with ComponentType (?). ComponentGroup or FastList<IComponent>?
@@ -47,6 +50,17 @@ public class Entity {
     public EntityArchetype getArchetype() { return archetype; }
     /** Package private setter */
     void setArchetype(EntityArchetype archetype) { this.archetype = archetype; }
+
+    /**
+     * Get this entity's transform.
+     * If none exist, then the IdentityTransform is returned (position=0, scale=1, rotation=0).
+     * @return this entity's transform, or the IdentityTransform.
+     */
+    public Transform getTransform() {
+        Transform transform = getComponent(Transform.class);
+        if (transform != null) return transform;
+        return identityTransform;
+    }
 
     /**
      * Add a component to this entity.
@@ -142,6 +156,19 @@ public class Entity {
         FastList<IComponent> relevant = components.get(component.getClass());
         if (relevant == null) return false;
         return relevant.contains(component);
+    }
+
+    // TODO: Class<? extends IComponent> messy, but ComponentTypeGroup too long. consider something better
+    /**
+     * Check whether or not all the given component types exist on this entity.
+     * @param classes - The component types.
+     * @return true if all component types exist on this entity, false otherwise.
+     */
+    public boolean hasComponents(Class<? extends IComponent>... classes) {
+        for (Class<? extends IComponent> c : classes) {
+            if (getComponent(c) == null) return false;
+        }
+        return true;
     }
 
     //TODO: package-private or remove?

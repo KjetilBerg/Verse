@@ -1,5 +1,6 @@
 package com.kbindiedev.verse.ecs;
 
+import com.kbindiedev.verse.ecs.systems.ComponentSystem;
 import com.kbindiedev.verse.system.SequenceRunner;
 
 /**
