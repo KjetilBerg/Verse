@@ -21,7 +21,7 @@ public class SpriteBatch {
 
     private IndexData indexData;    //TODO: move this into mesh? like a getter ?
 
-    private HashMap<Texture, Integer> textureToSlot;    //TODO: hashset ?
+    private SamplerMap textureToSlot;
     private int nextTextureSlot;
     private int maxTextureSlots;
 
@@ -48,7 +48,7 @@ public class SpriteBatch {
 
         mesh = implementation.createMesh(MaterialTemplate.PredefinedTemplates.BASIC_SPRITEBATCH.createMaterial(), size * 4);
         vertexData = BufferUtils.createByteBuffer(Shader.PredefinedAttributes.BASIC_SPRITEBATCH.getStride() * size * 4);    //TODO: material.getVertexAttributes instead, though MUST be identical
-        textureToSlot = new HashMap<>();
+        textureToSlot = new SamplerMap();
         this.maxTextureSlots = maxTextureSlots;
         nextTextureSlot = 0;
 
@@ -122,10 +122,9 @@ public class SpriteBatch {
         mesh.setIndices(indexData); //do not need to re-set every flush. TODO: make some getter for mesh's indexData instead
 
 
-        Texture[] textures = textureToSlot.keySet().toArray(new Texture[0]);
         mesh.getMaterial().setUniformValue("uProjection", projectionMatrix);
         mesh.getMaterial().setUniformValue("uView", viewMatrix);
-        mesh.getMaterial().setUniformValue("uTexArray", textures);                  //TODO: force set uniform values every frame? makes "dirty flags" inside materials easier.
+        mesh.getMaterial().setUniformValue("uTexArray", textureToSlot);                  //TODO: force set uniform values every frame? makes "dirty flags" inside materials easier.
 
         //TODO: TEMP
         //GL33.glEnable(GL11.GL_BLEND);
@@ -185,9 +184,6 @@ public class SpriteBatch {
         if (nextTextureSlot >= maxTextureSlots || vertexData.position() == vertexData.capacity()) flush();
 
         byte slot = (byte)storeOrGetSlotForTexture(texture);
-
-        slot++; //TODO: bug in GLShader usematerial, doing +1 for slots. remove this line once that's fixed
-
 
         float rx1 = -originX; float ry1 = -originY;
         float rx2 = rx1 + width; float ry2 = ry1 + height;

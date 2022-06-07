@@ -32,7 +32,7 @@ public class UniformLayout {
      */
     public enum UniformValueType {
         MATRIX4f(Matrix4f.class),
-        TEXTURE_ARRAY(Texture[].class);
+        TEXTURE_ARRAY(SamplerMap.class);    // TODO: rename to "TEXTURE_SAMPLER" maybe
 
         private Class<?> valid;
         UniformValueType(Class<?> valid) { this.valid = valid; }

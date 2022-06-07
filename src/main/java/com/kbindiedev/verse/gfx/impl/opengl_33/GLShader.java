@@ -1,9 +1,6 @@
 package com.kbindiedev.verse.gfx.impl.opengl_33;
 
-import com.kbindiedev.verse.gfx.Material;
-import com.kbindiedev.verse.gfx.Shader;
-import com.kbindiedev.verse.gfx.Texture;
-import com.kbindiedev.verse.gfx.UniformLayout;
+import com.kbindiedev.verse.gfx.*;
 import com.kbindiedev.verse.gfx.strategy.attributes.VertexAttributes;
 import com.kbindiedev.verse.profiling.Assertions;
 import com.kbindiedev.verse.profiling.EngineWarning;
@@ -188,6 +185,22 @@ public class GLShader extends Shader {
                     uploadMat4f(entry.getKey(), (Matrix4f)entry.getValue());
                     break;
                 case TEXTURE_ARRAY:
+                    SamplerMap sampler = (SamplerMap)entry.getValue();
+                    //int[] shaderSampler = new int[sampler.size()];
+                    int[] shaderSampler = new int[8]; // TODO: must be > greatest slot, and <= shader slot size (prob just set to always == shader slot size)
+                    // TODO: ensure size under limit
+                    int i = 1;  // TODO: bound slot does not matter. can optimize if already bound. keep a SampleMap as a tracker?
+                    for (Map.Entry<Texture, Integer> sample : sampler.entrySet()) {
+                        Texture texture = sample.getKey();
+                        int slot = sample.getValue();
+
+                        if (!(texture instanceof GLTexture)) { Assertions.warn("texture is not GLTexture, %s", texture); continue; }
+                        texture.bind(i);
+                        shaderSampler[slot] = i;
+                        i++;
+                    }
+                    uploadIntArray(entry.getKey(), shaderSampler);
+                    /*
                     Texture[] textures = (Texture[])entry.getValue();
                     int[] samplerMap = new int[textures.length];    //TODO: ensure size under limit
                     for (int i = 0; i < textures.length; ++i) {
@@ -197,6 +210,7 @@ public class GLShader extends Shader {
                         samplerMap[i] = i+1; //TODO? textures are never unbound
                     }
                     uploadIntArray(entry.getKey(), samplerMap);
+                    */
                     break;
                 default:
                     Assertions.error("opengl shader unrecognized UniformValueType: %s", valueType.name());
