@@ -7,10 +7,7 @@ import com.kbindiedev.verse.input.mouse.MouseInputManager;
 import com.kbindiedev.verse.profiling.Assertions;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWVidMode;
-import org.lwjgl.opengl.ARBDebugOutput;
-import org.lwjgl.opengl.GL;
-import org.lwjgl.opengl.GLDebugMessageARBCallback;
-import org.lwjgl.opengl.GLDebugMessageCallback;
+import org.lwjgl.opengl.*;
 import org.lwjgl.system.MemoryStack;
 
 import java.nio.IntBuffer;
@@ -46,7 +43,8 @@ public class GEOpenGL33 extends GraphicsEngine {
         int numShaders = setupDefaultShaders();
         System.out.printf("GEOpenGL33: %d default shaders prepared\n", numShaders);
 
-        glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
+        //glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
+        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     }
 
     //TODO: probably move this along with setupCapabilities
@@ -95,14 +93,16 @@ public class GEOpenGL33 extends GraphicsEngine {
         //GLFWErrorCallback.createPrint(System.err).set(); //TODO: which one?
         if (!glfwInit()) throw new IllegalStateException("Unable to initialize GLFW");
 
+        //TODO: is this 3.3 or 3.2 ?
+        GLApplicationWindowSettings.GLVersionSettings glVersion = new GLApplicationWindowSettings.GLVersionSettings(3, 2, GLFW_OPENGL_CORE_PROFILE, GLFW_TRUE);
+        GLApplicationWindowSettings windowSettings = new GLApplicationWindowSettings("Dance to the verse", DISPLAY_WIDTH, DISPLAY_HEIGHT, glVersion);
 
-        glfwDefaultWindowHints();
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);                  //TODO: is this 3.3 or 3.2 ?
-        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
+        //windowSettings.setMaximized(true);
+        //windowSettings.setDecorated(false);
 
-        window = glfwCreateWindow(DISPLAY_WIDTH, DISPLAY_HEIGHT, "Dance to the verse", NULL, NULL);
+        GLApplicationWindow applicationWindow = GLApplicationWindow.createWindow(windowSettings);
+
+        window = applicationWindow.getWindowGLID();
         if (window == NULL) throw new RuntimeException("Failed to create the GLFW window");
 
         glfwSetKeyCallback(window, (window, key, scancode, action, mods) -> {
@@ -131,6 +131,8 @@ public class GEOpenGL33 extends GraphicsEngine {
             DISPLAY_WIDTH = width;
             DISPLAY_HEIGHT = height;
             System.out.printf("RESIZE: %d x %d\n", width, height);
+            // TODO temp: go via IMPL
+            updateViewport(width, height);
         });
 
 
@@ -169,6 +171,39 @@ public class GEOpenGL33 extends GraphicsEngine {
         }
 
         return window;
+    }
+
+    // TODO TEMP
+    private void updateViewport(int width, int height) {
+
+        /*
+        //note: still has stretching
+        //inspired from LibGDX. look for custom fit solution
+
+        float worldWidth = (float)DISPLAY_WIDTH;
+        float worldHeight = (float)DISPLAY_HEIGHT;
+
+        float screenWidth = (float)width;
+        float screenHeight = (float)height;
+
+        float targetRatio = screenHeight / screenWidth;
+        float sourceRatio = worldHeight / worldWidth;
+
+        float scale = (targetRatio < sourceRatio ? screenWidth / worldWidth : screenHeight / worldHeight);
+
+        int viewportWidth = Math.round(worldWidth * scale);
+        int viewportHeight = Math.round(worldHeight * scale);
+
+        int x = (int)((screenWidth - viewportWidth) / 2);
+        int y = (int)((screenHeight - viewportHeight) / 2);
+        int w = (int)viewportWidth;
+        int h = (int)viewportHeight;
+
+        GL30.glViewport(x, y, w, h);
+        System.out.println("Viewport: width=" + width + " height=" + height + " = x=" + x + " y=" + y + " w=" + w + " h=" + h);
+*/
+        //GL30.glViewport(0, 0, width, height); // same result??
+        GL30.glViewport(0, 0, 300, 300); // think I understand viewports now. just need to center camera too (in example, anyway)
     }
 
     //TODO: store shader somewhere
