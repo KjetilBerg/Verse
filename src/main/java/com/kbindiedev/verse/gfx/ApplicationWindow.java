@@ -1,9 +1,10 @@
 package com.kbindiedev.verse.gfx;
 
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+import com.kbindiedev.verse.input.keyboard.IKeyEventListener;
+import com.kbindiedev.verse.input.mouse.IMouseInputProcessor;
 
 /** Represents an operating system "Application" window. */
-public abstract class ApplicationWindow {
+public abstract class ApplicationWindow { //implements IKeyEventListener, IMouseInputProcessor { //TODO: not entirely sure of relationship between window implementation and input serving
 
     protected String windowTitle;
     protected int windowX, windowY;

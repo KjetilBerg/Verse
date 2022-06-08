@@ -5,33 +5,34 @@ import com.kbindiedev.verse.profiling.Assertions;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 
 /**
- * All mouse inputs from varying implementations are ultimately sent here, for this class to then dispatch.
- * All events are dispatched right before the game .update function is run.
- * Note: comments and method names describe everything on a per-frame-basis, though the actual definition is
- *      per-handleEvents-method-is-run-basis. This SHOULD happen once per frame, right before the global game .update
- *      method is executed.
- * In regards to the 'click' event, timestamps of events are recorded when the events are handled (once per frame),
- *      making them essentially work like framerules (sub-frame accuracy is not considered).
- * mouseClick events are ALWAYS dispatched AFTER mouseUp events.
- * The mouse events are handled AFTER the keyboard events are handled.
+ * A handler for mouse inputs. You can attach an external event listener, or query this class for states.
+ *
+ * All inputs are related to what you find in {@link MouseButtons}.
+ *
+ * MouseClick events are always dispatched following a mouseUp event.
+ *
+ * @see MouseButtons
+ * @see IMouseInputProcessor
  */
-//TODO: maybe make non-static
 public class MouseInputManager {
 
-    private static HashMap<Integer, Boolean> buttonStates = new HashMap<>();
-    private static HashMap<Integer, Long> buttonStatesTimestamps = new HashMap<>();  //timestamps (unix) for when state last changed
-    private static HashSet<Integer> buttonChangesThisFrame = new HashSet<>();    //map of buttons that changed their state this frame
-    private static ArrayList<MouseEvent> unhandledEvents = new ArrayList<>();   //events are piled and handled once per frame
-    private static int currentMouseX = 0, currentMouseY = 0;
+    private HashMap<Integer, Boolean> buttonStates = new HashMap<>();        // maps button number to button state
+    private HashMap<Integer, Long> buttonStatesTimestamps = new HashMap<>(); // timestamps (unix) for when state last changed
+    private HashSet<Integer> buttonChanges = new HashSet<>();                // map of buttons that changed their state since "iterate"
+    private ArrayList<MouseEvent> unhandledEvents = new ArrayList<>();       // events are piled and handled during "iterate"
+    private ArrayList<Runnable> dispatchList = new ArrayList<>();            // events to be dispatched, generated during "iterate"
+    private int currentMouseX = 0, currentMouseY = 0;
 
-    private static long unixLastMoveOrDrag = System.currentTimeMillis();
+    private long unixThisIteration = System.currentTimeMillis();
+    private long unixLastMoveOrDrag = unixThisIteration;
 
-    private static boolean isAnyButtonPressed = false;
+    private boolean isAnyButtonPressed = false;
 
-    /** Initialize processor to blank */
-    private static IMouseInputProcessor processor = new IMouseInputProcessor() {
+    /** Initialize processor to blank. */
+    private IMouseInputProcessor processor = new IMouseInputProcessor() {
         @Override public boolean mouseDown(int screenX, int screenY, int button) { return false; }
         @Override public boolean mouseUp(int screenX, int screenY, int button) { return false; }
         @Override public boolean mouseClicked(int screenX, int screenY, int button, float holdDuration) { return false; }
@@ -40,117 +41,109 @@ public class MouseInputManager {
         @Override public boolean mouseScrolled(float amountX, float amountY) { return false; }
     };
 
-    /** Set the IMouseInputProcessor system wide. */
-    public static void setProcessor(IMouseInputProcessor p) { processor = p; }
+    /** Set the IMouseInputProcessor. */
+    public void setProcessor(IMouseInputProcessor p) { processor = p; }
 
     /**
-     * Check whether a button is pressed.
-     * Note that if checked during event dispatch, registry may not be "up-to-date" with current state of final frame.
-     *      Things are guaranteed to be "up-to-date" once the global game .update method is executed, though.
+     * Check if a button is pressed.
      * @param button - The button code {@see MouseButtons}
      * @return true if button by button code is pressed, false otherwise
      */
-    public static boolean isButtonDown(int button) { return buttonStates.getOrDefault(button, false); }
+    public boolean isButtonDown(int button) { return buttonStates.getOrDefault(button, false); }
 
     /**
      * Get the x coordinate of the last recorded mouse position.
-     * Note that if checked during event dispatch, registry may not be "up-to-date" with current state of final frame.
-     *      Things are guaranteed to be "up-to-date" once the global game .update method is executed, though.
-     * @return the x coordinate of the mouse position
+     * @return the x coordinate of the mouse position.
      */
-    public static int getMouseX() { return currentMouseX; }
+    public int getMouseX() { return currentMouseX; }
 
     /**
      * Get the y coordinate of the last recorded mouse position.
-     * Note that if checked during event dispatch, registry may not be "up-to-date" with current state of final frame.
-     *      Things are guaranteed to be "up-to-date" once the global game .update method is executed, though.
-     * @return the y coordinate of the mouse position
+     * @return the y coordinate of the mouse position.
      */
-    public static int getMouseY() { return currentMouseY; }
+    public int getMouseY() { return currentMouseY; }
 
     /**
-     * Check whether a button was pressed this frame.
-     * Note that if checked during event dispatch, registry may not be "up-to-date" with current state of final frame.
-     *      Things are guaranteed to be "up-to-date" once the global game .update method is executed, though.
-     * @param button - The button code {@see MouseButtons}
-     * @return true if button by button code was pressed this frame
+     * Check if a button was pressed this iteration.
+     * @param button - The button code {@see MouseButtons}.
+     * @return true if button by button code was pressed this iteration.
      */
-    public static boolean wasButtonPressedThisFrame(int button) {
-        return buttonChangesThisFrame.contains(button) && buttonStates.get(button);
+    public boolean wasButtonPressedThisIteration(int button) {
+        return buttonChanges.contains(button) && buttonStates.get(button);
     }
 
     /**
-     * Check whether a button was released this frame.
-     * Note that if checked during event dispatch, registry may not be "up-to-date" with current state of final frame.
-     *      Things are guaranteed to be "up-to-date" once the global game .update method is executed, though.
-     * @param button - The button code {@see MouseButtons}
-     * @return true if button by button code was released this frame
+     * Check if a button was released this iteration.
+     * @param button - The button code {@see MouseButtons}.
+     * @return true if button by button code was released this iteration.
      */
-    public static boolean wasButtonReleasedThisFrame(int button) {
-        return buttonChangesThisFrame.contains(button) && !buttonStates.get(button);
+    public boolean wasButtonReleasedThisIteration(int button) {
+        return buttonChanges.contains(button) && !buttonStates.get(button);
     }
 
     /**
-     * Handle all unhandled events. Should happen once per frame.
-     * This will also notify the processor of all events that have happened since last call to this function.
-     * Note that all events are handled "in-order".
-     *      This means if there are several events during a single frame, the .isButtonDown and such functions
-     *      that depend on the event registry, may not be "up-to-date" with events that are yet to be dispatched this frame.
+     * Perform a single iteration.
+     * All unhandled (queued) events will be handled and dispatched to self and {@link #processor}.
+     * All events are handled "in-order", and are then dispatched "in-order" after handling is complete.
      */
-    public static void handleEvents() {
-        buttonChangesThisFrame.clear();
+    public void iterate() {
+        buttonChanges.clear();
 
-        for (MouseEvent event : unhandledEvents) {
+        unixThisIteration = System.currentTimeMillis();
 
-            if (event instanceof MouseButtonEvent) handleButtonEvent((MouseButtonEvent)event);
-            else if (event instanceof MouseMovedEvent) handleMovedEvent((MouseMovedEvent)event);
-            else if (event instanceof MouseScrolledEvent) handleScrolledEvent((MouseScrolledEvent)event);
-            else Assertions.warn("unknown MouseEvent class type: %s", event.getClass().getCanonicalName());
-
-        }
+        for (MouseEvent event : unhandledEvents) handleSingleEvent(event); // no need to remove, since dispatchEvents are generated by handlers
+        for (Runnable dispatchEvent : dispatchList) dispatchEvent.run();
 
         unhandledEvents.clear();
+        dispatchList.clear();
     }
 
-    /** Handle MouseButtonEvent, used in handleEvents {@see #handleEvents} */
-    private static void handleButtonEvent(MouseButtonEvent event) {
-        //check registry
-        if (buttonStates.containsKey(event.button)) {
-            boolean bad = false;
-            if (event.type == MouseButtonEvent.MouseButtonEventType.BUTTONDOWN && buttonStates.get(event.button)) bad = true; //already pressed
-            if (event.type == MouseButtonEvent.MouseButtonEventType.BUTTONUP && !buttonStates.get(event.button)) bad = true; //already released
+    /**
+     * Handle a single MouseEvent by adjusting the registry. Does not dispatch the event.
+     * The event is validated before being handled.
+     * @return whether or not the MouseEvent was handled successfully.
+     */
+    private boolean handleSingleEvent(MouseEvent event) {
 
-            if (bad) {
-                Assertions.warn("mouse button: '%d' got event: '%s', but is already in that state (this should not happen). ignoring event...", event.button, event.type.name());
-                return;
-            }
-        }
+        if (event instanceof MouseButtonEvent) return handleButtonEvent((MouseButtonEvent)event);
+        if (event instanceof MouseMovedEvent) return handleMovedEvent((MouseMovedEvent)event);
+        if (event instanceof MouseScrolledEvent) return handleScrolledEvent((MouseScrolledEvent)event);
 
-        //update timestamp
-        long unixNow = System.currentTimeMillis();
+        Assertions.warn("unknown MouseEvent class type: %s", event.getClass().getCanonicalName());
+        return false;
+    }
+
+    /**
+     * Handle a single MouseButtonEvent by adjusting the registry. Does not dispatch the event.
+     * The event is validated before being handled. See: {@link #validateButtonEventTowardsRegistry(MouseButtonEvent)}
+     * @return whether or not the MouseButtonEvent was handled successfully.
+     */
+    private boolean handleButtonEvent(MouseButtonEvent event) {
+        if (!validateButtonEventTowardsRegistry(event)) return false;
+
+        // update timestamp
+        long unixNow = unixThisIteration;
         long unixOldTimestamp = buttonStatesTimestamps.getOrDefault(event.button, 0L);
-        buttonStatesTimestamps.put(event.button, System.currentTimeMillis());
+        buttonStatesTimestamps.put(event.button, unixThisIteration);
 
-        //update buttonState registry
+        // update buttonState registry
         if (event.type == MouseButtonEvent.MouseButtonEventType.BUTTONDOWN) buttonStates.put(event.button, true);
         else if (event.type == MouseButtonEvent.MouseButtonEventType.BUTTONUP) buttonStates.put(event.button, false);
+        buttonChanges.add(event.button);
 
-        //update buttonChangesThisFrame registry
-        buttonChangesThisFrame.add(event.button);
-
-        //check if any button is pressed
+        // check if any button is pressed
         isAnyButtonPressed = false;
         for (boolean state : buttonStates.values()) {
             if (state) { isAnyButtonPressed = true; break; }
         }
 
-        //dispatch event
+        // generate dispatch event
         switch (event.type) {
             case BUTTONDOWN:
-                processor.mouseDown(currentMouseX, currentMouseY, event.button);
+                dispatchList.add(() -> processor.mouseDown(currentMouseX, currentMouseY, event.button));
                 break;
             case BUTTONUP:
-                processor.mouseUp(currentMouseX, currentMouseY, event.button);
+                dispatchList.add(() -> processor.mouseUp(currentMouseX, currentMouseY, event.button));
                 break;
             default: Assertions.error("unknown event type: %s", event.type.name());
         }
@@ -159,59 +152,90 @@ public class MouseInputManager {
         //                              and the 'pressed timestamp' came after the last move or drag event
         if (event.type == MouseButtonEvent.MouseButtonEventType.BUTTONUP && unixOldTimestamp > unixLastMoveOrDrag) {
             float holdDurationSeconds = (unixNow - unixOldTimestamp) / 1000f;
-            processor.mouseClicked(currentMouseX, currentMouseY, event.button, holdDurationSeconds);
+            dispatchList.add(() -> processor.mouseClicked(currentMouseX, currentMouseY, event.button, holdDurationSeconds));
         }
+
+        return true;
     }
 
-    /** Handle MouseMovedEvent, used in handleEvents {@see #handleEvents} */
-    private static void handleMovedEvent(MouseMovedEvent event) {
+    /**
+     * Handle a single MouseMovedEvent by adjusting the registry. Does not dispatch the event.
+     * @return whether or not the MouseMovedEvent was handled successfully (always = true).
+     */
+    private boolean handleMovedEvent(MouseMovedEvent event) {
         currentMouseX = event.screenX;
         currentMouseY = event.screenY;
 
-        unixLastMoveOrDrag = System.currentTimeMillis();
+        unixLastMoveOrDrag = unixThisIteration;
 
         if (isAnyButtonPressed) {
-            processor.mouseDragged(event.screenX, event.screenY);
+            dispatchList.add(() -> processor.mouseDragged(event.screenX, event.screenY));
         } else {
-            processor.mouseMoved(event.screenX, event.screenY);
+            dispatchList.add(() -> processor.mouseMoved(event.screenX, event.screenY));
         }
-    }
 
-    /** Handle MouseScrolledEvent, used in handleEvents {@see #handleEvents} */
-    private static void handleScrolledEvent(MouseScrolledEvent event) {
-        processor.mouseScrolled(event.amountX, event.amountY);
+        return true;
     }
-
 
     /**
-     * Notify that a certain button was pressed. MUST not be called again before .notifyButtonUp has been called.
-     * The button code is in accordance to the MouseButtons class {@see MouseButtons}.
+     * Handle a single MouseScrolledEvent. Does not dispatch the event.
+     * @return whether or not the MouseScrolledEvent was handled successfully (always = true).
+     */
+    private boolean handleScrolledEvent(MouseScrolledEvent event) {
+        dispatchList.add(() -> processor.mouseScrolled(event.amountX, event.amountY));
+        return true;
+    }
+
+    /**
+     * Check that the given MouseButtonEvent does not introduce a conflicting buttonstate (in other words, cannot "press" if already pressed and vice versa).
+     * @param event - The event.
+     * @return true if event is "ok", false otherwise.
+     */
+    private boolean validateButtonEventTowardsRegistry(MouseButtonEvent event) {
+
+        if (!buttonStates.containsKey(event.button)) return true;
+
+        boolean ok = true;
+        if (event.type == MouseButtonEvent.MouseButtonEventType.BUTTONDOWN && buttonStates.get(event.button))
+            ok = false; //already pressed
+        if (event.type == MouseButtonEvent.MouseButtonEventType.BUTTONUP && !buttonStates.get(event.button))
+            ok = false; //already released
+
+        if (!ok)
+            Assertions.warn("mouse button: '%d' got event: '%s', but is already in that state (this should not happen). ignoring event...", event.button, event.type.name());
+
+        return ok;
+    }
+
+    /**
+     * Queue a MouseButtonEvent that a certain button was pressed.
+     * This method must not be called again with the same button code before .queueButtonUp has been called with that button code.
      * @param button - The button code {@see MouseButtons}.
      */
-    public static void notifyButtonDown(int button) {
+    public void queueButtonDown(int button) {
         unhandledEvents.add(new MouseButtonEvent(MouseButtonEvent.MouseButtonEventType.BUTTONDOWN, button));
     }
 
     /**
-     * Notify that a certain button was released. MUST not be called again before .notifyButtonDown has been called.
-     * The button code is in accordance to the MouseButtons class {@see MouseButtons}.
+     * Queue a MouseButtonEvent that a certain button was released.
+     * This method must not be called again with the same button code before .queueButtonDown has been called with that button code.
      * @param button - The button code {@see MouseButtons}.
      */
-    public static void notifyButtonUp(int button) {
+    public void queueButtonUp(int button) {
         unhandledEvents.add(new MouseButtonEvent(MouseButtonEvent.MouseButtonEventType.BUTTONUP, button));
     }
 
     /**
-     * Notify that the mouse moved.
-     * @param screenX - The x coordinate, in pixels, of where the mouse moved to. The origin is in the upper left corner.
-     * @param screenY - The y coordinate, in pixels, of where the mouse moved to. The origin is in the upper left corner.
+     * Queue a MouseMovedEvent that the mouse moved.
+     * @param screenX - The x coordinate, in pixel screen coordinates, of where the mouse moved to. The origin is in the upper left corner.
+     * @param screenY - The y coordinate, in pixel screen coordinates, of where the mouse moved to. The origin is in the upper left corner.
      */
-    public static void notifyMouseMove(int screenX, int screenY) {
+    public void queueMouseMove(int screenX, int screenY) {
         unhandledEvents.add(new MouseMovedEvent(screenX, screenY));
     }
 
     /**
-     * Notify that the mouse wheel was scrolled.
+     * Queue a MouseScrolledEvent that the mouse wheel was scrolled.
      * @param amountX - The amount of horizontal scroll (yes such mice do exist),
      *                  negative if the wheel was scrolled towards the left from the user's perspective, and
      *                  positive if the wheel was scrolled towards the right from the user's perspective.
@@ -219,7 +243,7 @@ public class MouseInputManager {
      *                  negative if the wheel was scrolled towards the user, and
      *                  positive if the wheel was scrolled away from the user.
      */
-    public static void notifyMouseScrolled(float amountX, float amountY) {
+    public void queueMouseScrolled(float amountX, float amountY) {
         unhandledEvents.add(new MouseScrolledEvent(amountX, amountY));
     }
 

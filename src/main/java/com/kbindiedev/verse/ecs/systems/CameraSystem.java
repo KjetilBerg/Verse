@@ -3,6 +3,7 @@ package com.kbindiedev.verse.ecs.systems;
 import com.kbindiedev.verse.ecs.*;
 import com.kbindiedev.verse.ecs.components.Camera;
 import com.kbindiedev.verse.ecs.components.Transform;
+import com.kbindiedev.verse.profiling.Assertions;
 
 import java.util.Iterator;
 
@@ -30,8 +31,15 @@ public class CameraSystem extends ComponentSystem {
             Transform transform = entity.getTransform();
             Camera camera = entity.getComponent(Camera.class);
 
-            float amplitude = camera.zoom * 0.5f;   // TODO: camera: 1/zoom instead ?
-            camera.projectionMatrix.setOrtho(-amplitude, amplitude, amplitude, -amplitude, camera.nearPlane, camera.farPlane);
+            switch (camera.cameraType) {
+                case ORTHOGRAPHIC:
+                    float amplitude = camera.zoom * 0.5f;   // TODO: camera: 1/zoom instead ?
+                    camera.projectionMatrix.setOrtho(-amplitude, amplitude, amplitude, -amplitude, camera.nearPlane, camera.farPlane);
+                    break;
+                default:
+                    Assertions.error("unknown CameraType: %s", camera.cameraType.name());
+                    throw new IllegalArgumentException("unknown CameraType: " + camera.cameraType.name());
+            }
 
             if (camera.target != null) transform.rotation.lookAlong(camera.target.position, camera.up);
 

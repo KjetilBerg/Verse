@@ -1,29 +1,22 @@
 package com.kbindiedev.verse;
 
-import com.kbindiedev.verse.ecs.EntityQueryDesc;
-import com.kbindiedev.verse.ecs.components.IComponent;
 import com.kbindiedev.verse.gfx.*;
 import com.kbindiedev.verse.gfx.impl.opengl_33.GEOpenGL33;
 import com.kbindiedev.verse.gfx.impl.opengl_33.GLTexture;
-import com.kbindiedev.verse.input.keyboard.IKeyboardInputProcessor;
-import com.kbindiedev.verse.input.keyboard.KeyboardInputManager;
+import com.kbindiedev.verse.input.keyboard.IKeyEventListener;
+import com.kbindiedev.verse.input.keyboard.KeyEventTracker;
 import com.kbindiedev.verse.input.keyboard.Keys;
 import com.kbindiedev.verse.input.mouse.IMouseInputProcessor;
 import com.kbindiedev.verse.input.mouse.MouseButtons;
 import com.kbindiedev.verse.input.mouse.MouseInputManager;
-import com.kbindiedev.verse.net.rest.*;
 import org.joml.Matrix4f;
 import org.lwjgl.BufferUtils;
 
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.net.HttpCookie;
-import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
 
-public class GeneralTesting implements GEOpenGL33.IRenderable, IKeyboardInputProcessor, IMouseInputProcessor {
+public class GeneralTesting implements GEOpenGL33.IRenderable, IKeyEventListener, IMouseInputProcessor {
     private SpriteBatch spriteBatch;
 
 
@@ -157,8 +150,8 @@ public class GeneralTesting implements GEOpenGL33.IRenderable, IKeyboardInputPro
 
     public GeneralTesting(GEOpenGL33 gfx) {
 
-        KeyboardInputManager.setProcessor(this);
-        MouseInputManager.setProcessor(this);
+        //KeyEventTracker.setProcessor(this);
+        //MouseInputManager.setProcessor(this);
 
         spriteBatch = new SpriteBatch(gfx, 1, 8);
         //spriteBatch.setColor(new Pixel(255, 255, 0));
@@ -175,18 +168,18 @@ public class GeneralTesting implements GEOpenGL33.IRenderable, IKeyboardInputPro
 
     @Override
     public void update(float dt) {
-        KeyboardInputManager.handleEvents(); //TODO: this should be put elsewhere
-        MouseInputManager.handleEvents();
+        //KeyEventTracker.handleEvents(); //TODO: this should be put elsewhere
+        //MouseInputManager.handleEvents();
         //System.out.println("Update: " + dt);
         doKeyStates();
         x += dx * dt;
         y += dy * dt;
 
-        if (KeyboardInputManager.wasKeyPressedThisFrame(Keys.KEY_S)) y += 0.5f;
+        //if (KeyEventTracker.wasKeyPressedThisFrame(Keys.KEY_S)) y += 0.5f;
 
-        //if (KeyboardInputManager.isKeyDown(Keys.KEY_W)) System.out.println("W IS DOWN");
-        if (MouseInputManager.isButtonDown(MouseButtons.LEFT)) System.out.printf("LEFT is down at: %d %d\n", MouseInputManager.getMouseX(), MouseInputManager.getMouseY());
-        if (MouseInputManager.wasButtonPressedThisFrame(MouseButtons.RIGHT)) System.out.println("RIGHT was pressed this frame");
+        //if (KeyEventTracker.isKeyDown(Keys.KEY_W)) System.out.println("W IS DOWN");
+        //if (MouseInputManager.isButtonDown(MouseButtons.LEFT)) System.out.printf("LEFT is down at: %d %d\n", MouseInputManager.getMouseX(), MouseInputManager.getMouseY());
+        //if (MouseInputManager.wasButtonPressedThisFrame(MouseButtons.RIGHT)) System.out.println("RIGHT was pressed this frame");
     }
 
     private Matrix4f proj;
@@ -243,6 +236,16 @@ public class GeneralTesting implements GEOpenGL33.IRenderable, IKeyboardInputPro
 
     @Override
     public boolean keyTyped(int keycode) {
+        return false;
+    }
+
+    @Override
+    public boolean keyDownNow(int keycode) {
+        return false;
+    }
+
+    @Override
+    public boolean keyUpNow(int keycode) {
         return false;
     }
 
