@@ -7,6 +7,7 @@ import com.kbindiedev.verse.ecs.Space;
 import com.kbindiedev.verse.ecs.components.Camera;
 import com.kbindiedev.verse.ecs.components.SpriteRenderer;
 import com.kbindiedev.verse.ecs.components.Transform;
+import com.kbindiedev.verse.ecs.systems.CameraSystem;
 import com.kbindiedev.verse.ecs.systems.SpriteRendererSystem;
 import com.kbindiedev.verse.gfx.GraphicsEngineSettings;
 import com.kbindiedev.verse.gfx.Pixel;
@@ -66,9 +67,10 @@ public class Main {
         float right = camera.zoom * camera.viewportWidth / 2;
         float bottom = camera.zoom * camera.viewportHeight / 2;
         camera.projectionMatrix.ortho(-right, right, bottom, -bottom, camera.nearPlane, camera.farPlane);
-        Entity cameraEntity = space.getEntityManager().instantiate(camera);
+        Entity cameraEntity = space.getEntityManager().instantiate(camera, new Transform());
 
         space.addSystem(new ExampleSystem(space));
+        space.addSystem(new CameraSystem(space));
         space.addSystem(new SpriteRendererSystem(space));
 
         RenderContext context = new RenderContext(cameraEntity);

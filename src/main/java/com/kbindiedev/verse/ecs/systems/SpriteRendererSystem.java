@@ -27,7 +27,7 @@ public class SpriteRendererSystem extends ComponentSystem {
         proj = new Matrix4f();
         proj.ortho(-2f, 2f, 2f, -2f, -1f, 1f);
         //proj.ortho(-1f, 1f, 1f, -1f, -1f, 1f);  //default, y-down projection
-        batch.setProjectionMatrix(proj);
+        batch.setProjectionMatrix(proj); // TODO: proj matrix set by camera
     }
 
     @Override
@@ -55,7 +55,7 @@ public class SpriteRendererSystem extends ComponentSystem {
 
             batch.setColor(sprite.color);
             batch.draw(sprite.sprite, transform.position.x(), transform.position.y(), 0f, 0f, 1f, 1f,
-                    transform.scale.x(), transform.scale.y(), transform.rotation.getX(), false, false);
+                    transform.scale.x(), transform.scale.y(), transform.rotation.angle(), false, false); // TODO: is angle right?
         }
         batch.end();
     }

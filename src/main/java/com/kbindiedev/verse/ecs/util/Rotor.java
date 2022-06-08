@@ -1,6 +1,10 @@
 package com.kbindiedev.verse.ecs.util;
 
 // TODO FAR FUTURE: represent any number of dimensions.
+// TODO: move to Math package.
+// TODO: euleran angles: Gimbal lock is a problem.
+// TODO FUTURE: move away from Quaternions and use Rotors (postponed)
+
 /**
  * A structure representing 3D rotation.
  * Most Game Engines utilize "Quaternions".

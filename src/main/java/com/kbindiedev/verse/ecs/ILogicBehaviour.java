@@ -17,8 +17,8 @@ public interface ILogicBehaviour {
 
     default void start() {}
 
-    default void update() {}
+    default void update(float dt) {}
 
-    default void fixedUpdate() {}    // TODO: registration? how long is "fixed" ?
+    default void fixedUpdate(float dt) {}    // TODO: registration? how long is "fixed" ?
 
 }

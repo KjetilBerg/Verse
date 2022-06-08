@@ -31,7 +31,7 @@ import java.util.List;
  */
 public class Entity {
 
-    private static Transform identityTransform = new Transform();
+    private static Transform identityTransform = new Transform();   // TODO PRIORITY: make immutable
 
     private EntityManager manager;
     private EntityArchetype archetype;
