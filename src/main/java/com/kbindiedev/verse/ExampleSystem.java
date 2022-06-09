@@ -6,8 +6,10 @@ import com.kbindiedev.verse.ecs.components.Transform;
 import com.kbindiedev.verse.ecs.systems.ComponentSystem;
 import com.kbindiedev.verse.input.keyboard.KeyEventTracker;
 import com.kbindiedev.verse.input.keyboard.Keys;
+import com.kbindiedev.verse.util.view.FitViewMapper;
 import org.joml.Vector2f;
 
+import java.awt.*;
 import java.util.Iterator;
 
 public class ExampleSystem extends ComponentSystem {
@@ -66,15 +68,28 @@ public class ExampleSystem extends ComponentSystem {
             if (transform == null) System.out.println("Warn: camera has no transform. cannot translate");
 
             // TODO: 1 frame late. this is temp while Scissoring is not implemented. still, there should be a way to retrieve screen/window.
-            entity.getComponent(Camera.class).aspectRatio = screenAspectRatio;
+            Camera camera = entity.getComponent(Camera.class);
+            float ar = (float)wWidth / wHeight;
+            camera.aspectRatio = ar;
+/*
+            Rectangle cameraRect = new Rectangle(0, 0, 1000*(int)camera.orthographicWidth, (int)(1000f * camera.orthographicWidth / camera.aspectRatio));
+            Rectangle dest = new Rectangle(0, 0, wWidth, wHeight);
+            FitViewMapper mapper = new FitViewMapper(cameraRect, dest); // TODO this is a test
+            Rectangle r = mapper.getResult();
+            System.out.printf("camX: %d, camY: %d, camW: %d, camH: %d, winW. %d, winY: %d, rX: %d, rY: %d, rW: %d, rH: %d\n",
+                    0, 0, 1000*(int)camera.orthographicWidth, (int)(1000*camera.orthographicWidth / camera.aspectRatio),
+                    wWidth, wHeight,
+                    r.x, r.y, r.width, r.height);
+*/
 
         }
     }
 
     // TODO: very temp and very sketchy.
-    private float screenAspectRatio = 1f;
+    private int wWidth = 1, wHeight = 1;
     @Override
     public void render(RenderContext context) {
-        screenAspectRatio = (float)context.getApplicationWindow().getWindowWidth() / context.getApplicationWindow().getWindowHeight();
+        wWidth = context.getApplicationWindow().getWindowWidth();
+        wHeight = context.getApplicationWindow().getWindowHeight();
     }
 }

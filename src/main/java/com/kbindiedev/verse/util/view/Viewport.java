@@ -1,4 +1,4 @@
-package com.kbindiedev.verse;
+package com.kbindiedev.verse.util.view;
 
 // TODO: not sure what package this should belong to
 

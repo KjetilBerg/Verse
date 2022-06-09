@@ -3,7 +3,7 @@ package com.kbindiedev.verse.ecs;
 import com.kbindiedev.verse.ecs.components.Camera;
 import com.kbindiedev.verse.ecs.components.Transform;
 import com.kbindiedev.verse.gfx.window.ApplicationWindow;
-import com.kbindiedev.verse.Viewport;
+import com.kbindiedev.verse.util.view.Viewport;
 
 /** A context for rendering the scene. Includes camera entity and varying gfx details. */
 public class RenderContext {
