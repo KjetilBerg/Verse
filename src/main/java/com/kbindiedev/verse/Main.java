@@ -37,6 +37,9 @@ public class Main {
 
         Space space = new Space(gl33);
 
+        // TODO: something like applicationWindow.attachInputs(space) may be ideal.
+        space.getInput().getKeyboardPipeline().setQueue(gl33.getApplicationWindow().getKeyboardQueue());
+
         // TODO next: viewport shenanigans
 
         SpriteRenderer sprite = new SpriteRenderer();

@@ -41,8 +41,6 @@ public class SpriteRendererSystem extends ComponentSystem {
     // TODO MAYBE: implement rotation (pitch and yaw) into SpriteBatch
     @Override
     public void render(RenderContext context) {
-        System.out.println("SpriteRendererSystem render");
-
         Iterator<Entity> entities = query.execute().iterator();
 
         batch.setProjectionMatrix(context.getCameraComponent().projectionMatrix);

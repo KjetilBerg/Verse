@@ -4,6 +4,9 @@ import com.kbindiedev.verse.ecs.*;
 import com.kbindiedev.verse.ecs.components.Camera;
 import com.kbindiedev.verse.ecs.components.Transform;
 import com.kbindiedev.verse.ecs.systems.ComponentSystem;
+import com.kbindiedev.verse.input.keyboard.KeyEventTracker;
+import com.kbindiedev.verse.input.keyboard.Keys;
+import org.joml.Vector2f;
 
 import java.util.Iterator;
 
@@ -34,22 +37,31 @@ public class ExampleSystem extends ComponentSystem {
 
     @Override
     public void fixedUpdate(float dt) {
-        System.out.println("fixedUpdate: " + dt);
         EntityGroup entities = query.execute();
 
         Iterator<Entity> x = entities.iterator();
         while (x.hasNext()) {
             ExampleComponent comp = x.next().getComponent(ExampleComponent.class);
             if (comp == null) throw new RuntimeException("comp not ExampleComponent");
-            System.out.println("Component data: " + comp.data);
         }
+
+        // camera movement:
+        Vector2f movement = new Vector2f();
+        KeyEventTracker keys = getSpace().getKeyboardState();
+        if (keys.isKeyDown(Keys.KEY_W)) movement.y -= 1.0f;
+        if (keys.isKeyDown(Keys.KEY_S)) movement.y += 1.0f;
+        if (keys.isKeyDown(Keys.KEY_A)) movement.x -= 1.0f;
+        if (keys.isKeyDown(Keys.KEY_D)) movement.x += 1.0f;
 
         Iterator<Entity> cameras = query2.execute().iterator();
         while (cameras.hasNext()) {
             Entity entity = cameras.next();
             Transform transform = entity.getComponent(Transform.class);
 
-            if (transform != null) transform.position.x += 0.1f * dt;
+            if (transform != null) {
+                transform.position.x += movement.x() * dt;
+                transform.position.y += movement.y() * dt;
+            }
 
             if (transform == null) System.out.println("Warn: camera has no transform. cannot translate");
 

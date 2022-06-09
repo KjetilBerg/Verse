@@ -47,6 +47,10 @@ public class GEOpenGL33 extends GraphicsEngine {
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     }
 
+    // TODO: temp
+    private GLApplicationWindow applicationWindow;
+    public GLApplicationWindow getApplicationWindow() { return applicationWindow; }
+
     //TODO: probably move this along with setupCapabilities
     public void renderLoop(IRenderable core) {
         float deltaTime = 0f;
@@ -100,13 +104,15 @@ public class GEOpenGL33 extends GraphicsEngine {
         //windowSettings.setMaximized(true);
         //windowSettings.setDecorated(false);
 
-        GLApplicationWindow applicationWindow = GLApplicationWindow.createWindow(windowSettings);
+        // TODO temp
+        applicationWindow = GLApplicationWindow.createWindow(windowSettings);
 
         window = applicationWindow.getWindowGLID();
         if (window == NULL) throw new RuntimeException("Failed to create the GLFW window");
 
         // TODO: hook up to new system
         /*
+        // NOTE: keys have been hooked up to new system, see GLApplicationWindow
         glfwSetKeyCallback(window, (window, key, scancode, action, mods) -> {
             if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE) glfwSetWindowShouldClose(window, true);
             //System.out.println("EVENT KEY: " + key);

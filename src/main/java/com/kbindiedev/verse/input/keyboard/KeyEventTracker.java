@@ -61,7 +61,7 @@ public class KeyEventTracker implements IKeyEventListener {
         return getKeyState(keycode) == KeyState.UPNOW;
     }
 
-    private KeyState getKeyState(int keycode) { return keyStates.getOrDefault(keycode, KeyState.DOWN); }
+    private KeyState getKeyState(int keycode) { return keyStates.getOrDefault(keycode, KeyState.UP); }
 
     @Override
     public boolean keyDown(int keycode) {

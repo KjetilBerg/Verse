@@ -2,7 +2,12 @@ package com.kbindiedev.verse.ecs;
 
 import com.kbindiedev.verse.ecs.systems.ComponentSystem;
 import com.kbindiedev.verse.gfx.GraphicsEngine;
+import com.kbindiedev.verse.input.InputSystem;
+import com.kbindiedev.verse.input.keyboard.KeyEventTracker;
+import com.kbindiedev.verse.input.keyboard.event.KeyEvent;
 import com.kbindiedev.verse.system.FastList;
+
+import java.util.Queue;
 
 // TODO: integration tests
 
@@ -20,6 +25,7 @@ import com.kbindiedev.verse.system.FastList;
  */
 public class Space {
 
+    private InputSystem input;
     private GraphicsEngine gfxImplementation;
     private EntityManager entityManager;
     private FastList<ComponentSystem> systems;
@@ -28,9 +34,11 @@ public class Space {
 
     private Thread runner;
 
-    public Space(GraphicsEngine gfxImplementation) { this(gfxImplementation, new EntityManager()); }
-    public Space(GraphicsEngine gfxImplementation, EntityManager entityManager) { // TODO: remove manager ?
+    public Space(GraphicsEngine gfxImplementation) { this(gfxImplementation, new InputSystem()); }
+    public Space(GraphicsEngine gfxImplementation, InputSystem input) { this(gfxImplementation, input, new EntityManager()); }
+    public Space(GraphicsEngine gfxImplementation, InputSystem input, EntityManager entityManager) { // TODO: remove manager ?
         this.gfxImplementation = gfxImplementation;
+        this.input = input;
         this.entityManager = entityManager;
         systems = new FastList<>();
         lastTimestamp = System.currentTimeMillis();
@@ -73,6 +81,8 @@ public class Space {
         float dt = (timestamp - lastTimestamp) / 1000f;
         lastTimestamp = timestamp;
 
+        input.iterate();
+
         accumulator += dt;
         while (accumulator >= 1/60f) {
             accumulator -= 1/60f;
@@ -89,5 +99,13 @@ public class Space {
     public void render(RenderContext context) {
         for (ComponentSystem system : systems) system.render(context);
     }
+
+    public InputSystem getInput() { return input; }
+
+    // short-hands below (TODO: consider move)
+    /** @return an object describing the current state of the keyboard(s) associated with this Space. */
+    public KeyEventTracker getKeyboardState() { return input.getKeyboardPipeline().getTracker(); }
+    /** @return a queue of all KeyEvents that happened this frame. */
+    public Queue<KeyEvent> getAllNewKeyEvents() { return input.getKeyboardPipeline().getProcessor().getOutputEvents(); }
 
 }

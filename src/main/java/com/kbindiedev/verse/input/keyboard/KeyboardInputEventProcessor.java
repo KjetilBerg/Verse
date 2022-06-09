@@ -5,6 +5,7 @@ import com.kbindiedev.verse.input.keyboard.event.KeyboardInputEvent;
 import com.kbindiedev.verse.profiling.Assertions;
 
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Queue;
 
 /**
@@ -24,6 +25,7 @@ public class KeyboardInputEventProcessor {
 
     public KeyboardInputEventProcessor() {
         keyStates = new HashMap<>();
+        outputEvents = new LinkedList<>();
     }
 
     public Queue<KeyEvent> getOutputEvents() { return outputEvents; }

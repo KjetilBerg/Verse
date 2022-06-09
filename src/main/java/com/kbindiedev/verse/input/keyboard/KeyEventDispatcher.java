@@ -2,6 +2,8 @@ package com.kbindiedev.verse.input.keyboard;
 import com.kbindiedev.verse.input.keyboard.event.KeyEvent;
 import com.kbindiedev.verse.profiling.Assertions;
 
+import java.util.Queue;
+
 /**
  * Dispatches {@link com.kbindiedev.verse.input.keyboard.event.KeyEvent}.
  *
@@ -19,11 +21,9 @@ public class KeyEventDispatcher {
         @Override public boolean keyUpNow(int keycode) { return false; }
     };
 
-    private KeyboardInputEventProcessor processor;
     private IKeyEventListener listener;
 
-    public KeyEventDispatcher(KeyboardInputEventProcessor processor) {
-        this.processor = processor;
+    public KeyEventDispatcher() {
         this.listener = BLANK_LISTENER;
     }
 
@@ -32,10 +32,10 @@ public class KeyEventDispatcher {
     }
 
     /** Dispatch all events from this iteration. The same events will be dispatched again if this method is called before the processor's next iteration. */
-    public void dispatch() {
+    public void dispatch(Queue<KeyEvent> events) {
         if (listener == BLANK_LISTENER) return;
 
-        for (KeyEvent event : processor.getOutputEvents()) dispatchSingleEvent(event);
+        for (KeyEvent event : events) dispatchSingleEvent(event);
     }
 
     /** Dispatch a single event */

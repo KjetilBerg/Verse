@@ -1,6 +1,8 @@
 package com.kbindiedev.verse.gfx.impl.opengl_33;
 
 import com.kbindiedev.verse.gfx.ApplicationWindow;
+import com.kbindiedev.verse.input.keyboard.KeyboardInputEventQueue;
+import com.kbindiedev.verse.profiling.Assertions;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.system.MemoryStack;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
@@ -14,12 +16,19 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 public class GLApplicationWindow extends ApplicationWindow {
 
     private long windowGLID;
+    private KeyboardInputEventQueue keyboardQueue; // TODO: more general class; want other queues too. make part of ApplicationWindow instead?
 
     private GLApplicationWindow(long windowGLID, String title) {
         super(title);
         this.windowGLID = windowGLID;
         queryGlfwAboutDetails();
+
+        keyboardQueue = new KeyboardInputEventQueue();
+        setupCallbacks();
     }
+
+    // TODO TEMP:
+    public KeyboardInputEventQueue getKeyboardQueue() { return keyboardQueue; }
 
     public static GLApplicationWindow createWindow(GLApplicationWindowSettings settings) {
 
@@ -63,16 +72,31 @@ public class GLApplicationWindow extends ApplicationWindow {
 
     public long getWindowGLID() { return windowGLID; }
 
+    // TODO: remove these two?
     /** Called by the creator of this object when the window is resized. */
     protected void eventResizeWindow(int width, int height) {
         windowWidth = width;
         windowHeight = height;
     }
-
     /** Called by the creator of this object when the window is moved. */
     protected void eventMoveWindow(int windowX, int windowY) {
         this.windowX = windowX;
         this.windowY = windowY;
+    }
+
+    private void setupCallbacks() {
+        glfwSetKeyCallback(windowGLID, (window, key, scancode, action, mods) -> {
+            if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE) glfwSetWindowShouldClose(window, true); // TODO: this
+            if (action == GLFW_PRESS) {
+                keyboardQueue.queueKeyDown(key);
+            } else if (action == GLFW_RELEASE) {
+                keyboardQueue.queueKeyUp(key);
+            } else if (action == GLFW_REPEAT) {
+                keyboardQueue.queueKeyTyped(key);
+            } else {
+                Assertions.warn("GLFW: unknown keyboard action: %d", action);
+            }
+        });
     }
 
     @Override
