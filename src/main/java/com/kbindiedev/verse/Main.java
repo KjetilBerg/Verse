@@ -14,6 +14,7 @@ import com.kbindiedev.verse.gfx.Pixel;
 import com.kbindiedev.verse.gfx.Sprite;
 import com.kbindiedev.verse.gfx.impl.opengl_33.GEOpenGL33;
 import com.kbindiedev.verse.gfx.impl.opengl_33.GLTexture;
+import org.lwjgl.opengl.GL30;
 
 public class Main {
 
@@ -65,18 +66,21 @@ public class Main {
         space.getEntityManager().instantiate(c2);
 
         Camera camera = new Camera();
+        camera.aspectRatio = 16f/9;
+        GL30.glViewport(0, 0, 1920, 1080); //TODO temp, until RenderingStrategy
         //camera.viewportWidth = 1920; camera.viewportHeight = 1080;
+        /*
         camera.viewportWidth = 4f; camera.viewportHeight = camera.viewportWidth * 9 / 16;
         float right = camera.zoom * camera.viewportWidth / 2;
         float bottom = camera.zoom * camera.viewportHeight / 2;
-        camera.projectionMatrix.ortho(-right, right, bottom, -bottom, camera.nearPlane, camera.farPlane);
+        camera.projectionMatrix.ortho(-right, right, bottom, -bottom, camera.nearPlane, camera.farPlane); */
         Entity cameraEntity = space.getEntityManager().instantiate(camera, new Transform());
 
         space.addSystem(new ExampleSystem(space));
         space.addSystem(new CameraSystem(space));
         space.addSystem(new SpriteRendererSystem(space));
 
-        RenderContext context = new RenderContext(cameraEntity);
+        RenderContext context = new RenderContext(cameraEntity, gl33.getApplicationWindow());
         gl33.renderLoop(new GEOpenGL33.IRenderable() {
             @Override
             public void update(float dt) {

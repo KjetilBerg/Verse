@@ -2,9 +2,8 @@ package com.kbindiedev.verse.gfx.impl.opengl_33;
 
 import com.kbindiedev.verse.AssetPool;
 import com.kbindiedev.verse.gfx.*;
-import com.kbindiedev.verse.input.keyboard.KeyEventTracker;
-import com.kbindiedev.verse.input.mouse.MouseInputManager;
-import com.kbindiedev.verse.profiling.Assertions;
+import com.kbindiedev.verse.gfx.impl.opengl_33.window.GLApplicationWindow;
+import com.kbindiedev.verse.gfx.impl.opengl_33.window.GLApplicationWindowSettings;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.*;
@@ -135,6 +134,8 @@ public class GEOpenGL33 extends GraphicsEngine {
         });
         glfwSetScrollCallback(window, (window, xoffset, yoffset) -> MouseInputManager.notifyMouseScrolled((float)xoffset, (float)yoffset));
 */
+
+        /*
         glfwSetWindowSizeCallback(window, (window, width, height) -> {
             DISPLAY_WIDTH = width;
             DISPLAY_HEIGHT = height;
@@ -142,6 +143,8 @@ public class GEOpenGL33 extends GraphicsEngine {
             // TODO temp: go via IMPL
             updateViewport(width, height);
         });
+        */
+
 
 
 
@@ -211,7 +214,8 @@ public class GEOpenGL33 extends GraphicsEngine {
         System.out.println("Viewport: width=" + width + " height=" + height + " = x=" + x + " y=" + y + " w=" + w + " h=" + h);
 */
         //GL30.glViewport(0, 0, width, height); // same result??
-        GL30.glViewport(0, 0, 300, 300); // think I understand viewports now. just need to center camera too (in example, anyway)
+        //GL30.glViewport(0, 0, 300, 300); // think I understand viewports now. just need to center camera too (in example, anyway)
+
     }
 
     //TODO: store shader somewhere

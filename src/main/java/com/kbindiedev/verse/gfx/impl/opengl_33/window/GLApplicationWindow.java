@@ -1,9 +1,10 @@
-package com.kbindiedev.verse.gfx.impl.opengl_33;
+package com.kbindiedev.verse.gfx.impl.opengl_33.window;
 
-import com.kbindiedev.verse.gfx.ApplicationWindow;
+import com.kbindiedev.verse.gfx.window.ApplicationWindow;
 import com.kbindiedev.verse.input.keyboard.KeyboardInputEventQueue;
 import com.kbindiedev.verse.profiling.Assertions;
 import org.lwjgl.glfw.GLFWVidMode;
+import org.lwjgl.opengl.GL30;
 import org.lwjgl.system.MemoryStack;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
@@ -97,6 +98,17 @@ public class GLApplicationWindow extends ApplicationWindow {
                 Assertions.warn("GLFW: unknown keyboard action: %d", action);
             }
         });
+
+        glfwSetWindowSizeCallback(windowGLID, (window, width, height) -> {
+            windowWidth = width;
+            windowHeight = height;
+        });
+    }
+
+    @Override
+    public void setViewportBoundsInternal(int screenX, int screenY, int width, int height) {
+        glfwMakeContextCurrent(windowGLID); // TODO: StateTracker
+        GL30.glViewport(screenX, screenY, width, height);
     }
 
     @Override

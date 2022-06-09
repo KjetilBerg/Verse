@@ -33,8 +33,9 @@ public class CameraSystem extends ComponentSystem {
 
             switch (camera.cameraType) {
                 case ORTHOGRAPHIC:
-                    float amplitude = camera.zoom * 0.5f;   // TODO: camera: 1/zoom instead ?
-                    camera.projectionMatrix.setOrtho(-amplitude, amplitude, amplitude, -amplitude, camera.nearPlane, camera.farPlane);
+                    float horizontal = camera.zoom * camera.orthographicWidth;
+                    float vertical = camera.zoom * camera.orthographicWidth / camera.aspectRatio;
+                    camera.projectionMatrix.setOrtho(-horizontal, horizontal, vertical, -vertical, camera.nearPlane, camera.farPlane);
                     break;
                 default:
                     Assertions.error("unknown CameraType: %s", camera.cameraType.name());

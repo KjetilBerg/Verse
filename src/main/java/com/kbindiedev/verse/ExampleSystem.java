@@ -65,6 +65,16 @@ public class ExampleSystem extends ComponentSystem {
 
             if (transform == null) System.out.println("Warn: camera has no transform. cannot translate");
 
+            // TODO: 1 frame late. this is temp while Scissoring is not implemented. still, there should be a way to retrieve screen/window.
+            entity.getComponent(Camera.class).aspectRatio = screenAspectRatio;
+
         }
+    }
+
+    // TODO: very temp and very sketchy.
+    private float screenAspectRatio = 1f;
+    @Override
+    public void render(RenderContext context) {
+        screenAspectRatio = (float)context.getApplicationWindow().getWindowWidth() / context.getApplicationWindow().getWindowHeight();
     }
 }

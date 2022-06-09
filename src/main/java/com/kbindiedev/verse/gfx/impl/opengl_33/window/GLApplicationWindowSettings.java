@@ -1,7 +1,8 @@
-package com.kbindiedev.verse.gfx.impl.opengl_33;
+package com.kbindiedev.verse.gfx.impl.opengl_33.window;
 
 // TODO: consider moving this to some "opengl_common" package.
 
+import com.kbindiedev.verse.gfx.impl.opengl_33.window.GLApplicationWindow;
 import com.kbindiedev.verse.profiling.Assertions;
 import org.lwjgl.glfw.GLFWVidMode;
 

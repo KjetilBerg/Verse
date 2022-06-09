@@ -10,10 +10,10 @@ public class Camera implements IComponent {
     public Matrix4f projectionMatrix    = new Matrix4f();
     public Matrix4f viewMatrix          = new Matrix4f();
     public Vector3f up                  = new Vector3f(0f, 1f, 0f);
+    public float orthographicWidth      = 1f;   // height is determined by aspectRatio
+    public float aspectRatio            = 1f;
     public float nearPlane              = -1f;
     public float farPlane               = 1f;
-    public float viewportWidth          = 1f;
-    public float viewportHeight         = 1f;
     public float zoom                   = 1f;
 
     public Transform target             = null;

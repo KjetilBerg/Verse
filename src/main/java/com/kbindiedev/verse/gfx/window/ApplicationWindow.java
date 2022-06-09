@@ -1,4 +1,4 @@
-package com.kbindiedev.verse.gfx;
+package com.kbindiedev.verse.gfx.window;
 
 import com.kbindiedev.verse.input.keyboard.IKeyEventListener;
 import com.kbindiedev.verse.input.mouse.IMouseInputProcessor;
@@ -9,6 +9,8 @@ public abstract class ApplicationWindow { //implements IKeyEventListener, IMouse
     protected String windowTitle;
     protected int windowX, windowY;
     protected int windowWidth, windowHeight;
+
+    protected int viewportX, viewportY, viewportWidth, viewportHeight;
 
     protected boolean isResizable = true;
     protected boolean isVisible = true;
@@ -26,6 +28,8 @@ public abstract class ApplicationWindow { //implements IKeyEventListener, IMouse
         this.windowTitle = windowTitle;
         windowX = 0; windowY = 0;
         windowWidth = 0; windowHeight = 0;
+
+        viewportX = -1; viewportY = -1; viewportWidth = -1; viewportHeight = -1; // TODO: 0 ?
     }
 
     public String getWindowTitle() { return windowTitle; }
@@ -47,6 +51,15 @@ public abstract class ApplicationWindow { //implements IKeyEventListener, IMouse
     public boolean isFullscreen() { return isFullscreen; }
 
     // TODO: minimize, maximize etc
+
+    /** Set the screen's viewport bounds for being rendered to. */
+    public void setViewportBounds(int screenX, int screenY, int width, int height) {
+        if (screenX != viewportX || screenY != viewportY || width != viewportWidth || height != viewportHeight)
+            setViewportBoundsInternal(screenX, screenY, width, height);
+        viewportX = screenX; viewportY = screenY; viewportWidth = width; viewportHeight = height;
+    }
+
+    protected abstract void setViewportBoundsInternal(int screenX, int screenY, int width, int height);
 
     /**
      * Change the window's title.

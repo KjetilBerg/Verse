@@ -4,7 +4,6 @@ import com.kbindiedev.verse.ecs.*;
 import com.kbindiedev.verse.ecs.components.SpriteRenderer;
 import com.kbindiedev.verse.ecs.components.Transform;
 import com.kbindiedev.verse.gfx.SpriteBatch;
-import org.joml.Matrix4f;
 
 import java.util.Iterator;
 
@@ -12,22 +11,9 @@ public class SpriteRendererSystem extends ComponentSystem {
 
     private EntityQuery query;
     private SpriteBatch batch;
-    private Matrix4f proj;
 
     public SpriteRendererSystem(Space space) {
         super(space);
-    }
-
-    @Override
-    public void awake() {
-        // TODO: from some localized system (reuse batches)?
-        // TODO: 128, 8. use other numbers
-        batch = new SpriteBatch(getSpace().getGfxImplementation(), 128, 8);
-
-        proj = new Matrix4f();
-        proj.ortho(-2f, 2f, 2f, -2f, -1f, 1f);
-        //proj.ortho(-1f, 1f, 1f, -1f, -1f, 1f);  //default, y-down projection
-        batch.setProjectionMatrix(proj); // TODO: proj matrix set by camera
     }
 
     @Override
@@ -35,14 +21,22 @@ public class SpriteRendererSystem extends ComponentSystem {
         System.out.println("SpriteRendererSystem start");
         EntityQueryDesc desc = new EntityQueryDesc(new ComponentTypeGroup(SpriteRenderer.class), null, null);
         query = desc.compile(getSpace().getEntityManager());
+
+
+        // TODO: from some localized system (reuse batches)?
+        // TODO: 128, 8. use other numbers
+        batch = new SpriteBatch(getSpace().getGfxImplementation(), 128, 8);
     }
 
     // TODO FUTURE: 3DSpriteBatch (consider other rotations and z component of position)
     // TODO MAYBE: implement rotation (pitch and yaw) into SpriteBatch
+        // TODO: or have angle be part of SpriteRenderer component
     @Override
     public void render(RenderContext context) {
         Iterator<Entity> entities = query.execute().iterator();
 
+        // TODO: temp (context prepare). When change rendering pipeline, batch renders to FBO (on camera). Renderer then considers context.
+        context.prepare();
         batch.setProjectionMatrix(context.getCameraComponent().projectionMatrix);
         batch.setViewMatrix(context.getCameraComponent().viewMatrix);
         batch.begin();
