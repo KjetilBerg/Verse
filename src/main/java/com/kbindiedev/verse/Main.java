@@ -7,14 +7,23 @@ import com.kbindiedev.verse.ecs.Space;
 import com.kbindiedev.verse.ecs.components.Camera;
 import com.kbindiedev.verse.ecs.components.SpriteRenderer;
 import com.kbindiedev.verse.ecs.components.Transform;
+import com.kbindiedev.verse.ecs.generators.LayeredTileMapToEntitiesGenerator;
 import com.kbindiedev.verse.ecs.systems.CameraSystem;
+import com.kbindiedev.verse.ecs.systems.RenderContextPreparerSystem;
 import com.kbindiedev.verse.ecs.systems.SpriteRendererSystem;
 import com.kbindiedev.verse.gfx.GraphicsEngineSettings;
 import com.kbindiedev.verse.gfx.Pixel;
 import com.kbindiedev.verse.gfx.Sprite;
 import com.kbindiedev.verse.gfx.impl.opengl_33.GEOpenGL33;
 import com.kbindiedev.verse.gfx.impl.opengl_33.GLTexture;
+import com.kbindiedev.verse.maps.LayeredTileMap;
+import com.kbindiedev.verse.maps.TileMapLoader;
 import org.lwjgl.opengl.GL30;
+
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 
 public class Main {
 
@@ -47,7 +56,6 @@ public class Main {
         sprite.color = new Pixel(1f, 1f, 1f, 1f);
         //sprite.sprite = new Sprite(new GLTexture("./../example.png"));
         sprite.sprite = new Sprite(new GLTexture("assets/img/smile.png"));   // TODO: renders same image as below
-        space.getEntityManager().instantiate(sprite);
 
         SpriteRenderer sprite2 = new SpriteRenderer();
         sprite2.color = new Pixel(1f, 1f, 0f, 1f);
@@ -55,7 +63,9 @@ public class Main {
         Transform transform = new Transform();
         transform.position.x = 0.5f;
         transform.position.y = 0.3f;
-        space.getEntityManager().instantiate(sprite2, transform);
+
+        //space.getEntityManager().instantiate(sprite);
+        //space.getEntityManager().instantiate(sprite2, transform);
 
         ExampleComponent c1 = new ExampleComponent();
         ExampleComponent c2 = new ExampleComponent();
@@ -64,6 +74,13 @@ public class Main {
 
         space.getEntityManager().instantiate(c1);
         space.getEntityManager().instantiate(c2);
+
+        try {
+            LayeredTileMap testTileMap = TileMapLoader.loadTileMap(new File("./../spritepack_demo/paths.tmx"));
+            LayeredTileMapToEntitiesGenerator.generateEntities(space.getEntityManager(), testTileMap);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         Camera camera = new Camera();
         camera.aspectRatio = 16f/9;
@@ -76,11 +93,14 @@ public class Main {
         camera.projectionMatrix.ortho(-right, right, bottom, -bottom, camera.nearPlane, camera.farPlane); */
         Entity cameraEntity = space.getEntityManager().instantiate(camera, new Transform());
 
+        RenderContextPreparerSystem rcps = new RenderContextPreparerSystem(space);
         space.addSystem(new ExampleSystem(space));
+        space.addSystem(rcps);
         space.addSystem(new CameraSystem(space));
         space.addSystem(new SpriteRendererSystem(space));
 
-        RenderContext context = new RenderContext(cameraEntity, gl33.getApplicationWindow());
+        RenderContext context = new RenderContext(cameraEntity, gl33.getApplicationWindow(), true);
+        rcps.addRenderContext(context);
         gl33.renderLoop(new GEOpenGL33.IRenderable() {
             @Override
             public void update(float dt) {
@@ -89,8 +109,8 @@ public class Main {
 
             @Override
             public void render() {
-                space.tick(); // TODO: render MUST happen during .render. throw assertion if called at another time
-                space.render(context);
+                space.tick();
+                space.render(context); // TODO: render MUST happen during .render. throw assertion if called at another time
             } // TODO: remove render?
         });
     }

@@ -49,28 +49,34 @@ public class ExampleSystem extends ComponentSystem {
 
         // camera movement:
         Vector2f movement = new Vector2f();
+        float zoom = 0f;
         KeyEventTracker keys = getSpace().getKeyboardState();
-        if (keys.isKeyDown(Keys.KEY_W)) movement.y -= 1.0f;
-        if (keys.isKeyDown(Keys.KEY_S)) movement.y += 1.0f;
-        if (keys.isKeyDown(Keys.KEY_A)) movement.x -= 1.0f;
-        if (keys.isKeyDown(Keys.KEY_D)) movement.x += 1.0f;
+        if (keys.isKeyDown(Keys.KEY_W)) movement.y += 3.0f;
+        if (keys.isKeyDown(Keys.KEY_S)) movement.y -= 3.0f;
+        if (keys.isKeyDown(Keys.KEY_A)) movement.x += 3.0f;
+        if (keys.isKeyDown(Keys.KEY_D)) movement.x -= 3.0f;
+        if (keys.isKeyDown(Keys.KEY_Q)) zoom += 10.0f;
+        if (keys.isKeyDown(Keys.KEY_E)) zoom -= 10.0f;
 
         Iterator<Entity> cameras = query2.execute().iterator();
         while (cameras.hasNext()) {
             Entity entity = cameras.next();
+            Camera camera = entity.getComponent(Camera.class);
             Transform transform = entity.getComponent(Transform.class);
 
+            camera.zoom += zoom * dt;
+
             if (transform != null) {
-                transform.position.x += movement.x() * dt;
-                transform.position.y += movement.y() * dt;
+                transform.position.x += movement.x() * dt * camera.zoom;
+                transform.position.y += movement.y() * dt * camera.zoom;
             }
 
             if (transform == null) System.out.println("Warn: camera has no transform. cannot translate");
 
             // TODO: 1 frame late. this is temp while Scissoring is not implemented. still, there should be a way to retrieve screen/window.
-            Camera camera = entity.getComponent(Camera.class);
-            float ar = (float)wWidth / wHeight;
-            camera.aspectRatio = ar;
+
+            //float ar = (float)wWidth / wHeight;
+            //camera.aspectRatio = ar;
 /*
             Rectangle cameraRect = new Rectangle(0, 0, 1000*(int)camera.orthographicWidth, (int)(1000f * camera.orthographicWidth / camera.aspectRatio));
             Rectangle dest = new Rectangle(0, 0, wWidth, wHeight);

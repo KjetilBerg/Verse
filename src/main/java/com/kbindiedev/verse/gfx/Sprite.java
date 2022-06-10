@@ -11,11 +11,11 @@ public class Sprite {
     private float u1, u2, v1, v2;
 
     public Sprite(Texture texture) { this(texture, 0f, 1f, 0f, 1f); }
-    public Sprite(Texture texture, float u1, float u2, float v1, float v2) {
+    public Sprite(Texture texture, float u1, float v1, float u2, float v2) {
         this.texture = texture;
         this.u1 = u1;
-        this.u2 = u2;
         this.v1 = v1;
+        this.u2 = u2;
         this.v2 = v2;
     }
 

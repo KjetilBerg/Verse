@@ -11,13 +11,18 @@ public class RenderContext {
     private Entity cameraEntity;
     private ApplicationWindow applicationWindow;
     private Viewport viewport;
+    private boolean cameraFollowAspectRatio;
 
     // TODO: some window or idk
-    public RenderContext(Entity cameraEntity, ApplicationWindow applicationWindow) { this(cameraEntity, applicationWindow, new Viewport()); }
-    public RenderContext(Entity cameraEntity, ApplicationWindow applicationWindow, Viewport viewport) {
+    public RenderContext(Entity cameraEntity, ApplicationWindow applicationWindow, boolean cameraFollowAspectRatio) {
+        this(cameraEntity, applicationWindow, cameraFollowAspectRatio, new Viewport());
+    }
+
+    public RenderContext(Entity cameraEntity, ApplicationWindow applicationWindow, boolean cameraFollowAspectRatio, Viewport viewport) {
         if (!cameraEntity.hasComponents(Camera.class)) throw new IllegalArgumentException("cameraEntity must have a camera"); // TODO: VoidCamera ? to avoid crash
         this.cameraEntity = cameraEntity;
         this.applicationWindow = applicationWindow;
+        this.cameraFollowAspectRatio = cameraFollowAspectRatio;
         this.viewport = viewport;
     }
 
@@ -26,6 +31,8 @@ public class RenderContext {
 
     public ApplicationWindow getApplicationWindow() { return applicationWindow; }
     public Viewport getViewport() { return viewport; }
+
+    public boolean shouldCameraFollowAspectRatio() { return cameraFollowAspectRatio; }
 
     /** Prepare the window to be rendered to. */
     public void prepare() {
