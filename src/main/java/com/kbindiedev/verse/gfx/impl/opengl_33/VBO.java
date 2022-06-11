@@ -119,10 +119,12 @@ public class VBO implements IBufferable, IBufferSlicable<VBO.VBOSlice> {
             if (numBytes < 0) Assertions.warn("numBytes cannot be negative. got '%d'. ignoring...", numBytes);
             if (numBytes <= 0) return;
 
+            int oldLimit = data.limit();
             data.limit(data.position() + (int)numBytes);
             StateTracker.pushVertexBufferObject(root);
             GEOpenGL33.gl33.glBufferSubData(GEOpenGL33.gl33.GL_ARRAY_BUFFER, absoluteOffset + offset, data);
             StateTracker.popVertexBufferObject();
+            data.limit(oldLimit);
         }
 
         @Override

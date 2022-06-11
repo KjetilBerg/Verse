@@ -13,11 +13,16 @@ import java.util.List;
  */
 public class TileMap {
 
+    private String name;
     private Collection<Entry> entries;
 
-    public TileMap() {
+    public TileMap() { this(""); }
+    public TileMap(String name) {
+        this.name = name;
         entries = new ArrayList<>();
     }
+
+    public String getName()  { return name; }
 
     public void addEntry(Sprite sprite, int x, int y) {
         addEntry(sprite, x, y, sprite.getWidth(), sprite.getHeight());

@@ -31,6 +31,10 @@ public class CameraSystem extends ComponentSystem {
             Transform transform = entity.getTransform();
             Camera camera = entity.getComponent(Camera.class);
 
+            // prevent floating point errors
+            float cameraIncrements = 1 / 32f; // TODO: some errors still prevail
+            camera.zoom = ((int)(camera.zoom / cameraIncrements)) * cameraIncrements;
+
             switch (camera.cameraType) {
                 case ORTHOGRAPHIC:
                     float horizontal = camera.zoom * camera.orthographicWidth;

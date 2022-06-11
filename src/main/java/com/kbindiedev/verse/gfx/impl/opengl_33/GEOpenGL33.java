@@ -26,7 +26,7 @@ public class GEOpenGL33 extends GraphicsEngine {
     public static GL33 gl33;    //TODO: move, but keep internal to this package
     private static long window;
     private static final float FPS = 1/60f;
-    private int DISPLAY_WIDTH = 300, DISPLAY_HEIGHT = 300;
+    private int DISPLAY_WIDTH = 1000, DISPLAY_HEIGHT = 800;
 
     @Override
     public void initialize(GraphicsEngineSettings settings) {   //TODO: use settings

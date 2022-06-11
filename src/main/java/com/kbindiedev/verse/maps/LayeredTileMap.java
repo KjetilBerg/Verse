@@ -34,6 +34,19 @@ public class LayeredTileMap {
         return layers.get(layer);
     }
 
+    /**
+     * Put a map for a certain layer.
+     * Any existing map for the given layer will be replaced.
+     * @param layer - The layer.
+     * @param map - The map.
+     * @return the map that was associated with the given layer before it was replaced, or null if none existed.
+     */
+    public TileMap putForLayer(int layer, TileMap map) {
+        TileMap existing = layers.get(layer);
+        makeExist(layer, map);
+        return existing;
+    }
+
     /** Iterate over all TileMaps, starting from the lowest index and ending at the highest index. */
     public Iterator<TileMap> iterator() {
         Iterator<Integer> order = layersSorted.iterator();
@@ -45,10 +58,18 @@ public class LayeredTileMap {
         };
     }
 
+    // TODO: make better
+
     /** Add a layer if it does not exist, otherwise do nothing and return false. */
     private boolean ensureExistsLayer(int layer) {
         if (layers.containsKey(layer)) return false;
-        layers.put(layer, new TileMap());
+        return makeExist(layer, new TileMap());
+    }
+
+    /** Add the given map to layers if none exist for that layer, otherwise do nothing and return false. */
+    private boolean makeExist(int layer, TileMap map) {
+        if (layers.containsKey(layer)) return false;
+        layers.put(layer, map);
         layersSorted.add(layer);
         return true;
     }

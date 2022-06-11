@@ -1,5 +1,7 @@
 package com.kbindiedev.verse.ecs;
 
+import com.kbindiedev.verse.system.FastList;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -15,7 +17,7 @@ import java.util.Iterator;
  */
 public class EntityGroup { // TODO: implement collection? same as ComponentTypeGroup
 
-    private HashSet<Entity> group;
+    private FastList<Entity> group;
 
     /** Create a new blank EntityGroup */
     public EntityGroup() { this(new ArrayList<>()); }
@@ -25,7 +27,7 @@ public class EntityGroup { // TODO: implement collection? same as ComponentTypeG
      * @param groups - Other groups to add to this group. Changes to these groups do not affect this group.
      */
     public EntityGroup(Collection<EntityGroup> groups) {
-        group = new HashSet<>();
+        group = new FastList<>();
         for (EntityGroup g : groups) group.addAll(g.group);
     }
 

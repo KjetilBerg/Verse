@@ -26,7 +26,9 @@ public class Sprite {
     public float getV1() { return v1; }
     public float getV2() { return v2; }
 
-    public int getWidth() { return (int)((u2 - u1) * texture.getWidth()); }
-    public int getHeight() { return (int)((v2 - v1) * texture.getHeight()); }
+    //public int getWidth() { return Math.round((u2 - u1) * texture.getWidth()); }
+    //public int getHeight() { return Math.round((v2 - v1) * texture.getHeight()); }
+    public int getWidth() { return (int)((u2 - u1) * texture.getWidth() + 0.5f); }
+    public int getHeight() { return (int)((v2 - v1) * texture.getHeight() + 0.5f); }
 
 }

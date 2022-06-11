@@ -84,14 +84,18 @@ public class Main {
 
         Camera camera = new Camera();
         camera.aspectRatio = 16f/9;
-        GL30.glViewport(0, 0, 1920, 1080); //TODO temp, until RenderingStrategy
+        camera.zoom = 250f;
+        //GL30.glViewport(0, 0, 1920, 1080); //TODO temp, until RenderingStrategy
         //camera.viewportWidth = 1920; camera.viewportHeight = 1080;
         /*
         camera.viewportWidth = 4f; camera.viewportHeight = camera.viewportWidth * 9 / 16;
         float right = camera.zoom * camera.viewportWidth / 2;
         float bottom = camera.zoom * camera.viewportHeight / 2;
         camera.projectionMatrix.ortho(-right, right, bottom, -bottom, camera.nearPlane, camera.farPlane); */
-        Entity cameraEntity = space.getEntityManager().instantiate(camera, new Transform());
+        Transform cameraTransform = new Transform();
+        cameraTransform.position.x = -160f;
+        cameraTransform.position.y = -200f;
+        Entity cameraEntity = space.getEntityManager().instantiate(camera, cameraTransform);
 
         RenderContextPreparerSystem rcps = new RenderContextPreparerSystem(space);
         space.addSystem(new ExampleSystem(space));

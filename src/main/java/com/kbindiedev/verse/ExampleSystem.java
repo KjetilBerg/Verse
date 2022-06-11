@@ -28,8 +28,6 @@ public class ExampleSystem extends ComponentSystem {
         query = desc.compile(getSpace().getEntityManager());
 
         query2 = new EntityQueryDesc(new ComponentTypeGroup(Camera.class), null, null).compile(getSpace().getEntityManager());
-
-        query2.execute().iterator().next().getComponent(Camera.class).zoom = 4f;
     }
 
     @Override
@@ -55,8 +53,8 @@ public class ExampleSystem extends ComponentSystem {
         if (keys.isKeyDown(Keys.KEY_S)) movement.y -= 3.0f;
         if (keys.isKeyDown(Keys.KEY_A)) movement.x += 3.0f;
         if (keys.isKeyDown(Keys.KEY_D)) movement.x -= 3.0f;
-        if (keys.isKeyDown(Keys.KEY_Q)) zoom += 10.0f;
-        if (keys.isKeyDown(Keys.KEY_E)) zoom -= 10.0f;
+        if (keys.isKeyDown(Keys.KEY_Q)) zoom += 100.0f;
+        if (keys.isKeyDown(Keys.KEY_E)) zoom -= 100.0f;
 
         Iterator<Entity> cameras = query2.execute().iterator();
         while (cameras.hasNext()) {

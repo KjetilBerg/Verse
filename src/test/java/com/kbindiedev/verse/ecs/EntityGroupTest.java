@@ -1,6 +1,5 @@
 package com.kbindiedev.verse.ecs;
 
-import com.kbindiedev.verse.ecs.components.IComponent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -9,6 +8,8 @@ import java.util.Iterator;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
+
+// TODO: (new requirement) test maintains order of entities
 
 public class EntityGroupTest {
 

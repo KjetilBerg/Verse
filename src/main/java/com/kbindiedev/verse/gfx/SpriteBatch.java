@@ -3,6 +3,8 @@ package com.kbindiedev.verse.gfx;
 import com.kbindiedev.verse.profiling.Assertions;
 import org.joml.Matrix4f;
 import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL33;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -126,11 +128,11 @@ public class SpriteBatch {
         mesh.getMaterial().setUniformValue("uView", viewMatrix);
         mesh.getMaterial().setUniformValue("uTexArray", textureToSlot);                  //TODO: force set uniform values every frame? makes "dirty flags" inside materials easier.
 
-        //TODO: TEMP
-        //GL33.glEnable(GL11.GL_BLEND);
-        //GL33.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+        //TODO: TEMP (BLEND, make abstract; move away from OpenGL here)
+        GL33.glEnable(GL11.GL_BLEND);
+        GL33.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
         mesh.render();
-        //GL33.glDisable(GL11.GL_BLEND);
+        GL33.glDisable(GL11.GL_BLEND);
 
         vertexData.position(0);
         textureToSlot.clear();
