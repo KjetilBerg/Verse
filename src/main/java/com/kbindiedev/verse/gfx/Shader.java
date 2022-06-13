@@ -42,7 +42,7 @@ public abstract class Shader {
             DEFAULT = _default.bake();
 
             RawVertexAttributes spritebatch = new RawVertexAttributes(GEOpenGL33.gl33.GL_DYNAMIC_DRAW);
-            spritebatch.addAttribute(0, 2, GL_FLOAT, false);    //position (x, y)
+            spritebatch.addAttribute(0, 3, GL_FLOAT, false);    //position (x, y, z)
             //spritebatch.addAttribute(1, 1, GL_UNSIGNED_INT, false);    //color (packed, rgba)
             //spritebatch.addAttribute(1, 4, GL_UNSIGNED_BYTE, false);
             spritebatch.addAttribute(1, 4, GL_UNSIGNED_BYTE, true);

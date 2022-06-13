@@ -2,12 +2,17 @@ package com.kbindiedev.verse.ecs.generators;
 
 import com.kbindiedev.verse.ecs.Entity;
 import com.kbindiedev.verse.ecs.EntityManager;
+import com.kbindiedev.verse.ecs.components.IComponent;
+import com.kbindiedev.verse.ecs.components.SpriteAnimator;
 import com.kbindiedev.verse.ecs.components.SpriteRenderer;
 import com.kbindiedev.verse.ecs.components.Transform;
-import com.kbindiedev.verse.maps.LayeredTileMap;
-import com.kbindiedev.verse.maps.TileMap;
+import com.kbindiedev.verse.ecs.datastore.SpriteAnimation;
+import com.kbindiedev.verse.maps.*;
+import com.kbindiedev.verse.profiling.Assertions;
 
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * Creates an Entity structure (hierarchy) by a given LayeredTileMap.
@@ -29,21 +34,49 @@ public class LayeredTileMapToEntitiesGenerator {
         Entity parent = null;
 
         Iterator<TileMap> iterator = layeredTileMap.iterator();
+        float zLayer = -0.1f; // TODO: different numbers (remember camera near/far planes)
 
         while (iterator.hasNext()) {
             TileMap tilemap = iterator.next();
 
+            zLayer += 0.1f;
+
             for (TileMap.Entry entry : tilemap.getAllEntries()) {
-                SpriteRenderer sprite = new SpriteRenderer();
+
+                Tile t = entry.getTile();
+
+                List<IComponent> list = new ArrayList<>();
+
                 Transform transform = new Transform();
-                sprite.sprite = entry.getSprite();
                 // TODO: transforms. better? widht/height
                 transform.position.x = entry.getX();
                 transform.position.y = entry.getY();
+                transform.position.z = zLayer;
                 transform.scale.x = entry.getWidth();
                 transform.scale.y = entry.getHeight();
+                list.add(transform);
 
-                destination.instantiate(parent, sprite, transform);
+                if (t instanceof StaticTile) {
+
+                    StaticTile tile = (StaticTile)t;
+                    SpriteRenderer spriteRenderer = new SpriteRenderer();
+                    spriteRenderer.sprite = tile.getSprite();
+                    list.add(spriteRenderer);
+
+                } else if (t instanceof AnimatedTile) {
+
+                    AnimatedTile tile = (AnimatedTile)t;
+                    SpriteAnimator spriteAnimator = new SpriteAnimator();
+                    SpriteRenderer spriteRenderer = new SpriteRenderer();
+                    spriteAnimator.animation = tile.getAnimation();
+                    list.add(spriteAnimator);
+                    list.add(spriteRenderer);
+
+                } else {
+                    Assertions.warn("unknown tile type: %s. tile: %s", t.getClass().getCanonicalName(), t);
+                }
+
+                destination.instantiate(parent, list.toArray(new IComponent[0]));
             }
 
         }

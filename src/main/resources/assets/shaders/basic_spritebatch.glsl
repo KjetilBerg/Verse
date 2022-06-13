@@ -1,6 +1,6 @@
 #shader vertex
 #version 330 core
-layout (location=0) in vec2 aPos;               //x, y      2 float
+layout (location=0) in vec3 aPos;               //x, y, z   3 float
 layout (location=1) in vec4 aColor;             //color     4 bytes
 layout (location=2) in vec2 aTexCoords;         //u, v      2 float
 //layout (location=3) in uint aTexId;
@@ -21,7 +21,7 @@ void main()
     fTexCoords = aTexCoords;
     fTexId = aTexId;
 
-    gl_Position = uProjection * uView * vec4(aPos, 1.0, 1.0);
+    gl_Position = uProjection * uView * vec4(aPos, 1.0);
 }
 
 #shader fragment
@@ -38,5 +38,6 @@ out vec4 color;
 
 void main()
 {
+    if (fColor.a < 0.1) discard;
     color = texture(uTexArray[int(fTexId)], fTexCoords) * fColor;
 }

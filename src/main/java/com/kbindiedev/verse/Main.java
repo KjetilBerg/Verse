@@ -10,12 +10,14 @@ import com.kbindiedev.verse.ecs.components.Transform;
 import com.kbindiedev.verse.ecs.generators.LayeredTileMapToEntitiesGenerator;
 import com.kbindiedev.verse.ecs.systems.CameraSystem;
 import com.kbindiedev.verse.ecs.systems.RenderContextPreparerSystem;
+import com.kbindiedev.verse.ecs.systems.SpriteAnimatorSystem;
 import com.kbindiedev.verse.ecs.systems.SpriteRendererSystem;
 import com.kbindiedev.verse.gfx.GraphicsEngineSettings;
 import com.kbindiedev.verse.gfx.Pixel;
 import com.kbindiedev.verse.gfx.Sprite;
 import com.kbindiedev.verse.gfx.impl.opengl_33.GEOpenGL33;
 import com.kbindiedev.verse.gfx.impl.opengl_33.GLTexture;
+import com.kbindiedev.verse.io.files.Files;
 import com.kbindiedev.verse.maps.LayeredTileMap;
 import com.kbindiedev.verse.maps.TileMapLoader;
 import org.lwjgl.opengl.GL30;
@@ -55,7 +57,7 @@ public class Main {
         SpriteRenderer sprite = new SpriteRenderer();
         sprite.color = new Pixel(1f, 1f, 1f, 1f);
         //sprite.sprite = new Sprite(new GLTexture("./../example.png"));
-        sprite.sprite = new Sprite(new GLTexture("assets/img/smile.png"));   // TODO: renders same image as below
+        sprite.sprite = new Sprite(new GLTexture(Files.getExternalPath("assets/img/smile.png")));
 
         SpriteRenderer sprite2 = new SpriteRenderer();
         sprite2.color = new Pixel(1f, 1f, 0f, 1f);
@@ -101,6 +103,7 @@ public class Main {
         space.addSystem(new ExampleSystem(space));
         space.addSystem(rcps);
         space.addSystem(new CameraSystem(space));
+        space.addSystem(new SpriteAnimatorSystem(space));
         space.addSystem(new SpriteRendererSystem(space));
 
         RenderContext context = new RenderContext(cameraEntity, gl33.getApplicationWindow(), true);

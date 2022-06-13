@@ -99,7 +99,7 @@ public class GLMesh extends Mesh implements IMemoryOccupant {
 
         ByteBuffer indices = indexData.getBuffer();
         indices.position(0);
-        indices.limit(indexData.getNumIndices() * 2);   //TODO: is it always 2 ?
+        indices.limit(indexData.getNumIndices() * 2);   //TODO: is it always 2 ? // TODO: better limiting ("unset" this)
 
         //TODO: 0 and 3 are hardcoded. this is temporary
         //TODO: can use ebos for indices (?)

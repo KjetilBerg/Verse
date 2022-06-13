@@ -1,13 +1,10 @@
 package com.kbindiedev.verse.maps;
 
-import com.kbindiedev.verse.gfx.Sprite;
-
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
 /**
- * Maps sprites onto a space with an arbitrary position and size.
+ * Maps tiles onto a space with an arbitrary position and size.
  *
  * @see LayeredTileMap
  */
@@ -24,23 +21,22 @@ public class TileMap {
 
     public String getName()  { return name; }
 
-    public void addEntry(Sprite sprite, int x, int y) {
-        addEntry(sprite, x, y, sprite.getWidth(), sprite.getHeight());
+    public void addEntry(Tile tile, int x, int y) {
+        entries.add(new Entry(tile, x, y, tile.getWidth(), tile.getHeight()));
     }
-
-    public void addEntry(Sprite sprite, int x, int y, int width, int height) {
-        entries.add(new Entry(sprite, x, y, width, height));
+    public void addEntry(Tile tile, int x, int y, int width, int height) {
+        entries.add(new Entry(tile, x, y, width, height));
     }
 
     public Collection<Entry> getAllEntries() { return entries; }
 
     public static class Entry {
-        private Sprite sprite;
+        private Tile tile;
         private int x, y, width, height;
-        private Entry(Sprite sprite, int x, int y, int width, int height) {
-            this.sprite = sprite; this.x = x; this.y = y; this.width = width; this.height = height;
+        private Entry(Tile tile, int x, int y, int width, int height) {
+            this.tile = tile; this.x = x; this.y = y; this.width = width; this.height = height;
         }
-        public Sprite getSprite() { return sprite; }
+        public Tile getTile() { return tile; }
         public int getX() { return x; }
         public int getY() { return y; }
         public int getWidth() { return width; }

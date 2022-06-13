@@ -14,7 +14,6 @@ public class TileMapLoader {
     private static final HashMap<String, ITileMapLoaderImplementation> loaders = new HashMap<>();
 
     static {
-        loaders.put("test", new TestTileMapLoader());
         loaders.put("tmx", new TmxTileMapLoader());
     }
 

@@ -4,6 +4,7 @@ import com.kbindiedev.verse.AssetPool;
 import com.kbindiedev.verse.gfx.*;
 import com.kbindiedev.verse.gfx.impl.opengl_33.window.GLApplicationWindow;
 import com.kbindiedev.verse.gfx.impl.opengl_33.window.GLApplicationWindowSettings;
+import com.kbindiedev.verse.io.files.Files;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.*;
@@ -221,7 +222,8 @@ public class GEOpenGL33 extends GraphicsEngine {
     //TODO: store shader somewhere
     //TODO: localized predefined uniform values
     private int setupDefaultShaders() {
-        GLShader spritebatchShader = new GLShader(Shader.PredefinedAttributes.BASIC_SPRITEBATCH, UniformLayout.Predefined.SPRITEBATCH, "assets/shaders/basic_spritebatch.glsl");
+        GLShader spritebatchShader = new GLShader(Shader.PredefinedAttributes.BASIC_SPRITEBATCH,
+                UniformLayout.Predefined.SPRITEBATCH, Files.getExternalPath("assets/shaders/basic_spritebatch.glsl"));
         spritebatchShader.compile();
         AssetPool.registerShader(new Shader.Reference(this.getClass(), Shader.Predefined.BASIC_SPRITEBATCH), spritebatchShader);
 

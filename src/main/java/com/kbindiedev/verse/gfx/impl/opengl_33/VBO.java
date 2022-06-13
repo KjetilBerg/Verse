@@ -46,7 +46,7 @@ public class VBO implements IBufferable, IBufferSlicable<VBO.VBOSlice> {
         long inputDataSizeBytes = data.position() + data.limit();
         if (inputDataSizeBytes > numBytes) {
             Assertions.warn("VBO buffer limiting input buffer. old size: %d, new size: %d. position: %d, old limit: %d, new limit: %d", inputDataSizeBytes, numBytes, data.position(), data.position() + (int)numBytes, data.limit());
-            data.limit(data.position() + (int)numBytes);
+            data.limit(data.position() + (int)numBytes); // TODO: limit is bad on bytebuffers (remember to "unset" this)
         }
 
         StateTracker.pushVertexBufferObject(this);

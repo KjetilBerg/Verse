@@ -5,12 +5,16 @@ import com.kbindiedev.verse.ecs.components.SpriteRenderer;
 import com.kbindiedev.verse.ecs.components.Transform;
 import com.kbindiedev.verse.gfx.SpriteBatch;
 
-import java.util.Iterator;
+import java.util.*;
 
 public class SpriteRendererSystem extends ComponentSystem {
 
     private EntityQuery query;
     private SpriteBatch batch;
+
+    // TODO SOON: SortedFastList
+    private List<Entity> sortedQueryResult;
+    private long sortedQueryResultVersion = -1;
 
     public SpriteRendererSystem(Space space) {
         super(space);
@@ -21,6 +25,8 @@ public class SpriteRendererSystem extends ComponentSystem {
         System.out.println("SpriteRendererSystem start");
         EntityQueryDesc desc = new EntityQueryDesc(new ComponentTypeGroup(SpriteRenderer.class), null, null);
         query = desc.compile(getSpace().getEntityManager());
+
+        sortedQueryResult = new ArrayList<>();
 
 
         // TODO: from some localized system (reuse batches)?
@@ -33,23 +39,44 @@ public class SpriteRendererSystem extends ComponentSystem {
         // TODO: or have angle be part of SpriteRenderer component
     @Override
     public void render(RenderContext context) {
-        Iterator<Entity> entities = query.execute().iterator();
+        ensureTargetsUpToDate();
 
         // TODO: temp (context prepare). When change rendering pipeline, batch renders to FBO (on camera). Renderer then considers context.
         context.prepare();
         batch.setProjectionMatrix(context.getCameraComponent().projectionMatrix);
         batch.setViewMatrix(context.getCameraComponent().viewMatrix);
         batch.begin();
-        while (entities.hasNext()) {
-            Entity entity = entities.next();
+
+        for (Entity entity : sortedQueryResult) {
             Transform transform = entity.getTransform();
             SpriteRenderer sprite = entity.getComponent(SpriteRenderer.class);
 
             batch.setColor(sprite.color);
+            //batch.setZPos(transform.position.z());
+            // TODO sprite width/height ?
             batch.draw(sprite.sprite, transform.position.x(), transform.position.y(), 0f, 0f, 1f, 1f,
-                    transform.scale.x(), transform.scale.y(), transform.rotation.angle(), false, false); // TODO: is angle right?
+                    transform.scale.x(), transform.scale.y(), transform.rotation.angle(), false, false);
         }
         batch.end();
+    }
+
+    private void ensureTargetsUpToDate() {
+        if (query.getEntityTargetsContentVersion() <= sortedQueryResultVersion) return;
+        buildSortedRenderers();
+        sortedQueryResultVersion = query.getEntityTargetsContentVersion();
+    }
+
+    /** Retrieve all SpriteRenderers by query and sort them in a list. */
+    private void buildSortedRenderers() {
+        sortedQueryResult.clear();
+        Iterator<Entity> entities = query.execute().iterator();
+        while (entities.hasNext()) sortedQueryResult.add(entities.next());
+        sortedQueryResult.sort((e1, e2) -> {
+            float diff = e1.getTransform().position.z - e2.getTransform().position.z;
+            if (diff == 0) return 0;
+            if (diff < 0) return -1;
+            return 1;
+        });
     }
 
 }

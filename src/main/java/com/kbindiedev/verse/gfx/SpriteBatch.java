@@ -28,6 +28,10 @@ public class SpriteBatch {
     private int maxTextureSlots;
 
     private Pixel[] colors; //0 = top left, 1 = top right, 2 = bottom left, 3 = bottom right
+    private float[] zPos;   //0 = top left, 1 = top right, 2 = bottom left, 3 = bottom right
+
+    /* TODO: keep zPos? does not work for z-indexing transparent sprites, but may be useful to for example
+            PerspectiveCamera, ShapeRenderer, future custom depth testing (that would work for z-indexing transparent sprites) */
 
     private boolean drawing;
     private boolean globalFlipX, globalFlipY;
@@ -69,6 +73,8 @@ public class SpriteBatch {
 
         colors = new Pixel[4];
         setColor(Pixel.SOLID_WHITE);
+
+        zPos = new float[4];
 
         drawing = false;
         globalFlipX = false; globalFlipY = false;
@@ -242,18 +248,18 @@ public class SpriteBatch {
             v2 = temp;
         }
 
-        putVertex(x1, y1, colors[0], u1, v1, slot);
-        putVertex(x2, y2, colors[1], u2, v1, slot);
-        putVertex(x3, y3, colors[2], u1, v2, slot);
-        putVertex(x4, y4, colors[3], u2, v2, slot);
+        putVertex(x1, y1, zPos[0], colors[0], u1, v1, slot);
+        putVertex(x2, y2, zPos[1], colors[1], u2, v1, slot);
+        putVertex(x3, y3, zPos[2], colors[2], u1, v2, slot);
+        putVertex(x4, y4, zPos[3], colors[3], u2, v2, slot);
 
         drawsCycle++;
         drawsTotal++;
     }
 
     /** put a single vertex. position(xy), color(rgba / pixel), texcoords(uv), texture(texid) */
-    private void putVertex(float x, float y, Pixel color, float u, float v, byte texid) {
-        vertexData.putFloat(x); vertexData.putFloat(y);
+    private void putVertex(float x, float y, float z, Pixel color, float u, float v, byte texid) {
+        vertexData.putFloat(x); vertexData.putFloat(y); vertexData.putFloat(z);
         vertexData.putInt(color.packed());
         vertexData.putFloat(u); vertexData.putFloat(v);
         vertexData.put(texid);
@@ -280,6 +286,22 @@ public class SpriteBatch {
     public void setColor(Pixel color) {
         for (int i = 0; i < colors.length; ++i) colors[i] = color;
     }
+
+    /**
+     * Set the z coordinates to draw future textures at.
+     * The z coordinate can be set for each vertex.
+     * Can be safely changed after a .draw() call has been made, regardless of whether or not the cache has been flushed.
+     */
+    public void setZPos(float topLeft, float topRight, float bottomLeft, float bottomRight) {
+        zPos[0] = topLeft; zPos[1] = topRight; zPos[2] = bottomLeft; zPos[3] = bottomRight;
+    }
+
+    /**
+     * Set the z coordinate of every vertex to draw future textures at.
+     * Functionally identical to calling {@link #setZPos(float, float, float, float)} with the zPos parameter.
+     * @param zPos - The z position of all vertices.
+     */
+    public void setZPos(float zPos) { setZPos(zPos, zPos, zPos, zPos); }
 
     /**
      * Store a texture for use in this SpriteBatch.

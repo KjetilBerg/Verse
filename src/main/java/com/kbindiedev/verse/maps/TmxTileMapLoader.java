@@ -1,5 +1,8 @@
 package com.kbindiedev.verse.maps;
 
+import com.kbindiedev.verse.ecs.datastore.SpriteAnimation;
+import com.kbindiedev.verse.ecs.datastore.SpriteFrame;
+import com.kbindiedev.verse.ecs.datastore.builders.SpriteAnimationBuilder;
 import com.kbindiedev.verse.gfx.Sprite;
 import com.kbindiedev.verse.gfx.Texture;
 import com.kbindiedev.verse.gfx.impl.opengl_33.GLTexture;
@@ -18,6 +21,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 // TODO: mention unsupported parts
 
@@ -44,7 +49,8 @@ public class TmxTileMapLoader implements ITileMapLoaderImplementation {
         Tileset mainSet = new Tileset();
         for (Element tilesetElement : DOMElementUtil.getChildrenByName(document.getDocumentElement(), "tileset")) {
             Tileset tileset = loadTileset(tilesetElement);
-            mainSet.merge(tileset, 0);
+            boolean didClash = !mainSet.merge(tileset, 0, true);
+            if (didClash) Assertions.warn("unexpected clash in main merge for .tmx file");
         }
 
         return loadAllLayers(document.getDocumentElement(), mainSet, 16, 16);
@@ -100,17 +106,17 @@ public class TmxTileMapLoader implements ITileMapLoaderImplementation {
 
         TileMap map = new TileMap(layerElement.getAttribute("name"));
         while (index < indices.length) {
-            int spriteId = Integer.parseInt(indices[index]);
-            if (spriteId != 0) {
-                Sprite sprite = tileset.getSprite(spriteId);
+            int tileId = Integer.parseInt(indices[index]);
+            if (tileId != 0) {
+                Tile tile = tileset.getTile(tileId);
 
                 int column = (index % mapWidth);
                 int row = (index / mapWidth);
 
                 int xPos = column * tileWidth;
-                int yPos = row * tileHeight + (tileHeight - sprite.getHeight()); // .tmx assumes 0,0 is bottom left
+                int yPos = row * tileHeight + (tileHeight - tile.getHeight()); // .tmx assumes 0,0 is bottom left
 
-                map.addEntry(sprite, xPos, yPos); // TODO: is width and height right here?
+                map.addEntry(tile, xPos, yPos); // TODO: is width and height right here?
             }
             index++;
         }
@@ -129,7 +135,6 @@ public class TmxTileMapLoader implements ITileMapLoaderImplementation {
         int margin = DOMElementUtil.getIntAttribute(tilesetElement, "margin", 0);
 
         // TODO: <tileoffset>
-        // TODO: <animation>
 
         Tileset tileset = new Tileset(tilesetElement.getAttribute("name"));
         if (tilesetElement.hasAttribute("source")) {
@@ -137,8 +142,12 @@ public class TmxTileMapLoader implements ITileMapLoaderImplementation {
             // TODO: this needs improvement (+ offset)
             InputStream sourceStream = new FileInputStream(new File(TEMPPREFIXFILEPATH + tilesetElement.getAttribute("source"))); // TODO: filepath
             Tileset other = loadTileset(parseXML(sourceStream).getDocumentElement());
-            tileset.merge(other, firstgid - 1);
+            boolean didClash = !tileset.merge(other, firstgid - 1, true);
+            if (didClash) Assertions.warn("unexpected clash in GID's in .tmx file, from gid: %d", firstgid);
         } else {
+
+            Tileset animatedTileset = new Tileset();
+
             Node node = tilesetElement.getFirstChild();
             while (node != null) {
 
@@ -149,7 +158,8 @@ public class TmxTileMapLoader implements ITileMapLoaderImplementation {
 
                     Texture texture = new GLTexture(TEMPPREFIXFILEPATH + element.getAttribute("source")); // TODO: filepath
                     Tileset textureTileset = splitToTileset(texture, tileWidth, tileHeight, spacing, margin);
-                    tileset.merge(textureTileset, firstgid); // note: assuming only one image can exist per tileset
+                    boolean didClash = !tileset.merge(textureTileset, firstgid, true); // note: assuming only one image can exist per tileset
+                    if (didClash) Assertions.warn("unexpected clash in GID's in .tmx file, from gid: %d", firstgid);
 
                 } else if (element.getNodeName().equals("tile")) {
 
@@ -160,7 +170,31 @@ public class TmxTileMapLoader implements ITileMapLoaderImplementation {
                         Sprite sprite = new Sprite(texture);
 
                         int localgid = DOMElementUtil.getIntAttribute(imageElement, "id", 0);
-                        tileset.registerSprite(firstgid + localgid, sprite);
+                        StaticTile tile = new StaticTile(sprite);
+
+                        boolean didClash = !tileset.registerTile(firstgid + localgid, tile, true);
+                        if (didClash) Assertions.warn("unexpected clash in GID's in .tmx file, from gid: %d", firstgid + localgid);
+                    }
+
+                    int tileid = DOMElementUtil.getIntAttribute(element, "id", 0);
+                    Element animationElement = DOMElementUtil.getChildByName(element, "animation");
+                    if (animationElement != null) {
+                        SpriteAnimationBuilder builder = new SpriteAnimationBuilder();
+                        for (Element frameElement : DOMElementUtil.getChildrenByName(animationElement, "frame")) {
+                            int localgid = DOMElementUtil.getIntAttribute(frameElement, "tileid", 0);
+                            int durationMS = DOMElementUtil.getIntAttribute(frameElement, "duration", 100);
+
+                            Tile referredTile = tileset.getTile(firstgid + localgid);
+                            if (!(referredTile instanceof StaticTile)) throw new InvalidDataException("animated tile must refer to a StaticTile");
+                            Sprite sprite = ((StaticTile)referredTile).getSprite();
+
+                            SpriteFrame frame = new SpriteFrame(sprite, durationMS / 1000f);
+                            builder.addFrame(frame);
+                        }
+
+                        SpriteAnimation animation = builder.build(true);
+                        animatedTileset.registerTile(tileid, new AnimatedTile(animation), true);
+
                     }
 
 
@@ -169,6 +203,8 @@ public class TmxTileMapLoader implements ITileMapLoaderImplementation {
                 node = node.getNextSibling();
 
             }
+
+            tileset.merge(animatedTileset, firstgid, true);
 
         }
 
@@ -204,7 +240,8 @@ public class TmxTileMapLoader implements ITileMapLoaderImplementation {
                 float u1 = x / texture.getWidth();
                 float v1 = y / texture.getHeight();
                 Sprite sprite = new Sprite(texture, u1, v1, u1 + uWidth, v1 + vHeight);
-                tileset.registerSprite(id++, sprite);
+                Tile tile = new StaticTile(sprite);
+                tileset.registerTile(id++, tile, true);
             }
         }
 
