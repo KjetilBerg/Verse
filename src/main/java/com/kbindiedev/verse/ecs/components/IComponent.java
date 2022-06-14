@@ -1,5 +1,7 @@
 package com.kbindiedev.verse.ecs.components;
 
+import com.kbindiedev.verse.ecs.datastore.IConstantSize;
+
 /**
  * Represents a component that may exist on an entity.
  * Components should only contain data, with the exception of HECSScript.
@@ -11,4 +13,4 @@ package com.kbindiedev.verse.ecs.components;
  *      component in a scene (in other words, by the default implementation of double equals: ==).
  * @see HECSScript
  */
-public interface IComponent {}
+public interface IComponent extends IConstantSize {}

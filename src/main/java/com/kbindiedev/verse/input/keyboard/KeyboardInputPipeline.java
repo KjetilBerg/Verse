@@ -4,7 +4,6 @@ package com.kbindiedev.verse.input.keyboard;
 public class KeyboardInputPipeline {
 
     private KeyboardInputEventQueue queue;
-    private KeyboardInputEventProcessor processor;
     private KeyEventDispatcher dispatcher;
     private KeyEventMultiplexerListener multiplexer;
     private KeyEventTracker tracker;
@@ -14,7 +13,6 @@ public class KeyboardInputPipeline {
     public KeyboardInputPipeline() { this(new KeyboardInputEventQueue()); }
     public KeyboardInputPipeline(KeyboardInputEventQueue queue) {
         this.queue = queue;
-        processor = new KeyboardInputEventProcessor();
         dispatcher = new KeyEventDispatcher();
         multiplexer = new KeyEventMultiplexerListener();
         dispatcher.setListener(multiplexer);
@@ -27,10 +25,9 @@ public class KeyboardInputPipeline {
 
     /** Pass all events from the queue to the processor, and have it handle them. */
     public void iterate() {
-        processor.iterate(queue.getQueuedEvents());
+        tracker.iterate();
+        dispatcher.dispatch(queue.getQueuedEvents());
         queue.clear();
-
-        dispatcher.dispatch(processor.getOutputEvents());
     }
 
     public void setQueue(KeyboardInputEventQueue queue) { this.queue = queue; }
@@ -44,6 +41,5 @@ public class KeyboardInputPipeline {
     }
 
     public KeyEventTracker getTracker() { return tracker; }
-    public KeyboardInputEventProcessor getProcessor() { return processor; }
 
 }

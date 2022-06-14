@@ -103,9 +103,7 @@ public class Space {
     public InputSystem getInput() { return input; }
 
     // short-hands below (TODO: consider move)
-    /** @return an object describing the current state of the keyboard(s) associated with this Space. */
-    public KeyEventTracker getKeyboardState() { return input.getKeyboardPipeline().getTracker(); }
-    /** @return a queue of all KeyEvents that happened this frame. */
-    public Queue<KeyEvent> getAllNewKeyEvents() { return input.getKeyboardPipeline().getProcessor().getOutputEvents(); }
+    /** @return an object describing the current state of the keyboard(s) associated with this Space, and also any events that have been passed by it. */
+    public KeyEventTracker getKeyboardTracker() { return input.getKeyboardPipeline().getTracker(); }
 
 }

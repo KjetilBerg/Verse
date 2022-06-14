@@ -240,16 +240,6 @@ public class GeneralTesting implements GEOpenGL33.IRenderable, IKeyEventListener
     }
 
     @Override
-    public boolean keyDownNow(int keycode) {
-        return false;
-    }
-
-    @Override
-    public boolean keyUpNow(int keycode) {
-        return false;
-    }
-
-    @Override
     public boolean mouseDown(int screenX, int screenY, int button) {
         System.out.printf("BDOWN: x: %d, y: %d, btn: %d\n", screenX, screenY, button);
         return true;

@@ -3,6 +3,8 @@ package com.kbindiedev.verse.ecs.datastore;
 import java.util.ArrayList;
 import java.util.List;
 
+// TODO: refactor into animation package, and consider IConstantSize contract
+
 /** Describes a collection of SpriteFrames. */
 public class SpriteAnimation {
 

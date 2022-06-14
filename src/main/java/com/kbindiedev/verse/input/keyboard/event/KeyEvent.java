@@ -7,7 +7,7 @@ package com.kbindiedev.verse.input.keyboard.event;
  */
 public class KeyEvent {
 
-    public enum KeyEventType { KEYDOWN, KEYUP, KEYTYPED, KEYDOWNNOW, KEYUPNOW }
+    public enum KeyEventType { KEYDOWN, KEYUP, KEYTYPED }
 
     private KeyEventType type;
     private int keycode;

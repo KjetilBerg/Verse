@@ -79,7 +79,7 @@ public class TmxTileMapLoader implements ITileMapLoaderImplementation {
 
     // TODO tileoffset etc
     private LayeredTileMap loadAllLayers(Element root, Tileset tileset, int tileWidth, int tileHeight) {
-        LayeredTileMap map = new LayeredTileMap();
+        LayeredTileMap map = new LayeredTileMap(tileset);
         int index = 0;
         for (Element layerElement : DOMElementUtil.getChildrenByName(root, "layer")) {
             TileMap tilemap = loadLayer(layerElement, tileset, tileWidth, tileHeight);

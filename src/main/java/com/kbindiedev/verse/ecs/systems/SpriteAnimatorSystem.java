@@ -31,6 +31,7 @@ public class SpriteAnimatorSystem extends ComponentSystem {
             SpriteRenderer renderer = entity.getComponent(SpriteRenderer.class);
 
             SpriteAnimation animation = animator.animation;
+            if (animation.getFrames().size() == 0) continue; // TODO: more checks
 
             // TODO: instead, create some wrapper for SpriteAnimation, so that direct access is easier for systems
             animation.setCurrentFrameSeconds(animation.getCurrentFrameSeconds() + dt);

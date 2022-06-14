@@ -25,18 +25,4 @@ public interface IKeyEventListener {
      */
     boolean keyTyped(int keycode);
 
-    /**
-     * Called when a certain key was pressed this iteration (generally frame).
-     * @param keycode - The keycode, {@link Keys}.
-     * @return true if the event was handled, false otherwise.
-     */
-    boolean keyDownNow(int keycode);
-
-    /**
-     * Called when a certain key was released this iteration (generally frame).
-     * @param keycode - The keycode, {@link Keys}.
-     * @return true if the event was handled, false otherwise.
-     */
-    boolean keyUpNow(int keycode);
-
 }

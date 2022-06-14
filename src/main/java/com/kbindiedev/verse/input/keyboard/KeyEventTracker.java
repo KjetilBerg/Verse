@@ -1,16 +1,14 @@
 package com.kbindiedev.verse.input.keyboard;
 
-import com.kbindiedev.verse.profiling.Assertions;
+import com.kbindiedev.verse.input.keyboard.event.KeyEvent;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Queue;
 
 /**
- * A handler for keyboard inputs.
- * Takes in KeyboardInputEvents and generates KeyEvents.
- * You can query this class for states.
+ * Keeps track of KeyEvents and allows you to check key states.
+ * Also allows you to check for several key presses during a single iteration (very niche use case).
  *
  * All inputs are related to what you find in {@link Keys}.
  *
@@ -19,28 +17,19 @@ import java.util.Iterator;
  */
 public class KeyEventTracker implements IKeyEventListener {
 
-    private enum KeyState { DOWN, UP, TYPED, DOWNNOW, UPNOW }
-
-    private HashMap<Integer, KeyState> keyStates = new HashMap<>();   // key states by key code. null = released
+    private HashMap<Integer, Boolean> keyStates = new HashMap<>();          // key states by key code. true = down, false = up, null = up
+    private HashMap<Integer, Integer> timesTypedThisIteration = new HashMap<>(); // key code to "number of times typed this iteration".
+    private HashMap<Integer, Integer> timesDownThisIteration = new HashMap<>();  // key code to "number of times down  this iteration".
+    private HashMap<Integer, Integer> timesUpThisIteration = new HashMap<>();    // key code to "number of times up    this iteration".
+    private Queue<KeyEvent> allEventsThisIteration = new LinkedList<>();
 
     /**
      * Check if a key is pressed.
-     * @param keycode - The keycode {@see Keys}
-     * @return true if key by keycode is pressed, false otherwise
+     * @param keycode - The keycode {@see Keys}.
+     * @return true if key by keycode is pressed, false otherwise.
      */
     public boolean isKeyDown(int keycode) {
-        KeyState state = getKeyState(keycode);
-        return (state == KeyState.DOWN || state == KeyState.TYPED || state == KeyState.DOWNNOW);
-    }
-
-    /**
-     * Check if a key is 'typed'.
-     * A key is 'typed' when a keyboard sends an event to OS system input.
-     * @param keycode - The keycode {@see Keys}
-     * @return true if key by keycode is pressed, false otherwise
-     */
-    public boolean isKeyTyped(int keycode) {
-        return getKeyState(keycode) == KeyState.TYPED;
+        return keyStates.getOrDefault(keycode, false);
     }
 
     /**
@@ -49,7 +38,7 @@ public class KeyEventTracker implements IKeyEventListener {
      * @return true if key by keycode was pressed this iteration.
      */
     public boolean wasKeyPressedThisIteration(int keycode) {
-        return getKeyState(keycode) == KeyState.DOWNNOW;
+        return timesKeyDownThisIteration(keycode) > 0;
     }
 
     /**
@@ -58,38 +47,77 @@ public class KeyEventTracker implements IKeyEventListener {
      * @return true if key by keycode was released this iteration.
      */
     public boolean wasKeyReleasedThisIteration(int keycode) {
-        return getKeyState(keycode) == KeyState.UPNOW;
+        return timesKeyUpThisIteration(keycode) > 0;
     }
 
-    private KeyState getKeyState(int keycode) { return keyStates.getOrDefault(keycode, KeyState.UP); }
+    /**
+     * Check if a key is 'typed'.
+     * A key is 'typed' when a keyboard sends an event to OS system input.
+     * @param keycode - The keycode {@see Keys}
+     * @return true if key by keycode is pressed, false otherwise
+     */
+    public boolean wasKeyTypedThisIteration(int keycode) {
+        return timesKeyTypedThisIteration(keycode) > 0;
+    }
+
+    /**
+     * Get the number of times a key was pressed this iteration.
+     * @param keycode - The keycode {@link Keys}.
+     * @return the number of times a key was pressed this iteration, 0 or more.
+     */
+    public int timesKeyDownThisIteration(int keycode) {
+        return timesDownThisIteration.getOrDefault(keycode, 0);
+    }
+
+    /**
+     * Get the number of times a key was released this iteration.
+     * @param keycode - The keycode {@link Keys}.
+     * @return the number of times a key was released this iteration, 0 or more.
+     */
+    public int timesKeyUpThisIteration(int keycode) {
+        return timesUpThisIteration.getOrDefault(keycode, 0);
+    }
+
+    /**
+     * Get the number of times a key was typed this iteration.
+     * @param keycode - The keycode {@link Keys}.
+     * @return the number of times a key was typed this iteration, 0 or more.
+     */
+    public int timesKeyTypedThisIteration(int keycode) {
+        return timesTypedThisIteration.getOrDefault(keycode, 0);
+    }
+
+    public Queue<KeyEvent> getAllEventsThisIteration() { return allEventsThisIteration; }
 
     @Override
     public boolean keyDown(int keycode) {
-        keyStates.put(keycode, KeyState.DOWN);
+        keyStates.put(keycode, true);
+        timesDownThisIteration.put(keycode, timesDownThisIteration.getOrDefault(keycode, 0) + 1);
+        allEventsThisIteration.add(new KeyEvent(KeyEvent.KeyEventType.KEYDOWN, keycode));
         return false;
     }
 
     @Override
     public boolean keyUp(int keycode) {
-        keyStates.put(keycode, KeyState.UP);
+        keyStates.put(keycode, false);
+        timesUpThisIteration.put(keycode, timesUpThisIteration.getOrDefault(keycode, 0) + 1);
+        allEventsThisIteration.add(new KeyEvent(KeyEvent.KeyEventType.KEYUP, keycode));
         return false;
     }
 
     @Override
     public boolean keyTyped(int keycode) {
-        keyStates.put(keycode, KeyState.TYPED);
+        timesTypedThisIteration.put(keycode, timesTypedThisIteration.getOrDefault(keycode, 0) + 1);
+        allEventsThisIteration.add(new KeyEvent(KeyEvent.KeyEventType.KEYTYPED, keycode));
         return false;
     }
 
-    @Override
-    public boolean keyDownNow(int keycode) {
-        keyStates.put(keycode, KeyState.DOWNNOW);
-        return false;
+    /** Reset current iteration. */
+    public void iterate() {
+        timesDownThisIteration.clear();
+        timesUpThisIteration.clear();
+        timesTypedThisIteration.clear();
+        allEventsThisIteration.clear();
     }
 
-    @Override
-    public boolean keyUpNow(int keycode) {
-        keyStates.put(keycode, KeyState.UPNOW);
-        return false;
-    }
 }

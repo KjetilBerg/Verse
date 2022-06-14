@@ -42,21 +42,4 @@ public class KeyEventMultiplexerListener implements IKeyEventListener {
         return false;
     }
 
-    @Override
-    public boolean keyDownNow(int keycode) {
-        for (IKeyEventListener listener : listeners) {
-            boolean handled = listener.keyDownNow(keycode);
-            if (handled) return true;
-        }
-        return false;
-    }
-
-    @Override
-    public boolean keyUpNow(int keycode) {
-        for (IKeyEventListener listener : listeners) {
-            boolean handled = listener.keyUpNow(keycode);
-            if (handled) return true;
-        }
-        return false;
-    }
 }

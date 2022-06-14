@@ -13,6 +13,14 @@ public class TileMap {
     private String name;
     private Collection<Entry> entries;
 
+    /*
+    public TileMap(Tileset tileset) { this(tileset, ""); }
+    public TileMap(Tileset tileset, String name) {
+        this.tileset = tileset;
+        this.name = name;
+        entries = new ArrayList<>();
+    }
+    */
     public TileMap() { this(""); }
     public TileMap(String name) {
         this.name = name;
@@ -21,6 +29,7 @@ public class TileMap {
 
     public String getName()  { return name; }
 
+    // TODO: replace with addEntry(int tileid, int x, int y)... ?
     public void addEntry(Tile tile, int x, int y) {
         entries.add(new Entry(tile, x, y, tile.getWidth(), tile.getHeight()));
     }

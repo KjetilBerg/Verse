@@ -2,6 +2,8 @@ package com.kbindiedev.verse.ecs.datastore;
 
 import com.kbindiedev.verse.gfx.Sprite;
 
+// TODO: refactor into animation package, and consider IConstantSize contract
+
 /** Describes a frame of an animation. */
 public class SpriteFrame {
 

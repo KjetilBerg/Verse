@@ -51,6 +51,8 @@ public class SpriteRendererSystem extends ComponentSystem {
             Transform transform = entity.getTransform();
             SpriteRenderer sprite = entity.getComponent(SpriteRenderer.class);
 
+            if (sprite.sprite == null) continue;
+
             batch.setColor(sprite.color);
             //batch.setZPos(transform.position.z());
             // TODO sprite width/height ?

@@ -9,12 +9,14 @@ import java.util.*;
  */
 public class LayeredTileMap {
 
+    private Tileset tileset; // TODO: enforce tileset
     private HashMap<Integer, TileMap> layers;
 
     // TODO SOON: SortedFastList
     private List<Integer> layersSorted;
 
-    public LayeredTileMap() {
+    public LayeredTileMap(Tileset tileset) {
+        this.tileset = tileset;
         layers = new HashMap<>();
 
         //https://stackoverflow.com/questions/4903611/java-list-sorting-is-there-a-way-to-keep-a-list-permantly-sorted-automatically
@@ -28,6 +30,8 @@ public class LayeredTileMap {
             }
         };
     }
+
+    public Tileset getTileset() { return tileset; }
 
     public TileMap getForLayer(int layer) {
         ensureExistsLayer(layer);
