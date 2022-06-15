@@ -3,6 +3,8 @@ package com.kbindiedev.verse.system;
 import java.lang.reflect.Array;
 import java.util.*;
 
+// TODO: cachedList may be unnecessary
+
 /**
  * A collection that has O(1) insertion, O(1) removal and O(1) lookup.
  * Added elements are always added to the end of the collection, and the order is always maintained.
@@ -176,6 +178,7 @@ public class FastList<T> implements Collection<T> {
         return node.value;
     }
 
+    // TODO: rename to getCachedList (or remove entirely ?)
     /**
      * Get this collection as a list.
      * The order of the list is the same as the order of this collection (ordered by registration order).

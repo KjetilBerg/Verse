@@ -4,14 +4,11 @@ import com.kbindiedev.verse.ecs.*;
 import com.kbindiedev.verse.ecs.components.Camera;
 import com.kbindiedev.verse.ecs.components.SpriteAnimator;
 import com.kbindiedev.verse.ecs.components.Transform;
-import com.kbindiedev.verse.ecs.datastore.SpriteAnimation;
 import com.kbindiedev.verse.ecs.systems.ComponentSystem;
 import com.kbindiedev.verse.input.keyboard.KeyEventTracker;
 import com.kbindiedev.verse.input.keyboard.Keys;
-import com.kbindiedev.verse.util.view.FitViewMapper;
 import org.joml.Vector2f;
 
-import java.awt.*;
 import java.util.Iterator;
 
 public class ExampleSystem extends ComponentSystem {
@@ -46,15 +43,16 @@ public class ExampleSystem extends ComponentSystem {
             SpriteAnimator animator = entity.getComponent(SpriteAnimator.class);
 
             if (next) {
-                component.currentIndex = (component.currentIndex + 1) % component.animations.size();
+                //component.currentIndex = (component.currentIndex + 1) % component.animations.size();
+                animator.properties.put("some_trigger", true);
             }
             if (prev) {
-                component.currentIndex = (component.currentIndex + component.animations.size() - 1) % component.animations.size();
+                //component.currentIndex = (component.currentIndex + component.animations.size() - 1) % component.animations.size();
+                animator.properties.put("some_trigger", true);
             }
 
-            animator.animation = component.animations.get(component.currentIndex);
+
         }
-        //System.out.println("update: " + dt);
     }
 
     @Override

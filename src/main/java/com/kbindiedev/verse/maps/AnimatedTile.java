@@ -1,6 +1,6 @@
 package com.kbindiedev.verse.maps;
 
-import com.kbindiedev.verse.ecs.datastore.SpriteAnimation;
+import com.kbindiedev.verse.animation.SpriteAnimation;
 
 /** Represents a Tile that is a SpriteAnimation */
 public class AnimatedTile extends Tile {

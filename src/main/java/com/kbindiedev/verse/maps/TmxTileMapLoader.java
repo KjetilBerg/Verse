@@ -1,8 +1,7 @@
 package com.kbindiedev.verse.maps;
 
-import com.kbindiedev.verse.ecs.datastore.SpriteAnimation;
-import com.kbindiedev.verse.ecs.datastore.SpriteFrame;
-import com.kbindiedev.verse.ecs.datastore.builders.SpriteAnimationBuilder;
+import com.kbindiedev.verse.animation.SpriteAnimation;
+import com.kbindiedev.verse.animation.SpriteFrame;
 import com.kbindiedev.verse.gfx.Sprite;
 import com.kbindiedev.verse.gfx.Texture;
 import com.kbindiedev.verse.gfx.impl.opengl_33.GLTexture;
@@ -21,8 +20,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
 
 // TODO: mention unsupported parts
 
@@ -179,7 +176,7 @@ public class TmxTileMapLoader implements ITileMapLoaderImplementation {
                     int tileid = DOMElementUtil.getIntAttribute(element, "id", 0);
                     Element animationElement = DOMElementUtil.getChildByName(element, "animation");
                     if (animationElement != null) {
-                        SpriteAnimationBuilder builder = new SpriteAnimationBuilder();
+                        SpriteAnimation animation = new SpriteAnimation();
                         for (Element frameElement : DOMElementUtil.getChildrenByName(animationElement, "frame")) {
                             int localgid = DOMElementUtil.getIntAttribute(frameElement, "tileid", 0);
                             int durationMS = DOMElementUtil.getIntAttribute(frameElement, "duration", 100);
@@ -188,11 +185,9 @@ public class TmxTileMapLoader implements ITileMapLoaderImplementation {
                             if (!(referredTile instanceof StaticTile)) throw new InvalidDataException("animated tile must refer to a StaticTile");
                             Sprite sprite = ((StaticTile)referredTile).getSprite();
 
-                            SpriteFrame frame = new SpriteFrame(sprite, durationMS / 1000f);
-                            builder.addFrame(frame);
+                            animation.createFrame(sprite, durationMS / 1000f);
                         }
 
-                        SpriteAnimation animation = builder.build(true);
                         animatedTileset.registerTile(tileid, new AnimatedTile(animation), true);
 
                     }

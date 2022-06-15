@@ -1,14 +1,14 @@
 package com.kbindiedev.verse;
 
+import com.kbindiedev.verse.animation.SpriteAnimationMap;
 import com.kbindiedev.verse.ecs.Entity;
-import com.kbindiedev.verse.ecs.EntityManager;
 import com.kbindiedev.verse.ecs.RenderContext;
 import com.kbindiedev.verse.ecs.Space;
 import com.kbindiedev.verse.ecs.components.Camera;
 import com.kbindiedev.verse.ecs.components.SpriteAnimator;
 import com.kbindiedev.verse.ecs.components.SpriteRenderer;
 import com.kbindiedev.verse.ecs.components.Transform;
-import com.kbindiedev.verse.ecs.datastore.SpriteAnimation;
+import com.kbindiedev.verse.animation.SpriteAnimation;
 import com.kbindiedev.verse.ecs.generators.LayeredTileMapToEntitiesGenerator;
 import com.kbindiedev.verse.ecs.systems.CameraSystem;
 import com.kbindiedev.verse.ecs.systems.RenderContextPreparerSystem;
@@ -23,12 +23,9 @@ import com.kbindiedev.verse.io.files.Files;
 import com.kbindiedev.verse.maps.LayeredTileMap;
 import com.kbindiedev.verse.maps.TileMapLoader;
 import com.kbindiedev.verse.maps.TilesetResourceFetcher;
-import org.lwjgl.opengl.GL30;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 
 public class Main {
@@ -83,6 +80,11 @@ public class Main {
             SpriteAnimation playerSlash = TilesetResourceFetcher.getAnimation(testTileMap.getTileset(), 346 + 12);
             SpriteAnimation playerDie = TilesetResourceFetcher.getAnimation(testTileMap.getTileset(), 346 + 24);
 
+            SpriteAnimationMap map = new SpriteAnimationMap();
+            map.addAnimation(playerWalk);
+            map.addAnimation(playerRun);
+            map.addAnimation(playerSlash);
+            map.addAnimation(playerDie);
 
             ExampleComponent c1 = new ExampleComponent();
             Transform c1Loc = new Transform();
@@ -92,12 +94,9 @@ public class Main {
             c1Loc.scale.x = playerWalk.getFrames().get(0).getSprite().getWidth();
             c1Loc.scale.y = playerWalk.getFrames().get(0).getSprite().getHeight();
 
-            c1.animations = new ArrayList<>(4);
-            c1.animations.add(playerWalk);
-            c1.animations.add(playerRun);
-            c1.animations.add(playerSlash);
-            c1.animations.add(playerDie);
-            space.getEntityManager().instantiate(c1, new SpriteAnimator(), new SpriteRenderer(), c1Loc);
+            SpriteAnimator animator = new SpriteAnimator();
+            animator.map = map;
+            space.getEntityManager().instantiate(c1, animator, new SpriteRenderer(), c1Loc);
         } catch (IOException e) {
             e.printStackTrace();
         }

@@ -1,6 +1,6 @@
 package com.kbindiedev.verse.maps;
 
-import com.kbindiedev.verse.ecs.datastore.SpriteAnimation;
+import com.kbindiedev.verse.animation.SpriteAnimation;
 import com.kbindiedev.verse.gfx.Sprite;
 
 /** Allows you to fetch certain resources from {@link Tileset}. */
