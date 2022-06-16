@@ -1,5 +1,6 @@
 package com.kbindiedev.verse.ecs.systems;
 
+import com.kbindiedev.verse.animation.AnimationController;
 import com.kbindiedev.verse.ecs.*;
 import com.kbindiedev.verse.ecs.components.SpriteAnimator;
 import com.kbindiedev.verse.ecs.components.SpriteRenderer;
@@ -29,16 +30,16 @@ public class SpriteAnimatorSystem extends ComponentSystem {
             SpriteAnimator animator = entity.getComponent(SpriteAnimator.class);
             SpriteRenderer renderer = entity.getComponent(SpriteRenderer.class);
 
-            animator.currentAnimation = animator.map.pickAnimation(animator.currentAnimation, animator.properties);
+            AnimationController<SpriteAnimation> controller = animator.controller;
 
-            SpriteAnimation animation = animator.currentAnimation;
+            controller.getContext().setDeltaTime(dt);
+            SpriteAnimation animation = controller.pickAnimation();
+
+            float leftoverDeltatime = controller.getContext().getDeltaTime();
+            animation.progress(leftoverDeltatime);
 
             if (animation.getFrames().size() == 0) continue; // TODO: more checks
 
-            // TODO: instead, create some wrapper for SpriteAnimation, so that direct access is easier for systems
-
-            // TODO better
-            animation.progress(dt);
             renderer.sprite = animation.getCurrentSprite();
 
         }

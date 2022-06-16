@@ -7,6 +7,7 @@ import com.kbindiedev.verse.ecs.components.Transform;
 import com.kbindiedev.verse.ecs.systems.ComponentSystem;
 import com.kbindiedev.verse.input.keyboard.KeyEventTracker;
 import com.kbindiedev.verse.input.keyboard.Keys;
+import com.kbindiedev.verse.util.Trigger;
 import org.joml.Vector2f;
 
 import java.util.Iterator;
@@ -15,6 +16,10 @@ public class ExampleSystem extends ComponentSystem {
 
     private EntityQuery query;
     private EntityQuery query2;
+
+    private Trigger nextTrigger;
+    private Trigger prevTrigger;
+    private Trigger attackTrigger;
 
     public ExampleSystem(Space space) {
         super(space);
@@ -27,6 +32,10 @@ public class ExampleSystem extends ComponentSystem {
         query = desc.compile(getSpace().getEntityManager());
 
         query2 = new EntityQueryDesc(new ComponentTypeGroup(Camera.class), null, null).compile(getSpace().getEntityManager());
+
+        nextTrigger = new Trigger();
+        prevTrigger = new Trigger();
+        attackTrigger = new Trigger();
     }
 
     @Override
@@ -36,22 +45,22 @@ public class ExampleSystem extends ComponentSystem {
         boolean next = getSpace().getKeyboardTracker().wasKeyReleasedThisIteration(Keys.KEY_L);
         boolean prev = getSpace().getKeyboardTracker().wasKeyReleasedThisIteration(Keys.KEY_K);
 
+        nextTrigger.reset();
+        prevTrigger.reset();
+        if (next) nextTrigger.trigger();
+        if (prev) prevTrigger.trigger();
+
+        if (getSpace().getKeyboardTracker().wasKeyPressedThisIteration(Keys.KEY_M)) attackTrigger.trigger();
+
         while (entities.hasNext()) {
             Entity entity = entities.next();
 
             ExampleComponent component = entity.getComponent(ExampleComponent.class);
             SpriteAnimator animator = entity.getComponent(SpriteAnimator.class);
 
-            if (next) {
-                //component.currentIndex = (component.currentIndex + 1) % component.animations.size();
-                animator.properties.put("some_trigger", true);
-            }
-            if (prev) {
-                //component.currentIndex = (component.currentIndex + component.animations.size() - 1) % component.animations.size();
-                animator.properties.put("some_trigger", true);
-            }
-
-
+            animator.controller.getContext().getProperties().put("next", nextTrigger);
+            animator.controller.getContext().getProperties().put("prev", prevTrigger);
+            animator.controller.getContext().getProperties().put("attack", attackTrigger);
         }
     }
 

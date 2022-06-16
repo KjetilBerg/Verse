@@ -1,54 +1,94 @@
 package com.kbindiedev.verse.animation;
 
-import com.kbindiedev.verse.util.Properties;
+import com.kbindiedev.verse.profiling.Assertions;
+import com.kbindiedev.verse.state.StateTransition;
 import com.kbindiedev.verse.util.condition.Condition;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 /** Describes a condition that must be met in order to arrive at a certain Animation. */
-public class AnimationTransition<T extends Animation> {
-
-    private T fromAnimation;
-    private T toAnimation;
+public class AnimationTransition<T extends Animation> extends StateTransition<T, AnimatorContext> {
 
     private float exitTime;             // the exit time
     private boolean exitTimeAsSeconds;  // true = exitTime is treated as "seconds into animation", false = treated as seconds = animationDuration * exitTime
-    private WhenExitTime exactExitTime;      // true = transition can only occur during this exitTime's exact moment, false = transition can happen any time after exitTime
+    private ExitTimeStrategy strategy;
 
-    private Condition condition;
-
-    public AnimationTransition(T fromAnimation, T toAnimation, Condition condition) {
-        this.fromAnimation = fromAnimation;
-        this.toAnimation = toAnimation;
-        this.condition = condition;
-
-        exitTime = 0f;
-        exitTimeAsSeconds = false;
-        exactExitTime = WhenExitTime.AFTER_LOCAL;
+    public AnimationTransition(T animationFrom, T animationTo, Condition condition) {
+        this(animationFrom, animationTo, condition, 0f, false, ExitTimeStrategy.AFTER_GLOBAL);
     }
 
-    public T getFromAnimation() { return fromAnimation; }
-    public T getToAnimation() { return toAnimation; }
-    public boolean conditionMet(Properties properties) {
-        // TODO: if exactExitTime, need to keep track of last time checked etc.
-        if (exactExitTime == WhenExitTime.EXACT) throw new NotImplementedException();
+    public AnimationTransition(T animationFrom, T animationTo, Condition condition, float exitTime, boolean exitTimeAsSeconds, ExitTimeStrategy strategy) {
+        super(animationFrom, animationTo, condition);
 
-        float secondsPassed = getExitTimeAsSeconds();
+        this.exitTime = exitTime;
+        this.exitTimeAsSeconds = exitTimeAsSeconds;
+        this.strategy = strategy;
+    }
 
-        float secondsIntoAnimation = fromAnimation.getSecondsIntoAnimation();
-        if (exactExitTime == WhenExitTime.AFTER_GLOBAL) secondsIntoAnimation += fromAnimation.getLoopCount() * fromAnimation.getDuration();
+    public T getAnimationFrom() { return getStateFrom(); }
+    public T getAnimationTo() { return getStateTo(); }
 
-        if (secondsPassed < secondsIntoAnimation) return false;
+    @Override
+    public boolean canTransition(AnimatorContext context) {
+        if (!canTransitionByExitTime(context.getDeltaTime())) return false;
+        return super.canTransition(context);
+    }
 
-        return condition.pass(properties);
+    @Override
+    public T makeTransition(AnimatorContext context, boolean clean) {
+        float leftoverTime = getLeftoverTime(context.getDeltaTime());
+        context.setDeltaTime(leftoverTime);
+
+        T animation = super.makeTransition(context, clean);
+        animation.setSecondsIntoAnimation(0);
+        animation.setLoopCount(0);
+
+        System.out.println("TRANSITION");
+
+        return animation;
+    }
+
+    private boolean canTransitionByExitTime(float dt) {
+        return dt - getTimeUntilReachExitTime() >= 0;
+    }
+
+    /** @return the left over time, in seconds, from the time that would be consumed before I could properly transition. */
+    public float getLeftoverTime(float dt) {
+        return dt - getTimeUntilReachExitTime();
+    }
+
+    /** @return the time in seconds until exitTime would be satisfied, by the stored fromAnimation. always >= 0. */
+    public float getTimeUntilReachExitTime() {
+
+        Animation animationFrom = getAnimationFrom();
+
+        float exitTime = getExitTimeAsSeconds();
+        float secondsIntoAnimation = animationFrom.getSecondsIntoAnimation();
+
+        float time;
+        switch (strategy) {
+            case EXACT:
+                time = exitTime - secondsIntoAnimation;
+                while (time < 0) time += animationFrom.getDuration();
+                return time;
+            case AFTER_LOCAL:
+                time = exitTime - secondsIntoAnimation;
+                return Math.max(time, 0);
+            case AFTER_GLOBAL:
+                time = exitTime - (secondsIntoAnimation + animationFrom.getLoopCount() * animationFrom.getDuration());
+                return Math.max(time, 0);
+            default:
+                Assertions.warn("unknown strategy: %s", strategy.name());
+        }
+
+        return 0f;
+
     }
 
     private float getExitTimeAsSeconds() {
-        if (exitTimeAsSeconds) return exitTime * fromAnimation.getDuration();
-        return exitTime;
+        if (exitTimeAsSeconds) return exitTime;
+        return exitTime * getAnimationFrom().getDuration();
     }
 
-    // TODO: needs better naming. also refactor
-    private enum WhenExitTime {
+    public enum ExitTimeStrategy {
         EXACT, AFTER_LOCAL, AFTER_GLOBAL
     }
 

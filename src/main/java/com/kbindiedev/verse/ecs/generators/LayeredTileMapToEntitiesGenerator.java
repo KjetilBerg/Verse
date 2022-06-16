@@ -1,5 +1,7 @@
 package com.kbindiedev.verse.ecs.generators;
 
+import com.kbindiedev.verse.animation.AnimationController;
+import com.kbindiedev.verse.animation.AnimatorContext;
 import com.kbindiedev.verse.animation.SpriteAnimation;
 import com.kbindiedev.verse.animation.SpriteAnimationMap;
 import com.kbindiedev.verse.ecs.Entity;
@@ -72,9 +74,10 @@ public class LayeredTileMapToEntitiesGenerator {
 
                     // TODO TEMP: make dummy AnimationMap
                     SpriteAnimationMap map = new SpriteAnimationMap();
-                    map.addAnimation(tile.getAnimation());
+                    map.setEntryState(tile.getAnimation());
 
-                    spriteAnimator.map = map;
+                    AnimationController<SpriteAnimation> controller = new AnimationController<>(map, new AnimatorContext());
+                    spriteAnimator.controller = controller;
 
                     list.add(spriteAnimator);
                     list.add(spriteRenderer);

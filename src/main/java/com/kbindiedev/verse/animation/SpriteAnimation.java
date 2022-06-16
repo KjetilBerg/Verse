@@ -32,27 +32,22 @@ public class SpriteAnimation extends Animation {
         return frame;
     }
 
-    // TODO: optimize this ?? if frames are to be iterated, then the tree-like nature of SortedFastList could be utilized
     public List<SpriteFrame> getFrames() { return frames.getCachedList(); }
-
     public SpriteFrame getCurrentFrame() { return getFrames().get(currentFrameIndex); }
     public Sprite getCurrentSprite() { return getCurrentFrame().getSprite(); }
 
     @Override
     public void setSecondsIntoAnimation(float secondsIntoAnimation) {
-        progressCurrentFrame(secondsIntoAnimation - this.secondsIntoAnimation);
+        float dt = secondsIntoAnimation - this.secondsIntoAnimation;    // TODO: sortedFastList getSurroundingEntries ??
+        while (dt < 0) dt += getDuration();
+        progressCurrentFrame(dt);
         super.setSecondsIntoAnimation(secondsIntoAnimation);
-    }
-
-    /** Calculate my current frame by "secondsIntoFrame". */
-    private void recalculateCurrentFrame() {
-        currentFrameIndex = 0;
-        currentFrameSeconds = 0;
-        progressCurrentFrame(secondsIntoAnimation);
     }
 
     /** Go "dt" time forward in this animation. */
     private void progressCurrentFrame(float dt) {
+        if (!doesLoop() && dt + secondsIntoAnimation == durationSeconds) return; // TODO: sortedFastList getSurroundingEntries would fix this (weird if-case).
+
         currentFrameSeconds += dt;
         SpriteFrame frame = getCurrentFrame();
         while (currentFrameSeconds >= frame.getDuration()) {

@@ -12,4 +12,7 @@ public class ConditionAnd extends Condition {
     @Override
     public boolean pass(Properties properties) { return c1.pass(properties) && c2.pass(properties); }
 
+    @Override
+    public void success(Properties properties) { c1.success(properties); c2.success(properties); }
+
 }

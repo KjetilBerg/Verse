@@ -1,6 +1,6 @@
 package com.kbindiedev.verse;
 
-import com.kbindiedev.verse.animation.SpriteAnimationMap;
+import com.kbindiedev.verse.animation.*;
 import com.kbindiedev.verse.ecs.Entity;
 import com.kbindiedev.verse.ecs.RenderContext;
 import com.kbindiedev.verse.ecs.Space;
@@ -8,7 +8,6 @@ import com.kbindiedev.verse.ecs.components.Camera;
 import com.kbindiedev.verse.ecs.components.SpriteAnimator;
 import com.kbindiedev.verse.ecs.components.SpriteRenderer;
 import com.kbindiedev.verse.ecs.components.Transform;
-import com.kbindiedev.verse.animation.SpriteAnimation;
 import com.kbindiedev.verse.ecs.generators.LayeredTileMapToEntitiesGenerator;
 import com.kbindiedev.verse.ecs.systems.CameraSystem;
 import com.kbindiedev.verse.ecs.systems.RenderContextPreparerSystem;
@@ -23,10 +22,12 @@ import com.kbindiedev.verse.io.files.Files;
 import com.kbindiedev.verse.maps.LayeredTileMap;
 import com.kbindiedev.verse.maps.TileMapLoader;
 import com.kbindiedev.verse.maps.TilesetResourceFetcher;
+import com.kbindiedev.verse.util.condition.Condition;
+import com.kbindiedev.verse.util.condition.ConditionEqual;
+import com.kbindiedev.verse.util.condition.ConditionTrigger;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 
 public class Main {
 
@@ -80,11 +81,28 @@ public class Main {
             SpriteAnimation playerSlash = TilesetResourceFetcher.getAnimation(testTileMap.getTileset(), 346 + 12);
             SpriteAnimation playerDie = TilesetResourceFetcher.getAnimation(testTileMap.getTileset(), 346 + 24);
 
+            playerSlash.setLooping(false);
+
             SpriteAnimationMap map = new SpriteAnimationMap();
-            map.addAnimation(playerWalk);
-            map.addAnimation(playerRun);
-            map.addAnimation(playerSlash);
-            map.addAnimation(playerDie);
+
+            Condition next = new ConditionTrigger("next");
+            Condition prev = new ConditionTrigger("prev");
+            Condition attack = new ConditionTrigger("attack");
+
+            map.setEntryState(playerWalk);
+
+            map.addTransition(new AnimationTransition<>(playerWalk, playerRun, next));
+            map.addTransition(new AnimationTransition<>(playerRun, playerSlash, next));
+            map.addTransition(new AnimationTransition<>(playerSlash, playerDie, next, 1f, false, AnimationTransition.ExitTimeStrategy.AFTER_LOCAL));
+            map.addTransition(new AnimationTransition<>(playerDie, playerWalk, next));
+
+            map.addTransition(new AnimationTransition<>(playerRun, playerWalk, prev));
+            map.addTransition(new AnimationTransition<>(playerSlash, playerRun, prev, 1f, false, AnimationTransition.ExitTimeStrategy.AFTER_LOCAL));
+            map.addTransition(new AnimationTransition<>(playerDie, playerSlash, prev));
+            map.addTransition(new AnimationTransition<>(playerWalk, playerDie, prev));
+
+            map.addTransition(new AnimationTransition<>(playerWalk, playerSlash, attack));
+            map.addTransition(new AnimationTransition<>(playerSlash, playerWalk, Condition.NONE, 1f, false, AnimationTransition.ExitTimeStrategy.AFTER_LOCAL));
 
             ExampleComponent c1 = new ExampleComponent();
             Transform c1Loc = new Transform();
@@ -94,8 +112,10 @@ public class Main {
             c1Loc.scale.x = playerWalk.getFrames().get(0).getSprite().getWidth();
             c1Loc.scale.y = playerWalk.getFrames().get(0).getSprite().getHeight();
 
+            AnimationController<SpriteAnimation> controller = new AnimationController<>(map, new AnimatorContext());
+
             SpriteAnimator animator = new SpriteAnimator();
-            animator.map = map;
+            animator.controller = controller;
             space.getEntityManager().instantiate(c1, animator, new SpriteRenderer(), c1Loc);
         } catch (IOException e) {
             e.printStackTrace();
