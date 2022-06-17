@@ -1,4 +1,4 @@
-package com.kbindiedev.verse;
+package com.kbindiedev.verse.z_example;
 
 import com.kbindiedev.verse.ecs.components.IComponent;
 import com.kbindiedev.verse.animation.SpriteAnimation;

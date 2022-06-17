@@ -82,7 +82,8 @@ public class GEOpenGL33 extends GraphicsEngine {
         glfwDestroyWindow(window);
 
         glfwTerminate();
-        glfwSetErrorCallback(null).free();
+        GLFWErrorCallback c = glfwSetErrorCallback(null);
+        if (c != null) c.free();
     }
 
     @Override

@@ -1,4 +1,4 @@
-package com.kbindiedev.verse;
+package com.kbindiedev.verse.z_example;
 
 import com.kbindiedev.verse.ecs.*;
 import com.kbindiedev.verse.ecs.components.Camera;

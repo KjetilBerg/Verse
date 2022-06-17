@@ -22,9 +22,13 @@ import com.kbindiedev.verse.io.files.Files;
 import com.kbindiedev.verse.maps.LayeredTileMap;
 import com.kbindiedev.verse.maps.TileMapLoader;
 import com.kbindiedev.verse.maps.TilesetResourceFetcher;
+import com.kbindiedev.verse.math.helpers.Rectanglef;
 import com.kbindiedev.verse.util.condition.Condition;
-import com.kbindiedev.verse.util.condition.ConditionEqual;
 import com.kbindiedev.verse.util.condition.ConditionTrigger;
+import com.kbindiedev.verse.z_example.ExampleComponent;
+import com.kbindiedev.verse.z_example.ExampleSystem;
+import com.kbindiedev.verse.z_example.PlayerComponent;
+import com.kbindiedev.verse.z_example.PlayerMovementSystem;
 
 import java.io.File;
 import java.io.IOException;
@@ -71,7 +75,7 @@ public class Main {
         //space.getEntityManager().instantiate(sprite);
         //space.getEntityManager().instantiate(sprite2, transform);
 
-
+        Transform playerTransform = new Transform();
         try {
             LayeredTileMap testTileMap = TileMapLoader.loadTileMap(new File("./../spritepack_demo/paths.tmx"));
             LayeredTileMapToEntitiesGenerator.generateEntities(space.getEntityManager(), testTileMap);
@@ -104,19 +108,17 @@ public class Main {
             map.addTransition(new AnimationTransition<>(playerWalk, playerSlash, attack));
             map.addTransition(new AnimationTransition<>(playerSlash, playerWalk, Condition.NONE, 1f, false, AnimationTransition.ExitTimeStrategy.AFTER_LOCAL));
 
-            ExampleComponent c1 = new ExampleComponent();
-            Transform c1Loc = new Transform();
-            c1Loc.position.x = 0f;
-            c1Loc.position.y = 0f;
-            c1Loc.position.z = 0.8f;
-            c1Loc.scale.x = playerWalk.getFrames().get(0).getSprite().getWidth();
-            c1Loc.scale.y = playerWalk.getFrames().get(0).getSprite().getHeight();
+            playerTransform.position.x = 0f;
+            playerTransform.position.y = 0f;
+            playerTransform.position.z = 0.8f;
+            playerTransform.scale.x = playerWalk.getFrames().get(0).getSprite().getWidth();
+            playerTransform.scale.y = playerWalk.getFrames().get(0).getSprite().getHeight();
 
             AnimationController<SpriteAnimation> controller = new AnimationController<>(map, new AnimatorContext());
 
             SpriteAnimator animator = new SpriteAnimator();
             animator.controller = controller;
-            space.getEntityManager().instantiate(c1, animator, new SpriteRenderer(), c1Loc);
+            space.getEntityManager().instantiate(new ExampleComponent(), animator, new SpriteRenderer(), playerTransform, new PlayerComponent());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -124,6 +126,9 @@ public class Main {
         Camera camera = new Camera();
         camera.aspectRatio = 16f/9;
         camera.zoom = 250f;
+        camera.bounds = new Rectanglef(0f, 0f, 30 * 16f, 20 * 16f);
+        //camera.bounds = new Rectanglef(-100f, -100f, 200f, 200f);
+        //camera.target = playerTransform;
         //GL30.glViewport(0, 0, 1920, 1080); //TODO temp, until RenderingStrategy
         //camera.viewportWidth = 1920; camera.viewportHeight = 1080;
         /*
@@ -138,6 +143,7 @@ public class Main {
 
         RenderContextPreparerSystem rcps = new RenderContextPreparerSystem(space);
         space.addSystem(new ExampleSystem(space));
+        space.addSystem(new PlayerMovementSystem(space));
         space.addSystem(rcps);
         space.addSystem(new CameraSystem(space));
         space.addSystem(new SpriteAnimatorSystem(space));
