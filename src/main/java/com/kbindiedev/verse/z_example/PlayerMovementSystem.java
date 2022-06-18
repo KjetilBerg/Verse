@@ -40,6 +40,9 @@ public class PlayerMovementSystem extends ComponentSystem {
         if (getSpace().getKeyboardTracker().isKeyDown(Keys.KEY_LEFT)) dx -= dt;
         if (getSpace().getKeyboardTracker().isKeyDown(Keys.KEY_RIGHT)) dx += dt;
 
+        boolean running = false;
+        if (getSpace().getKeyboardTracker().isKeyDown(Keys.KEY_LEFT_SHIFT)) running = true;
+
         boolean attack = (getSpace().getKeyboardTracker().isKeyDown(Keys.KEY_F));
         attackTrigger.reset();
         if (attack) attackTrigger.trigger();
@@ -52,8 +55,9 @@ public class PlayerMovementSystem extends ComponentSystem {
             SpriteRenderer renderer = entity.getComponent(SpriteRenderer.class);
             SpriteAnimator animator = entity.getComponent(SpriteAnimator.class);
 
-            transform.position.x += dx * player.speed;
-            transform.position.y += dy * player.speed;
+            float speed = (running ? player.runSpeed : player.speed);
+            transform.position.x += dx * speed;
+            transform.position.y += dy * speed;
 
             if (dx > 0) player.facingRight = true;
             if (dx < 0) player.facingRight = false;

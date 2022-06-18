@@ -52,6 +52,13 @@ public class ExampleSystem extends ComponentSystem {
 
         if (getSpace().getKeyboardTracker().wasKeyPressedThisIteration(Keys.KEY_M)) attackTrigger.trigger();
 
+
+        // TODO: messy, should have something like .didTransitionToState(playerSlash)
+        boolean playSlashSound = false;
+        boolean playGenericSound = false;
+        if (getSpace().getKeyboardTracker().wasKeyReleasedThisIteration(Keys.KEY_F)) playSlashSound = true;
+        if (getSpace().getKeyboardTracker().wasKeyReleasedThisIteration(Keys.KEY_U)) playGenericSound = true;
+
         while (entities.hasNext()) {
             Entity entity = entities.next();
 
@@ -61,6 +68,9 @@ public class ExampleSystem extends ComponentSystem {
             animator.controller.getContext().getProperties().put("next", nextTrigger);
             animator.controller.getContext().getProperties().put("prev", prevTrigger);
             animator.controller.getContext().getProperties().put("attack", attackTrigger);
+
+            if (playSlashSound) component.slashSoundSource.play();
+            if (playGenericSound) component.genericSoundSource.play();
         }
     }
 

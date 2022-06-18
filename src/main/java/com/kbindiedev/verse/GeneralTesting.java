@@ -9,105 +9,41 @@ import com.kbindiedev.verse.input.keyboard.Keys;
 import com.kbindiedev.verse.input.mouse.IMouseInputProcessor;
 import com.kbindiedev.verse.input.mouse.MouseButtons;
 import com.kbindiedev.verse.input.mouse.MouseInputManager;
+import com.kbindiedev.verse.io.files.Files;
+import com.kbindiedev.verse.net.rest.*;
+import com.kbindiedev.verse.sfx.Sound;
+import com.kbindiedev.verse.sfx.SoundEngine;
+import com.kbindiedev.verse.sfx.SoundEngineSettings;
+import com.kbindiedev.verse.sfx.Source;
+import com.kbindiedev.verse.sfx.impl.openal_10.SEOpenAL10;
 import org.joml.Matrix4f;
 import org.lwjgl.BufferUtils;
+import org.lwjgl.openal.*;
+import sun.misc.IOUtils;
 
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.UnsupportedAudioFileException;
+import java.io.*;
+import java.net.HttpCookie;
+import java.net.URI;
 import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
 import java.util.Arrays;
 import java.util.List;
+import static org.lwjgl.openal.ALC10.*;
+import static org.lwjgl.openal.EXTEfx.ALC_MAX_AUXILIARY_SENDS;
 
 public class GeneralTesting implements GEOpenGL33.IRenderable, IKeyEventListener, IMouseInputProcessor {
+
     private SpriteBatch spriteBatch;
 
 
     /** Gets run from Main */
     public static void run() {
 
-        /*
-        RESTClientRequestSettings requestSettings = new RESTClientRequestSettings();
-        requestSettings.setEnforceSSL(false);
-        RESTClient.setGlobalRequestSettings(requestSettings);
-
-        RESTClientSettings apiSettings = new RESTClientSettings();
-        apiSettings.setPreserveCookies(true);
-        RESTClient api = new RESTClient("http://localhost:8080");
-        api.setClientSettings(apiSettings);
-
-        RESTClientSettings apiSettings2 = new RESTClientSettings();
-        apiSettings2.setPreserveCookies(false);
-        //api.setClientSettings(apiSettings2);
-        try {
-            //api.get("/hello");
-            System.out.println("request 1:");
-            RESTClientResponse response = api.newRequest().method("GET").path("/hello").param("file","true").execute();
-            System.out.println("Got length: " + response.contentAsString().length());
-            response.disconnect();
-
-            System.out.println("request 2 (stream):");
-            RESTClientResponse response2 = api.newRequest().method("GET").path("/hello").execute();
-            try (InputStream stream = response2.stream()) {
-                byte[] arr = new byte[8192];
-                int amountRead = stream.read(arr, 0, arr.length);
-                System.out.printf("Read '%d' bytes from request 2 body\n", amountRead);
-            }
-            response2.disconnect();
-
-            System.out.println("request 3:");
-            RESTClientResponse response3 = api.newRequest().method("GET").path("/file").execute();
-            //System.out.println("response 3: " + response3.contentAsString());
-            try (InputStream stream = response3.stream()) {
-
-                FileOutputStream fos = new FileOutputStream("../downloaded-file.txt");
-
-                int d;
-                while ((d = stream.read()) != -1) fos.write(d);
-                fos.close();
-
-            }
-            response3.disconnect();
-
-            System.out.println("request 4:");
-            RESTClientResponse response4 = api.newRequest().method("GET").path("/redirect").execute();
-            System.out.println("response 4: " + response4.contentAsString());
-            System.out.println("response 4 destination url: " + response4.getDestinationURL());
-            System.out.println("response 4 destination uri: " + response4.getDestinationURI());
-            response4.disconnect();
-
-            System.out.println("request 5:");
-            RESTClientResponse response5 = api.newRequest().method("PUT").path("/put-test").param("hello", "okay").execute();
-            System.out.println("response 5: " + response5.contentAsString());
-            response5.disconnect();
-
-            System.out.println("request 6:");
-            RESTClientResponse response6 = api.newRequest().method("POST").path("/reflect").param("code", "205").execute();
-            System.out.println("response 6: " + response6.getStatusCode() + " " + response6.contentAsString());
-            response6.disconnect();
-
-            System.out.println("request 7:");
-            RESTClientRequest request7 = api.newRequest().method("GET").path("/reflect").param("code", "408");
-            RESTClientResponse response7 = request7.execute();
-            System.out.println("response 7: " + response7.getStatusCode() + " " + response7.contentAsString());
-            response7.disconnect();
-
-            System.out.println("request 8:");
-            RESTClientResponse response8 = request7.clone().param("code", "409").execute();
-            System.out.println("response 8: " + response8.getStatusCode() + " " + response8.contentAsString());
-            response8.disconnect();
-
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        System.out.println("CHECKING COOKIES...");
-        try {
-            URI uri = new URI("http://localhost:8080/banana");
-            List<HttpCookie> cookies = api.getCookies(uri);
-            System.out.println(cookies);
-        } catch (Exception e) { e.printStackTrace(); }
-
-        System.exit(0);
-        */
+        //nettest();
 
         //GraphicsEngine gfx = new GEOpenGL33();
         GEOpenGL33 gfx = new GEOpenGL33();
@@ -160,8 +96,19 @@ public class GeneralTesting implements GEOpenGL33.IRenderable, IKeyEventListener
         spriteBatch.setProjectionMatrix(proj);
         //spriteBatch.setGlobalFlipSettings(false, true);
 
-        tex = new GLTexture("assets/img/smile.png");
+        tex = new GLTexture(Files.getExternalPath("assets/img/smile.png"));
 
+        SEOpenAL10 soundEngine = new SEOpenAL10();
+        //soundEngine.testrun();
+        soundEngine.initialize(new SoundEngineSettings());
+        Sound sound;
+        try { sound = soundEngine.createSound("../sound.wav"); } catch (Exception e) { throw new RuntimeException(e); }
+        Source source = soundEngine.createSource();
+        source.setSound(sound);
+        source.play();
+
+
+        //System.exit(0);
         gfx.renderLoop(this);
 
     }
@@ -296,5 +243,92 @@ public class GeneralTesting implements GEOpenGL33.IRenderable, IKeyEventListener
 
         public int getNumIndices() { return numIndices; }
         public ByteBuffer getBuffer() { return buffer; }
+    }
+
+
+    private static void nettest() {
+        RESTClientRequestSettings requestSettings = new RESTClientRequestSettings();
+        requestSettings.setEnforceSSL(false);
+        RESTClient.setGlobalRequestSettings(requestSettings);
+
+        RESTClientSettings apiSettings = new RESTClientSettings();
+        apiSettings.setPreserveCookies(true);
+        RESTClient api = new RESTClient("http://localhost:8080");
+        api.setClientSettings(apiSettings);
+
+        RESTClientSettings apiSettings2 = new RESTClientSettings();
+        apiSettings2.setPreserveCookies(false);
+        //api.setClientSettings(apiSettings2);
+        try {
+            //api.get("/hello");
+            System.out.println("request 1:");
+            RESTClientResponse response = api.newRequest().method("GET").path("/hello").param("file","true").execute();
+            System.out.println("Got length: " + response.contentAsString().length());
+            response.disconnect();
+
+            System.out.println("request 2 (stream):");
+            RESTClientResponse response2 = api.newRequest().method("GET").path("/hello").execute();
+            try (InputStream stream = response2.stream()) {
+                byte[] arr = new byte[8192];
+                int amountRead = stream.read(arr, 0, arr.length);
+                System.out.printf("Read '%d' bytes from request 2 body\n", amountRead);
+            }
+            response2.disconnect();
+
+            System.out.println("request 3:");
+            RESTClientResponse response3 = api.newRequest().method("GET").path("/file").execute();
+            //System.out.println("response 3: " + response3.contentAsString());
+            try (InputStream stream = response3.stream()) {
+
+                FileOutputStream fos = new FileOutputStream("../downloaded-file.txt");
+
+                int d;
+                while ((d = stream.read()) != -1) fos.write(d);
+                fos.close();
+
+            }
+            response3.disconnect();
+
+            System.out.println("request 4:");
+            RESTClientResponse response4 = api.newRequest().method("GET").path("/redirect").execute();
+            System.out.println("response 4: " + response4.contentAsString());
+            System.out.println("response 4 destination url: " + response4.getDestinationURL());
+            System.out.println("response 4 destination uri: " + response4.getDestinationURI());
+            response4.disconnect();
+
+            System.out.println("request 5:");
+            RESTClientResponse response5 = api.newRequest().method("PUT").path("/put-test").param("hello", "okay").execute();
+            System.out.println("response 5: " + response5.contentAsString());
+            response5.disconnect();
+
+            System.out.println("request 6:");
+            RESTClientResponse response6 = api.newRequest().method("POST").path("/reflect").param("code", "205").execute();
+            System.out.println("response 6: " + response6.getStatusCode() + " " + response6.contentAsString());
+            response6.disconnect();
+
+            System.out.println("request 7:");
+            RESTClientRequest request7 = api.newRequest().method("GET").path("/reflect").param("code", "408");
+            RESTClientResponse response7 = request7.execute();
+            System.out.println("response 7: " + response7.getStatusCode() + " " + response7.contentAsString());
+            response7.disconnect();
+
+            System.out.println("request 8:");
+            RESTClientResponse response8 = request7.clone().param("code", "409").execute();
+            System.out.println("response 8: " + response8.getStatusCode() + " " + response8.contentAsString());
+            response8.disconnect();
+
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        System.out.println("CHECKING COOKIES...");
+        try {
+            URI uri = new URI("http://localhost:8080/banana");
+            List<HttpCookie> cookies = api.getCookies(uri);
+            System.out.println(cookies);
+        } catch (Exception e) { e.printStackTrace(); }
+
+        System.exit(0);
     }
 }

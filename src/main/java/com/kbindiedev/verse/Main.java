@@ -23,6 +23,10 @@ import com.kbindiedev.verse.maps.LayeredTileMap;
 import com.kbindiedev.verse.maps.TileMapLoader;
 import com.kbindiedev.verse.maps.TilesetResourceFetcher;
 import com.kbindiedev.verse.math.helpers.Rectanglef;
+import com.kbindiedev.verse.sfx.Sound;
+import com.kbindiedev.verse.sfx.SoundEngineSettings;
+import com.kbindiedev.verse.sfx.Source;
+import com.kbindiedev.verse.sfx.impl.openal_10.SEOpenAL10;
 import com.kbindiedev.verse.util.condition.Condition;
 import com.kbindiedev.verse.util.condition.ConditionEqual;
 import com.kbindiedev.verse.util.condition.ConditionTrigger;
@@ -53,6 +57,9 @@ public class Main {
     private static void runECSTest() {
         GEOpenGL33 gl33 = new GEOpenGL33();
         gl33.initialize(new GraphicsEngineSettings());
+
+        SEOpenAL10 al10 = new SEOpenAL10();
+        al10.initialize(new SoundEngineSettings());
 
         Space space = new Space(gl33);
 
@@ -110,6 +117,7 @@ public class Main {
             map.addTransition(new AnimationTransition<>(playerIdle, playerRun, new ConditionEqual<>("moving", true)));
             map.addTransition(new AnimationTransition<>(playerRun, playerIdle, new ConditionEqual<>("moving", false)));
             map.addTransition(new AnimationTransition<>(playerIdle, playerSlash, new ConditionTrigger("attack")));
+            map.addTransition(new AnimationTransition<>(playerRun, playerSlash, new ConditionTrigger("attack")));
             map.addTransition(new AnimationTransition<>(playerSlash, playerIdle, Condition.NONE, 1f, false, AnimationTransition.ExitTimeStrategy.AFTER_LOCAL));
 
             playerTransform.position.x = 0f;
@@ -122,7 +130,23 @@ public class Main {
 
             SpriteAnimator animator = new SpriteAnimator();
             animator.controller = controller;
-            space.getEntityManager().instantiate(new ExampleComponent(), animator, new SpriteRenderer(), playerTransform, new PlayerComponent());
+
+            ExampleComponent exampleComponent = new ExampleComponent();
+
+            Sound sound1, sound2;
+            Source source1, source2;
+
+            try { sound1 = al10.createSound("../sound.wav"); } catch (Exception e) { throw new RuntimeException(e); }
+            source1 = al10.createSource();
+            source1.setSound(sound1);
+            exampleComponent.genericSoundSource = source1;
+
+            try { sound2 = al10.createSound("../slash.wav"); } catch (Exception e) { throw new RuntimeException(e); }
+            source2 = al10.createSource();
+            source2.setSound(sound2);
+            exampleComponent.slashSoundSource = source2;
+
+            space.getEntityManager().instantiate(exampleComponent, animator, new SpriteRenderer(), playerTransform, new PlayerComponent());
         } catch (IOException e) {
             e.printStackTrace();
         }
