@@ -11,7 +11,8 @@ import java.util.HashMap;
 
 /**
  * This class was lightly inspired by the LibGDX implementation of a similar structure (SpriteBatch)
- * Attributes follow, 21 bytes per vertex, 84 bytes per sprite (quad): float(x), float(y), byte(r), byte(g), byte(b), byte(a), float(u), float(v), byte(texid)
+ * Attributes follow, 25 bytes per vertex, 100 bytes per sprite (quad): float(x), float(y), float(z), byte(r), byte(g), byte(b), byte(a), float(u), float(v), byte(texid).
+ * (0, 0) is top left corner.   // TODO: adjust (bottom left?)
  */
 public class SpriteBatch {
 
@@ -27,7 +28,7 @@ public class SpriteBatch {
     private int nextTextureSlot;
     private int maxTextureSlots;
 
-    private Pixel[] colors; //0 = top left, 1 = top right, 2 = bottom left, 3 = bottom right
+    private Pixel[] colors; //0 = top left, 1 = top right, 2 = bottom left, 3 = bottom right // TODO order
     private float[] zPos;   //0 = top left, 1 = top right, 2 = bottom left, 3 = bottom right
 
     /* TODO: keep zPos? does not work for z-indexing transparent sprites, but may be useful to for example

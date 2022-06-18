@@ -80,8 +80,8 @@ public class ExampleSystem extends ComponentSystem {
         KeyEventTracker keys = getSpace().getKeyboardTracker();
         if (keys.isKeyDown(Keys.KEY_W)) movement.y += 3.0f;
         if (keys.isKeyDown(Keys.KEY_S)) movement.y -= 3.0f;
-        if (keys.isKeyDown(Keys.KEY_A)) movement.x += 3.0f;
-        if (keys.isKeyDown(Keys.KEY_D)) movement.x -= 3.0f;
+        if (keys.isKeyDown(Keys.KEY_A)) movement.x -= 3.0f;
+        if (keys.isKeyDown(Keys.KEY_D)) movement.x += 3.0f;
         if (keys.isKeyDown(Keys.KEY_Q)) zoom += 100.0f;
         if (keys.isKeyDown(Keys.KEY_E)) zoom -= 100.0f;
 

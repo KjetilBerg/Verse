@@ -24,6 +24,7 @@ import com.kbindiedev.verse.maps.TileMapLoader;
 import com.kbindiedev.verse.maps.TilesetResourceFetcher;
 import com.kbindiedev.verse.math.helpers.Rectanglef;
 import com.kbindiedev.verse.util.condition.Condition;
+import com.kbindiedev.verse.util.condition.ConditionEqual;
 import com.kbindiedev.verse.util.condition.ConditionTrigger;
 import com.kbindiedev.verse.z_example.ExampleComponent;
 import com.kbindiedev.verse.z_example.ExampleSystem;
@@ -80,7 +81,7 @@ public class Main {
             LayeredTileMap testTileMap = TileMapLoader.loadTileMap(new File("./../spritepack_demo/paths.tmx"));
             LayeredTileMapToEntitiesGenerator.generateEntities(space.getEntityManager(), testTileMap);
 
-            SpriteAnimation playerWalk = TilesetResourceFetcher.getAnimation(testTileMap.getTileset(), 346);
+            SpriteAnimation playerIdle = TilesetResourceFetcher.getAnimation(testTileMap.getTileset(), 346);
             SpriteAnimation playerRun = TilesetResourceFetcher.getAnimation(testTileMap.getTileset(), 346 + 6);
             SpriteAnimation playerSlash = TilesetResourceFetcher.getAnimation(testTileMap.getTileset(), 346 + 12);
             SpriteAnimation playerDie = TilesetResourceFetcher.getAnimation(testTileMap.getTileset(), 346 + 24);
@@ -91,10 +92,10 @@ public class Main {
 
             Condition next = new ConditionTrigger("next");
             Condition prev = new ConditionTrigger("prev");
-            Condition attack = new ConditionTrigger("attack");
 
-            map.setEntryState(playerWalk);
+            map.setEntryState(playerIdle);
 
+            /*
             map.addTransition(new AnimationTransition<>(playerWalk, playerRun, next));
             map.addTransition(new AnimationTransition<>(playerRun, playerSlash, next));
             map.addTransition(new AnimationTransition<>(playerSlash, playerDie, next, 1f, false, AnimationTransition.ExitTimeStrategy.AFTER_LOCAL));
@@ -104,15 +105,18 @@ public class Main {
             map.addTransition(new AnimationTransition<>(playerSlash, playerRun, prev, 1f, false, AnimationTransition.ExitTimeStrategy.AFTER_LOCAL));
             map.addTransition(new AnimationTransition<>(playerDie, playerSlash, prev));
             map.addTransition(new AnimationTransition<>(playerWalk, playerDie, prev));
+            */
 
-            map.addTransition(new AnimationTransition<>(playerWalk, playerSlash, attack));
-            map.addTransition(new AnimationTransition<>(playerSlash, playerWalk, Condition.NONE, 1f, false, AnimationTransition.ExitTimeStrategy.AFTER_LOCAL));
+            map.addTransition(new AnimationTransition<>(playerIdle, playerRun, new ConditionEqual<>("moving", true)));
+            map.addTransition(new AnimationTransition<>(playerRun, playerIdle, new ConditionEqual<>("moving", false)));
+            map.addTransition(new AnimationTransition<>(playerIdle, playerSlash, new ConditionTrigger("attack")));
+            map.addTransition(new AnimationTransition<>(playerSlash, playerIdle, Condition.NONE, 1f, false, AnimationTransition.ExitTimeStrategy.AFTER_LOCAL));
 
             playerTransform.position.x = 0f;
             playerTransform.position.y = 0f;
             playerTransform.position.z = 0.8f;
-            playerTransform.scale.x = playerWalk.getFrames().get(0).getSprite().getWidth();
-            playerTransform.scale.y = playerWalk.getFrames().get(0).getSprite().getHeight();
+            playerTransform.scale.x = playerIdle.getFrames().get(0).getSprite().getWidth();
+            playerTransform.scale.y = playerIdle.getFrames().get(0).getSprite().getHeight();
 
             AnimationController<SpriteAnimation> controller = new AnimationController<>(map, new AnimatorContext());
 
@@ -126,9 +130,9 @@ public class Main {
         Camera camera = new Camera();
         camera.aspectRatio = 16f/9;
         camera.zoom = 250f;
-        camera.bounds = new Rectanglef(0f, 0f, 30 * 16f, 20 * 16f);
+        camera.bounds = new Rectanglef(0 * 16f, 1 * 16f, 30 * 16f, 20 * 16f);
         //camera.bounds = new Rectanglef(-100f, -100f, 200f, 200f);
-        //camera.target = playerTransform;
+        camera.target = playerTransform;
         //GL30.glViewport(0, 0, 1920, 1080); //TODO temp, until RenderingStrategy
         //camera.viewportWidth = 1920; camera.viewportHeight = 1080;
         /*

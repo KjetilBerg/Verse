@@ -45,6 +45,7 @@ public class SpriteRendererSystem extends ComponentSystem {
         context.prepare();
         batch.setProjectionMatrix(context.getCameraComponent().projectionMatrix);
         batch.setViewMatrix(context.getCameraComponent().viewMatrix);
+        batch.setGlobalFlipSettings(false, true);
         batch.begin();
 
         for (Entity entity : sortedQueryResult) {
@@ -53,11 +54,12 @@ public class SpriteRendererSystem extends ComponentSystem {
 
             if (sprite.sprite == null) continue;
 
+            batch.setZPos(1f);
             batch.setColor(sprite.color);
             //batch.setZPos(transform.position.z());
             // TODO sprite width/height ?
             batch.draw(sprite.sprite, transform.position.x(), transform.position.y(), 0f, 0f, 1f, 1f,
-                    transform.scale.x(), transform.scale.y(), transform.rotation.angle(), false, false);
+                    transform.scale.x(), transform.scale.y(), transform.rotation.angle(), sprite.flipX, sprite.flipY);
         }
         batch.end();
     }

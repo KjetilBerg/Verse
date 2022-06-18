@@ -164,7 +164,7 @@ public class Rectanglef {
 
     @Override
     public String toString() {
-        return "Rectanglef[ x: " + x + ", y: " + y + ", width: " + width + ", height: " + height + " ]";
+        return "Rectanglef[ x1: " + x + ", y1: " + y + ", x2: " + getX2() + ", y2: " + getY2() + ", width: " + width + ", height: " + height + " ]";
     }
 
 }

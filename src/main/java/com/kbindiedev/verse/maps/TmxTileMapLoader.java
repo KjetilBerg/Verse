@@ -93,6 +93,7 @@ public class TmxTileMapLoader implements ITileMapLoaderImplementation {
         if (DOMElementUtil.getChildByName(layerElement, "chunk") != null) throw new IllegalArgumentException("infinite Tiled maps are not supported");
 
         int mapWidth = DOMElementUtil.getIntAttribute(layerElement, "width", 1);
+        int mapHeight = DOMElementUtil.getIntAttribute(layerElement, "height", 1);
 
         Element dataElement = DOMElementUtil.getChildByName(layerElement, "data");
 
@@ -108,10 +109,11 @@ public class TmxTileMapLoader implements ITileMapLoaderImplementation {
                 Tile tile = tileset.getTile(tileId);
 
                 int column = (index % mapWidth);
-                int row = (index / mapWidth);
+                int row = mapHeight - (index / mapWidth);
 
                 int xPos = column * tileWidth;
-                int yPos = row * tileHeight + (tileHeight - tile.getHeight()); // .tmx assumes 0,0 is bottom left
+                //int yPos = row * tileHeight + (tileHeight - tile.getHeight()); // .tmx assumes 0,0 is bottom left
+                int yPos = row * tileHeight; // TODO boolean: flipY
 
                 map.addEntry(tile, xPos, yPos); // TODO: is width and height right here?
             }

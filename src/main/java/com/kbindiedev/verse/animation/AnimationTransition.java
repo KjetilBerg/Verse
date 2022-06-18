@@ -41,8 +41,6 @@ public class AnimationTransition<T extends Animation> extends StateTransition<T,
         animation.setSecondsIntoAnimation(0);
         animation.setLoopCount(0);
 
-        System.out.println("TRANSITION");
-
         return animation;
     }
 

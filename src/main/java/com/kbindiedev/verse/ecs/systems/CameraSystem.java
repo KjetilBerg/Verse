@@ -40,11 +40,12 @@ public class CameraSystem extends ComponentSystem {
 
             camera.zoom = adjustCameraZoom(camera.zoom); // prevent floating point errors
 
-            // TODO: better following and inverse camera
+            // TODO: better following
             if (camera.target != null) {
-                transform.position.x = -(camera.target.position.x + camera.target.scale.x / 2);
-                transform.position.y = -(camera.target.position.y + camera.target.scale.y / 2);
+                transform.position.x = camera.target.position.x + camera.target.scale.x / 2;
+                transform.position.y = camera.target.position.y + camera.target.scale.y / 2;
             }
+
             // TODO: this is only if perspective camera / 3d camera
             //if (camera.target != null) transform.rotation.lookAlong(camera.target.position, camera.up);
 
@@ -75,7 +76,8 @@ public class CameraSystem extends ComponentSystem {
                     //horizontal = camera.zoom * camera.orthographicWidth;
                     //vertical = camera.zoom * camera.orthographicWidth / camera.aspectRatio;
 
-                    camera.projectionMatrix.setOrtho(-horizontal, horizontal, vertical, -vertical, camera.nearPlane, camera.farPlane);
+                    //camera.projectionMatrix.setOrtho(-horizontal, horizontal, vertical, -vertical, camera.nearPlane, camera.farPlane);
+                    camera.projectionMatrix.setOrtho(-horizontal/2, horizontal/2, -vertical/2, vertical/2, camera.nearPlane, camera.farPlane);
                     break;
                 default:
                     Assertions.error("unknown CameraType: %s", camera.cameraType.name());
@@ -83,7 +85,9 @@ public class CameraSystem extends ComponentSystem {
             }
 
             camera.viewMatrix.identity();
+            transform.position.negate();
             camera.viewMatrix.translate(transform.position);
+            transform.position.negate(); // TODO: BUT WHY
             camera.viewMatrix.scale(transform.scale); // note: does scale matter ?
             camera.viewMatrix.rotate(transform.rotation);
 
