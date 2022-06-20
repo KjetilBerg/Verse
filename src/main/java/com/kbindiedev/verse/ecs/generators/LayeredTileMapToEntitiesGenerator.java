@@ -6,11 +6,10 @@ import com.kbindiedev.verse.animation.SpriteAnimation;
 import com.kbindiedev.verse.animation.SpriteAnimationMap;
 import com.kbindiedev.verse.ecs.Entity;
 import com.kbindiedev.verse.ecs.EntityManager;
-import com.kbindiedev.verse.ecs.components.IComponent;
-import com.kbindiedev.verse.ecs.components.SpriteAnimator;
-import com.kbindiedev.verse.ecs.components.SpriteRenderer;
-import com.kbindiedev.verse.ecs.components.Transform;
+import com.kbindiedev.verse.ecs.components.*;
 import com.kbindiedev.verse.maps.*;
+import com.kbindiedev.verse.math.helpers.Point2Df;
+import com.kbindiedev.verse.math.shape.Polygon;
 import com.kbindiedev.verse.profiling.Assertions;
 
 import java.util.ArrayList;
@@ -65,6 +64,19 @@ public class LayeredTileMapToEntitiesGenerator {
                     SpriteRenderer spriteRenderer = new SpriteRenderer();
                     spriteRenderer.sprite = tile.getSprite();
                     list.add(spriteRenderer);
+
+                    // TODO: TEMP
+                    if (tile == layeredTileMap.getTileset().getTile(16)) {
+                        System.out.println("GENERATING POLYGON COLLIDER");
+                        PolygonCollider2D collider2D = new PolygonCollider2D();
+                        Polygon polygon = new Polygon(new Point2Df(8f, 8f));
+                        polygon.addPoint(new Point2Df(0f, 0f));
+                        polygon.addPoint(new Point2Df(16f, 0f));
+                        polygon.addPoint(new Point2Df(16f, 16f));
+                        polygon.addPoint(new Point2Df(0f, 16f));
+                        collider2D.polgyon = polygon;
+                        list.add(collider2D);
+                    }
 
                 } else if (t instanceof AnimatedTile) {
 

@@ -3,12 +3,9 @@ package com.kbindiedev.verse.ecs.systems;
 import com.kbindiedev.verse.ecs.*;
 import com.kbindiedev.verse.ecs.components.Camera;
 import com.kbindiedev.verse.ecs.components.Transform;
-import com.kbindiedev.verse.math.helpers.Rectanglef;
+import com.kbindiedev.verse.math.shape.Rectanglef;
 import com.kbindiedev.verse.profiling.Assertions;
-import org.joml.Vector2f;
-import org.joml.Vector4f;
 
-import java.awt.*;
 import java.util.Iterator;
 
 public class CameraSystem extends ComponentSystem {

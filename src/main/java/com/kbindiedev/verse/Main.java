@@ -4,15 +4,9 @@ import com.kbindiedev.verse.animation.*;
 import com.kbindiedev.verse.ecs.Entity;
 import com.kbindiedev.verse.ecs.RenderContext;
 import com.kbindiedev.verse.ecs.Space;
-import com.kbindiedev.verse.ecs.components.Camera;
-import com.kbindiedev.verse.ecs.components.SpriteAnimator;
-import com.kbindiedev.verse.ecs.components.SpriteRenderer;
-import com.kbindiedev.verse.ecs.components.Transform;
+import com.kbindiedev.verse.ecs.components.*;
 import com.kbindiedev.verse.ecs.generators.LayeredTileMapToEntitiesGenerator;
-import com.kbindiedev.verse.ecs.systems.CameraSystem;
-import com.kbindiedev.verse.ecs.systems.RenderContextPreparerSystem;
-import com.kbindiedev.verse.ecs.systems.SpriteAnimatorSystem;
-import com.kbindiedev.verse.ecs.systems.SpriteRendererSystem;
+import com.kbindiedev.verse.ecs.systems.*;
 import com.kbindiedev.verse.gfx.GraphicsEngineSettings;
 import com.kbindiedev.verse.gfx.Pixel;
 import com.kbindiedev.verse.gfx.Sprite;
@@ -22,7 +16,9 @@ import com.kbindiedev.verse.io.files.Files;
 import com.kbindiedev.verse.maps.LayeredTileMap;
 import com.kbindiedev.verse.maps.TileMapLoader;
 import com.kbindiedev.verse.maps.TilesetResourceFetcher;
-import com.kbindiedev.verse.math.helpers.Rectanglef;
+import com.kbindiedev.verse.math.helpers.Point2Df;
+import com.kbindiedev.verse.math.shape.Polygon;
+import com.kbindiedev.verse.math.shape.Rectanglef;
 import com.kbindiedev.verse.sfx.Sound;
 import com.kbindiedev.verse.sfx.SoundEngineSettings;
 import com.kbindiedev.verse.sfx.Source;
@@ -120,8 +116,8 @@ public class Main {
             map.addTransition(new AnimationTransition<>(playerRun, playerSlash, new ConditionTrigger("attack")));
             map.addTransition(new AnimationTransition<>(playerSlash, playerIdle, Condition.NONE, 1f, false, AnimationTransition.ExitTimeStrategy.AFTER_LOCAL));
 
-            playerTransform.position.x = 0f;
-            playerTransform.position.y = 0f;
+            playerTransform.position.x = 100f;
+            playerTransform.position.y = 100f;
             playerTransform.position.z = 0.8f;
             playerTransform.scale.x = playerIdle.getFrames().get(0).getSprite().getWidth();
             playerTransform.scale.y = playerIdle.getFrames().get(0).getSprite().getHeight();
@@ -146,7 +142,32 @@ public class Main {
             source2.setSound(sound2);
             exampleComponent.slashSoundSource = source2;
 
-            space.getEntityManager().instantiate(exampleComponent, animator, new SpriteRenderer(), playerTransform, new PlayerComponent());
+            PolygonCollider2D collider = new PolygonCollider2D();
+            Polygon polygon = new Polygon(new Point2Df(8f, 8f));
+            polygon.addPoint(new Point2Df(0f, 0f));
+            polygon.addPoint(new Point2Df(16f, 0f));
+            polygon.addPoint(new Point2Df(16f, 16f));
+            polygon.addPoint(new Point2Df(0f, 16f));
+            collider.polgyon = polygon;
+
+            space.getEntityManager().instantiate(exampleComponent, animator, new SpriteRenderer(), playerTransform, new PlayerComponent(), collider, new RigidBody2D());
+
+            PolygonCollider2D collider2 = new PolygonCollider2D();
+            Polygon polygon2 = new Polygon(new Point2Df(8f, 8f));
+            polygon2.addPoint(new Point2Df(0f, 0f));
+            polygon2.addPoint(new Point2Df(16f, 0f));
+            polygon2.addPoint(new Point2Df(16f, 16f));
+            polygon2.addPoint(new Point2Df(0f, 16f));
+            collider2.polgyon = polygon2;
+            SpriteRenderer renderer2 = new SpriteRenderer();
+            renderer2.sprite = TilesetResourceFetcher.getSprite(testTileMap.getTileset(), 347);
+            Transform transform2 = new Transform();
+            transform2.position.x = 20f;
+            transform2.position.y = 20f;
+            transform2.position.z = 1f;
+            transform2.scale.x = 32f; transform2.scale.y = 32f;
+            space.getEntityManager().instantiate(collider2, renderer2, transform2);
+
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -172,6 +193,7 @@ public class Main {
         RenderContextPreparerSystem rcps = new RenderContextPreparerSystem(space);
         space.addSystem(new ExampleSystem(space));
         space.addSystem(new PlayerMovementSystem(space));
+        space.addSystem(new PolygonCollider2DSystem(space));
         space.addSystem(rcps);
         space.addSystem(new CameraSystem(space));
         space.addSystem(new SpriteAnimatorSystem(space));

@@ -1,10 +1,8 @@
 package com.kbindiedev.verse.ecs.components;
 
-import com.kbindiedev.verse.math.helpers.Rectanglef;
+import com.kbindiedev.verse.math.shape.Rectanglef;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
-
-import java.awt.*;
 
 /** Represents a Camera object's data. */
 public class Camera implements IComponent {

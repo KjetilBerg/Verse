@@ -1,6 +1,8 @@
-package com.kbindiedev.verse.math.helpers;
+package com.kbindiedev.verse.math.shape;
 
 import com.kbindiedev.verse.math.MathUtil;
+
+// TODO consider: extends Polygon
 
 /** Rectangle but with floats. */
 public class Rectanglef {
