@@ -38,6 +38,5 @@ out vec4 color;
 
 void main()
 {
-    if (fColor.a < 0.1) discard;
     color = texture(uTexArray[int(fTexId)], fTexCoords) * fColor;
 }

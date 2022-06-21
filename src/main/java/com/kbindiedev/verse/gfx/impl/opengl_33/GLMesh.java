@@ -104,7 +104,15 @@ public class GLMesh extends Mesh implements IMemoryOccupant {
         //TODO: 0 and 3 are hardcoded. this is temporary
         //TODO: can use ebos for indices (?)
         //GEOpenGL33.gl33.glDrawRangeElementsBaseVertex(GL33.GL_TRIANGLES, 0, 3, GL33.GL_UNSIGNED_SHORT, indices, baseVertex);
-        GEOpenGL33.gl33.glDrawRangeElementsBaseVertex(GL33.GL_TRIANGLES, 0, indices.limit(), GL33.GL_UNSIGNED_SHORT, indices, baseVertex);
+
+        int drawMode;
+        switch (renderMode) {
+            case TRIANGLES: drawMode = GL33.GL_TRIANGLES; break;
+            case LINES: drawMode = GL33.GL_LINES; break;
+            case POINTS: drawMode = GL33.GL_POINTS; break;
+            default: Assertions.warn("unknown renderMode: %s. assuming triangles", renderMode.name()); drawMode = GL33.GL_TRIANGLES; break;
+        }
+        GEOpenGL33.gl33.glDrawRangeElementsBaseVertex(drawMode, 0, indices.limit(), GL33.GL_UNSIGNED_SHORT, indices, baseVertex);
 
         StateTracker.popVertexArrayObject();
 

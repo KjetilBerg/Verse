@@ -11,6 +11,8 @@ public interface GL33 {
 
     int GL_NO_ERROR = 0x0;
 
+    int GL_POINTS = 0x0;
+    int GL_LINES = 0x1;
     int GL_TRIANGLES = 0x4;
 
     int GL_BYTE = 0x1400;

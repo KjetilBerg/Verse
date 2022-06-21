@@ -77,6 +77,8 @@ public class PlayerMovementSystem extends ComponentSystem {
             if (transform.position.x > 28 * 16f) transform.position.x = 28 * 16f;
             if (transform.position.y > 13 * 24f) transform.position.y = 13 * 24f;
 
+            if (count++ % 60 == 0) System.out.println("Player pos: " + transform.position);
         }
     }
+    private int count = 0;
 }

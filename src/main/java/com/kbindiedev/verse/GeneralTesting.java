@@ -241,6 +241,7 @@ public class GeneralTesting implements GEOpenGL33.IRenderable, IKeyEventListener
             numIndices = data.length;
         }
 
+        public void setNumIndices(int indices) { numIndices = indices; }
         public int getNumIndices() { return numIndices; }
         public ByteBuffer getBuffer() { return buffer; }
     }

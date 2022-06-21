@@ -1,6 +1,6 @@
 package com.kbindiedev.verse.gfx.strategy.attributes;
 
-/** Stores data for a single Vertex attribute. Note: only used internally by VertexAttributes */
+/** Stores data for a single Vertex attribute. Note: only used internally by VertexAttributes. */
 public class VertexAttribute {
 
     int baseOffset;

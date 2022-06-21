@@ -2,9 +2,19 @@ package com.kbindiedev.verse.gfx;
 
 import com.kbindiedev.verse.profiling.Assertions;
 
+import java.util.Random;
+
 public class Pixel {
 
     public static final Pixel SOLID_WHITE = new Pixel(255, 255, 255, 255);
+
+    private static final Random STATIC_RANDOM = new Random();
+
+    public static Pixel random() { return random(STATIC_RANDOM); }
+    public static Pixel random(Random random) { return new Pixel(random.nextInt(256), random.nextInt(256), random.nextInt(256)); }
+
+    public static Pixel randomWithAlpha() { return randomWithAlpha(STATIC_RANDOM); }
+    public static Pixel randomWithAlpha(Random random) { return new Pixel(random.nextInt(256), random.nextInt(256), random.nextInt(256), random.nextInt(256)); }
 
     private int value;
 

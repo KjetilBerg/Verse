@@ -333,7 +333,7 @@ public class SpriteBatch {
     }
 
     //TODO: probably generalize this solution
-    private static class IndexData implements IIndexData {
+    public static class IndexData implements IIndexData {
 
         private ByteBuffer buffer;
         private int numIndices;
@@ -342,6 +342,9 @@ public class SpriteBatch {
             buffer = BufferUtils.createByteBuffer(numIndices * Short.BYTES);
             this.numIndices = numIndices;
         }
+
+        @Override
+        public void setNumIndices(int indices) { numIndices = indices; }
 
         @Override
         public int getNumIndices() { return numIndices; }

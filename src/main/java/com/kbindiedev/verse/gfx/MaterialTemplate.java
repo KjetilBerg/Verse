@@ -25,9 +25,11 @@ public class MaterialTemplate {
 
     public static class PredefinedTemplates {
         public static final MaterialTemplate BASIC_SPRITEBATCH;
+        public static final MaterialTemplate POS_3D_AND_COLOR;
 
         static {
             BASIC_SPRITEBATCH = new MaterialTemplate(UniformLayout.Predefined.SPRITEBATCH, Shader.Predefined.BASIC_SPRITEBATCH);
+            POS_3D_AND_COLOR = new MaterialTemplate(UniformLayout.Predefined.MVP_LAYOUT, Shader.Predefined.POS_3D_AND_COLOR);
         }
     }
 

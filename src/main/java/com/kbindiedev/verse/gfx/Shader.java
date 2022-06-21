@@ -25,13 +25,15 @@ public abstract class Shader {
 
 
     public enum Predefined {
-        BASIC_SPRITEBATCH
+        BASIC_SPRITEBATCH,
+        POS_3D_AND_COLOR
     }
 
     //TODO: at least move, either to VertexAttributes, or a more centralized system
     public static class PredefinedAttributes {
         public static final VertexAttributes DEFAULT;
         public static final VertexAttributes BASIC_SPRITEBATCH;
+        public static final VertexAttributes POS_3D_AND_COLOR;
 
         static {
             RawVertexAttributes _default = new RawVertexAttributes(GEOpenGL33.gl33.GL_DYNAMIC_DRAW);   //TODO: usage should not be defined for attributes
@@ -49,6 +51,11 @@ public abstract class Shader {
             spritebatch.addAttribute(2, 2, GL_FLOAT, false);    //texture coords (u, v)
             spritebatch.addAttribute(3, 1, GL_UNSIGNED_BYTE, false);     //texture id
             BASIC_SPRITEBATCH = spritebatch.bake();
+
+            RawVertexAttributes pos3dandcolor = new RawVertexAttributes(GEOpenGL33.gl33.GL_DYNAMIC_DRAW);
+            pos3dandcolor.addAttribute(0, 3, GL_FLOAT, false);          //position (x, y, z)
+            pos3dandcolor.addAttribute(1, 4, GL_UNSIGNED_BYTE, true);   // color (rgba)
+            POS_3D_AND_COLOR = pos3dandcolor.bake();
         }
     }
 

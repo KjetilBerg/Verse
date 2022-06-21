@@ -41,7 +41,7 @@ public class UniformLayout {
 
     public static class Predefined {
 
-        private static final UniformLayout MVP_LAYOUT;  //TODO temp: unusued
+        public static final UniformLayout MVP_LAYOUT;  //TODO temp: unusued
         public static final UniformLayout SPRITEBATCH;
 
         static {

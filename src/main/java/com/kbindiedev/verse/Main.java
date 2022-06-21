@@ -175,7 +175,7 @@ public class Main {
         Camera camera = new Camera();
         camera.aspectRatio = 16f/9;
         camera.zoom = 250f;
-        camera.bounds = new Rectanglef(0 * 16f, 1 * 16f, 30 * 16f, 20 * 16f);
+        //camera.bounds = new Rectanglef(0 * 16f, 1 * 16f, 30 * 16f, 20 * 16f);
         //camera.bounds = new Rectanglef(-100f, -100f, 200f, 200f);
         camera.target = playerTransform;
         //GL30.glViewport(0, 0, 1920, 1080); //TODO temp, until RenderingStrategy
@@ -190,14 +190,17 @@ public class Main {
         cameraTransform.position.y = -200f;
         Entity cameraEntity = space.getEntityManager().instantiate(camera, cameraTransform);
 
+        space.getEntityManager().instantiate(new ShapeRenderer());
+
         RenderContextPreparerSystem rcps = new RenderContextPreparerSystem(space);
         space.addSystem(new ExampleSystem(space));
         space.addSystem(new PlayerMovementSystem(space));
-        space.addSystem(new PolygonCollider2DSystem(space));
+        //space.addSystem(new PolygonCollider2DSystem(space));
         space.addSystem(rcps);
         space.addSystem(new CameraSystem(space));
         space.addSystem(new SpriteAnimatorSystem(space));
         space.addSystem(new SpriteRendererSystem(space));
+        space.addSystem(new ShapeRendererSystem(space));
 
         RenderContext context = new RenderContext(cameraEntity, gl33.getApplicationWindow(), true);
         rcps.addRenderContext(context);

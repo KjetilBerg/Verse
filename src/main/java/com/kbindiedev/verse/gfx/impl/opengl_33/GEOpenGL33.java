@@ -228,7 +228,12 @@ public class GEOpenGL33 extends GraphicsEngine {
         spritebatchShader.compile();
         AssetPool.registerShader(new Shader.Reference(this.getClass(), Shader.Predefined.BASIC_SPRITEBATCH), spritebatchShader);
 
-        return 1;
+        GLShader pos3dandcolorShader = new GLShader(Shader.PredefinedAttributes.POS_3D_AND_COLOR,
+                UniformLayout.Predefined.MVP_LAYOUT, Files.getExternalPath("assets/shaders/pos_3d_and_color.glsl"));
+        pos3dandcolorShader.compile();
+        AssetPool.registerShader(new Shader.Reference(this.getClass(), Shader.Predefined.POS_3D_AND_COLOR), pos3dandcolorShader);
+
+        return 2;
     }
 
 

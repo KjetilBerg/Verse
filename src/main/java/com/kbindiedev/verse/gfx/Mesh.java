@@ -9,12 +9,17 @@ public abstract class Mesh {
 
     protected Material material;
     protected IIndexData indexData; //TODO: default to some blank implementation
+    protected RenderMode renderMode;
 
     public Mesh(Material material) {
         this.material = material;
+        renderMode = RenderMode.TRIANGLES;
     }
 
     public Material getMaterial() { return material; }
+
+    public void setRenderMode(RenderMode mode) { renderMode = mode; }
+    public RenderMode getRenderMode() { return renderMode; }
 
     public void setVertices(float[] data) { updateVertices(data, 0); }
     public void updateVertices(float[] data, long vertexOffset) {
@@ -65,7 +70,7 @@ public abstract class Mesh {
     /**
      * Buffer VertexData, generally directly to the GPU.
      * @throws IndexOutOfBoundsException - If length exceeds data capacity by current position, or length + offsets exceed allocated GPU memory.
-     * @param data - The data to buffer. Must be a direct buffer. Limit will be set, though position will be left unchanged.
+     * @param data - The data to buffer. Must be a direct buffer. Limit, position and capacity will remain unchanged.
      * @param vertexOffset - An offset according to this mesh's material's VertexAttribute stride; which vertex, by index, to start buffering to.
      * @param byteOffset - An offset in bytes to be added on top of the vertexOffset calculation step.
      * @param length - The number of bytes to buffer.
@@ -74,5 +79,9 @@ public abstract class Mesh {
 
     /** Render the geometry to the currently defined target. */
     public abstract void render();
+
+    public enum RenderMode {
+        TRIANGLES, LINES, POINTS
+    }
 
 }
