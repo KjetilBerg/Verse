@@ -1,7 +1,6 @@
 package com.kbindiedev.verse.gfx;
 
-import com.kbindiedev.verse.gfx.strategy.attributes.VertexAttributes;
-import com.kbindiedev.verse.gfx.strategy.providers.IVertexProvider;
+import com.kbindiedev.verse.gfx.strategy.providers.MeshDataProvider;
 import com.kbindiedev.verse.profiling.Assertions;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -9,14 +8,14 @@ import org.lwjgl.BufferUtils;
 
 import java.nio.ByteBuffer;
 
-// TODO: considering IVertexProvider, could SpriteBatch extend PolygonTriangleBatch ?
+// TODO: considering MeshDataProvider, could SpriteBatch extend PolygonTriangleBatch ?
 
 /** Batches polygons as triangles for rendering. */
 public class PolygonTriangleBatch {
 
     private Mesh mesh;
     private ByteBuffer vertexData;
-    private IIndexData indexData;
+    private IndexDataBuffer indexDataBuffer;
 
     private Matrix4f projectionMatrix;
     private Matrix4f viewMatrix;
@@ -29,7 +28,7 @@ public class PolygonTriangleBatch {
     private short currentVertex;
 
 
-    public PolygonTriangleBatch(GraphicsEngine implementation, int maxVertices, int maxIndices) {
+    public PolygonTriangleBatch(GraphicsEngine implementation, int maxVertices, int maxIndices, Mesh.RenderMode renderMode) {
         if (maxVertices > 32767) throw new IllegalArgumentException(String.format("maximum vertex index is 32767. PolygonTriangleBatch requested max %d vertices", maxVertices));
         System.out.printf("Creating new PolygonTriangleBatch of size: vertices: %d, indices: %d\n", maxVertices, maxIndices); //TODO: Verse needs some notification system
 
@@ -40,8 +39,9 @@ public class PolygonTriangleBatch {
         Material material = MaterialTemplate.PredefinedTemplates.POS_3D_AND_COLOR.createMaterial(); // TODO: custom material (Shader)
 
         mesh = implementation.createMesh(material, maxVertices);
+        mesh.setRenderMode(renderMode);
         vertexData = BufferUtils.createByteBuffer(Shader.PredefinedAttributes.POS_3D_AND_COLOR.getStride() * maxVertices);    //TODO: material.getVertexAttributes instead, though MUST be identical
-        indexData = new SpriteBatch.IndexData(maxIndices);
+        indexDataBuffer = new IndexDataBuffer(maxIndices, true);
 
         projectionMatrix = new Matrix4f();
         viewMatrix = new Matrix4f();
@@ -49,7 +49,12 @@ public class PolygonTriangleBatch {
         drawing = false;
         globalFlipX = false; globalFlipY = false;
         drawsTotal = drawsCycle = rendercallsTotal = rendercallsCycle = 0;
+
+        mesh.setIndices(indexDataBuffer);
     }
+
+    public Mesh.RenderMode getRenderMode() { return mesh.getRenderMode(); }
+    public void setRenderMode(Mesh.RenderMode renderMode) { mesh.setRenderMode(renderMode); }
 
     public void setProjectionMatrix(Matrix4f projection) { projectionMatrix = projection; }
     public void setViewMatrix(Matrix4f view) { viewMatrix = view; }
@@ -68,30 +73,21 @@ public class PolygonTriangleBatch {
         drawing = false;
     }
 
-    // TODO: polygon with fixed center
-    // TODO: generic polygon
+    public void drawConvexPolygon(MeshDataProvider provider) {
 
-    public void drawConvexPolygon(IVertexProvider vertexProvider, int n) {
-        if (n < 3) throw new IllegalArgumentException("polygon length must be at least 3, but got: " + n);
-        if (n > maxVertices) Assertions.warn("vertexCount (n=%d) > maxVertices (%d). will cause crash.", n, maxVertices); // TODO: allocate more memory
-        if ((n - 2) * 3 > maxIndices) Assertions.warn("polygon indices (%d) > maxIndices (%d). will cause crash", (n - 2) * 3, maxIndices); // TODO: allocate more memory
+        if (provider.getNumVertices() > maxVertices) Assertions.warn("vertexCount (n=%d) > maxVertices (%d). will cause crash.", provider.getNumVertices(), maxVertices); // TODO: allocate more memory
+        if (provider.getNumIndexEntries(mesh.getRenderMode()) > maxIndices) Assertions.warn("polygon indices (%d) > maxIndices (%d). render-mode: %s, will cause crash", provider.getNumIndexEntries(mesh.getRenderMode()), maxIndices, mesh.getRenderMode().name()); // TODO: allocate more memory
 
         if (!drawing) Assertions.warn("not drawing, call .begin() first");
 
-        boolean willOverflowVertices = (currentVertex + n > maxVertices);
-        boolean willOverflowIndices = (indexData.getBuffer().position() + (n - 2) * 3 > maxIndices);
+        boolean willOverflowVertices = (currentVertex + provider.getNumVertices() > maxVertices);
+        boolean willOverflowIndices = (indexDataBuffer.getPosition() + provider.getNumIndexEntries(mesh.getRenderMode()) > maxIndices);
         if (willOverflowVertices || willOverflowIndices) flush();
 
-        vertexProvider.feed(vertexData, n);
+        indexDataBuffer.setBaseVertex(currentVertex);
+        provider.feed(vertexData, indexDataBuffer, mesh.getRenderMode());
 
-        ByteBuffer indices = indexData.getBuffer();
-        for (int i = 2; i < n; ++i) {
-            indices.putShort(currentVertex);
-            indices.putShort((short)(currentVertex + i - 1));
-            indices.putShort((short)(currentVertex + i));
-        }
-
-        currentVertex += n;
+        currentVertex += provider.getNumVertices();
 
         drawsCycle++;
         drawsTotal++;
@@ -108,19 +104,14 @@ public class PolygonTriangleBatch {
         vertexData.position(0);
         mesh.bufferVertices(vertexData, 0, 0, vertexIndex);
 
-        mesh.setIndices(indexData); //do not need to re-set every flush. TODO: make some getter for mesh's indexData instead
-
         mesh.getMaterial().setUniformValue("uProjection", projectionMatrix);
         mesh.getMaterial().setUniformValue("uView", viewMatrix);
 
-        // todo: setNumIndices is temp
-        indexData.setNumIndices(indexData.getBuffer().position() / 2);
+        indexDataBuffer.setToReadMode();
         mesh.render();
-        indexData.setNumIndices(indexData.getBuffer().capacity());
+        indexDataBuffer.setToWriteMode();
 
         vertexData.position(0);
-        indexData.getBuffer().position(0);
-        indexData.getBuffer().limit(indexData.getBuffer().capacity()); // TODO: temp
         currentVertex = 0;
     }
 

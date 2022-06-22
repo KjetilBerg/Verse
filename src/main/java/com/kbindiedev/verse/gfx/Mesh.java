@@ -8,8 +8,8 @@ import java.nio.ByteBuffer;
 public abstract class Mesh {
 
     protected Material material;
-    protected IIndexData indexData; //TODO: default to some blank implementation
-    protected RenderMode renderMode;
+    protected IndexDataBuffer indexDataBuffer; //TODO: default to some blank implementation
+    protected RenderMode renderMode; // TODO: lines = linewidth, points = point size
 
     public Mesh(Material material) {
         this.material = material;
@@ -30,9 +30,9 @@ public abstract class Mesh {
         bufferVertices(b, vertexOffset, 0, data.length * Float.BYTES);
     }
 
-    public void setIndices(IIndexData indexData) { this.indexData = indexData; }
+    public void setIndices(IndexDataBuffer indexDataBuffer) { this.indexDataBuffer = indexDataBuffer; }
 
-    /* TODO if ever: move to some implementation of IIndexData
+    /* TODO if ever: move to some implementation of IndexDataBuffer
     public void updateIndices(short[] data, long indexOffset) {
         ByteBuffer b = BufferUtils.createByteBuffer(data.length * Short.BYTES);
         for (short s : data) b.putShort(s);

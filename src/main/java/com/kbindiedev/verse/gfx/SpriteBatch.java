@@ -7,7 +7,6 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL33;
 
 import java.nio.ByteBuffer;
-import java.util.HashMap;
 
 /**
  * This class was lightly inspired by the LibGDX implementation of a similar structure (SpriteBatch)
@@ -22,7 +21,7 @@ public class SpriteBatch {
     private Mesh mesh;
     private ByteBuffer vertexData;
 
-    private IndexData indexData;    //TODO: move this into mesh? like a getter ?
+    private IndexDataBuffer indexDataBuffer;    //TODO: move this into mesh? like a getter ?
 
     private SamplerMap textureToSlot;
     private int nextTextureSlot;
@@ -60,17 +59,19 @@ public class SpriteBatch {
         nextTextureSlot = 0;
 
         //{ 0, 1, 2, 3, 2, 1 }
-        indexData = new IndexData(size * 6);
-        ByteBuffer buffer = indexData.getBuffer();
+        indexDataBuffer = new IndexDataBuffer(size * 6, true);
         int j = 0;
-        for (int i = 0; i < indexData.getNumIndices(); i += 6, j += 4) {
-            buffer.putShort((short)(j+0));
-            buffer.putShort((short)(j+1));
-            buffer.putShort((short)(j+2));
-            buffer.putShort((short)(j+3));
-            buffer.putShort((short)(j+2));
-            buffer.putShort((short)(j+1));
+        for (int i = 0; i < indexDataBuffer.getLimit(); i += 6, j += 4) {
+            indexDataBuffer.addLocalIndexEntry(j + 0);
+            indexDataBuffer.addLocalIndexEntry(j + 1);
+            indexDataBuffer.addLocalIndexEntry(j + 2);
+            indexDataBuffer.addLocalIndexEntry(j + 3);
+            indexDataBuffer.addLocalIndexEntry(j + 2);
+            indexDataBuffer.addLocalIndexEntry(j + 1);
         }
+
+        indexDataBuffer.setToReadMode();
+        mesh.setIndices(indexDataBuffer);
 
         colors = new Pixel[4];
         setColor(Pixel.SOLID_WHITE);
@@ -127,9 +128,8 @@ public class SpriteBatch {
         vertexData.position(0);
         mesh.bufferVertices(vertexData, 0, 0, vertexIndex);
 
-        indexData.numIndices = vertexIndex / (Shader.PredefinedAttributes.BASIC_SPRITEBATCH.getStride() * 4) * 6;   //TODO: mesh sets index. hand control to user?
-        mesh.setIndices(indexData); //do not need to re-set every flush. TODO: make some getter for mesh's indexData instead
-
+        int indexLimit = vertexIndex / (Shader.PredefinedAttributes.BASIC_SPRITEBATCH.getStride() * 4) * 6;   //TODO: getStride improvement
+        indexDataBuffer.limit(indexLimit);
 
         mesh.getMaterial().setUniformValue("uProjection", projectionMatrix);
         mesh.getMaterial().setUniformValue("uView", viewMatrix);
@@ -332,24 +332,4 @@ public class SpriteBatch {
         vertexData.put((byte)texid);    //texid (byte)
     }
 
-    //TODO: probably generalize this solution
-    public static class IndexData implements IIndexData {
-
-        private ByteBuffer buffer;
-        private int numIndices;
-
-        public IndexData(int numIndices) {
-            buffer = BufferUtils.createByteBuffer(numIndices * Short.BYTES);
-            this.numIndices = numIndices;
-        }
-
-        @Override
-        public void setNumIndices(int indices) { numIndices = indices; }
-
-        @Override
-        public int getNumIndices() { return numIndices; }
-
-        @Override
-        public ByteBuffer getBuffer() { return buffer; }
-    }
 }

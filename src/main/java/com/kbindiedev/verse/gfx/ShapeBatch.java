@@ -20,10 +20,10 @@ public class ShapeBatch {
         vertexData = BufferUtils.createByteBuffer(Shader.PredefinedAttributes.BASIC_SPRITEBATCH.getStride() * size * 4);    //TODO: material.getVertexAttributes instead, though MUST be identical
 
         //{ 0, 1, 2, 3, 2, 1 }
-        indexData = new IndexData(size * 6);
-        ByteBuffer buffer = indexData.getBuffer();
+        indexDataBuffer = new IndexDataBuffer(size * 6);
+        ByteBuffer buffer = indexDataBuffer.getBuffer();
         int j = 0;
-        for (int i = 0; i < indexData.getNumIndices(); i += 6, j += 4) {
+        for (int i = 0; i < indexDataBuffer.getNumIndices(); i += 6, j += 4) {
             buffer.putShort((short)(j+0));
             buffer.putShort((short)(j+1));
             buffer.putShort((short)(j+2));

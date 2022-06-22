@@ -77,8 +77,8 @@ public class GLMesh extends Mesh implements IMemoryOccupant {
     public void render() {
 
         //TODO: temp
-        if (indexData == null) {
-            new EngineWarning("indexData is null").print();
+        if (indexDataBuffer == null) {
+            new EngineWarning("indexDataBuffer is null").print();
             return;
         }
 
@@ -97,13 +97,10 @@ public class GLMesh extends Mesh implements IMemoryOccupant {
 
         shader.useMaterial(material);
 
-        ByteBuffer indices = indexData.getBuffer();
-        indices.position(0);
-        indices.limit(indexData.getNumIndices() * 2);   //TODO: is it always 2 ? // TODO: better limiting ("unset" this)
+        boolean wasWriteMode = indexDataBuffer.isInWriteMode();
+        indexDataBuffer.setToReadMode();
 
-        //TODO: 0 and 3 are hardcoded. this is temporary
         //TODO: can use ebos for indices (?)
-        //GEOpenGL33.gl33.glDrawRangeElementsBaseVertex(GL33.GL_TRIANGLES, 0, 3, GL33.GL_UNSIGNED_SHORT, indices, baseVertex);
 
         int drawMode;
         switch (renderMode) {
@@ -112,7 +109,11 @@ public class GLMesh extends Mesh implements IMemoryOccupant {
             case POINTS: drawMode = GL33.GL_POINTS; break;
             default: Assertions.warn("unknown renderMode: %s. assuming triangles", renderMode.name()); drawMode = GL33.GL_TRIANGLES; break;
         }
-        GEOpenGL33.gl33.glDrawRangeElementsBaseVertex(drawMode, 0, indices.limit(), GL33.GL_UNSIGNED_SHORT, indices, baseVertex);
+
+        GEOpenGL33.gl33.glDrawRangeElementsBaseVertex(drawMode, indexDataBuffer.positionInBytes(), indexDataBuffer.limitInBytes(),
+                GL33.GL_UNSIGNED_SHORT, indexDataBuffer.getBufferForReading(), baseVertex);
+
+        if (wasWriteMode) indexDataBuffer.setToWriteMode();
 
         StateTracker.popVertexArrayObject();
 

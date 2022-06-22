@@ -4,36 +4,22 @@ import com.kbindiedev.verse.gfx.*;
 import com.kbindiedev.verse.gfx.impl.opengl_33.GEOpenGL33;
 import com.kbindiedev.verse.gfx.impl.opengl_33.GLTexture;
 import com.kbindiedev.verse.input.keyboard.IKeyEventListener;
-import com.kbindiedev.verse.input.keyboard.KeyEventTracker;
-import com.kbindiedev.verse.input.keyboard.Keys;
 import com.kbindiedev.verse.input.mouse.IMouseInputProcessor;
-import com.kbindiedev.verse.input.mouse.MouseButtons;
-import com.kbindiedev.verse.input.mouse.MouseInputManager;
 import com.kbindiedev.verse.io.files.Files;
 import com.kbindiedev.verse.net.rest.*;
 import com.kbindiedev.verse.sfx.Sound;
-import com.kbindiedev.verse.sfx.SoundEngine;
 import com.kbindiedev.verse.sfx.SoundEngineSettings;
 import com.kbindiedev.verse.sfx.Source;
 import com.kbindiedev.verse.sfx.impl.openal_10.SEOpenAL10;
 import org.joml.Matrix4f;
 import org.lwjgl.BufferUtils;
-import org.lwjgl.openal.*;
-import sun.misc.IOUtils;
 
-import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.UnsupportedAudioFileException;
 import java.io.*;
 import java.net.HttpCookie;
 import java.net.URI;
 import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
 import java.util.Arrays;
 import java.util.List;
-import static org.lwjgl.openal.ALC10.*;
-import static org.lwjgl.openal.EXTEfx.ALC_MAX_AUXILIARY_SENDS;
 
 public class GeneralTesting implements GEOpenGL33.IRenderable, IKeyEventListener, IMouseInputProcessor {
 
@@ -227,25 +213,6 @@ public class GeneralTesting implements GEOpenGL33.IRenderable, IKeyEventListener
         proj.scale(scale, scale, 1f);
         return true;
     }
-
-
-    private static class IndexData implements IIndexData {
-
-        private ByteBuffer buffer;
-        private int numIndices;
-
-        public IndexData(short[] data) {
-            buffer = BufferUtils.createByteBuffer(data.length * 2);
-            for (short s : data) buffer.putShort(s);
-            buffer.flip();
-            numIndices = data.length;
-        }
-
-        public void setNumIndices(int indices) { numIndices = indices; }
-        public int getNumIndices() { return numIndices; }
-        public ByteBuffer getBuffer() { return buffer; }
-    }
-
 
     private static void nettest() {
         RESTClientRequestSettings requestSettings = new RESTClientRequestSettings();

@@ -1,37 +1,62 @@
 package com.kbindiedev.verse.gfx.strategy.providers;
 
+import com.kbindiedev.verse.gfx.IndexDataBuffer;
+import com.kbindiedev.verse.gfx.Mesh;
 import com.kbindiedev.verse.gfx.Shader;
-import com.kbindiedev.verse.gfx.strategy.attributes.VertexAttributes;
-import com.kbindiedev.verse.profiling.exceptions.NotEnoughVerticesException;
-import org.lwjgl.BufferUtils;
+import com.kbindiedev.verse.gfx.strategy.index.IndexEntriesGenerator;
+import com.kbindiedev.verse.gfx.strategy.index.LineMode;
+import com.kbindiedev.verse.gfx.strategy.index.PointMode;
+import com.kbindiedev.verse.gfx.strategy.index.TriangleMode;
+import com.kbindiedev.verse.profiling.Assertions;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-/** A IVertexProvider that wraps around when it arrives at the end. */
-public class ColoredVertexProvider implements IVertexProvider {
+/** A MeshDataProvider that provides POS_3D_AND_COLOR vertices, that are connected as triangles. */
+public class ColoredVertexProvider extends MeshDataProvider {
 
-    private VertexAttributes attributes;
+    private int numVertices;
+    private byte[] byteVertexData;
     private ByteBuffer wrapper;
-    private byte[] vertexData;
-    private int dataIndex;
 
-    public ColoredVertexProvider(int numVertices) {
-        attributes = Shader.PredefinedAttributes.POS_3D_AND_COLOR;
-        vertexData = new byte[numVertices * attributes.getStride()];
-        dataIndex = 0;
-        wrapper = ByteBuffer.wrap(vertexData);
+    private short[] indexEntriesTriangles;
+    private short[] indexEntriesLines;
+    private short[] indexEntriesPoints;
+
+    public ColoredVertexProvider(int numVertices) { this(numVertices, TriangleMode.ZERO_IS_CENTER, LineMode.ZERO_IS_CENTER_OUTLINE_ONLY, PointMode.DISREGARD_FIRST); }
+    public ColoredVertexProvider(int numVertices, TriangleMode triangleMode, LineMode lineMode, PointMode pointMode) {
+        super(Shader.PredefinedAttributes.POS_3D_AND_COLOR);
+        this.numVertices = numVertices;
+
+        byteVertexData = new byte[numVertices * attributes.getStride()];
+        wrapper = ByteBuffer.wrap(byteVertexData);
         wrapper.order(ByteOrder.LITTLE_ENDIAN);
+
+        indexEntriesTriangles = IndexEntriesGenerator.generateIndicesTriangles(numVertices, triangleMode);
+        indexEntriesLines = IndexEntriesGenerator.generateIndicesLines(numVertices, lineMode);
+        indexEntriesPoints = IndexEntriesGenerator.generateIndicesPoints(numVertices, pointMode);
     }
 
     @Override
-    public VertexAttributes getVertexAttributes() { return attributes; }
+    public long getNumVertices() { return numVertices; }
+    @Override
+    public long getNumIndexEntries(Mesh.RenderMode mode) { return getIndexEntries(mode).length; }
+
+    public short[] getIndexEntries(Mesh.RenderMode mode) {
+        switch (mode) {
+            case TRIANGLES: return indexEntriesTriangles;
+            case LINES: return indexEntriesLines;
+            case POINTS: return indexEntriesPoints;
+            default: Assertions.warn("unknown RenderMode: %s, assuming triangles", mode.name()); return indexEntriesTriangles;
+        }
+    }
 
     @Override
-    public void feedSingle(ByteBuffer buffer) throws NotEnoughVerticesException {
-        buffer.put(vertexData, dataIndex, attributes.getStride());
-        dataIndex += attributes.getStride();
-        dataIndex %= vertexData.length;
+    public void feed(ByteBuffer vertexData, IndexDataBuffer indexDataBuffer, Mesh.RenderMode mode) {
+        vertexData.put(byteVertexData);
+
+        short[] indexEntries = getIndexEntries(mode);
+        for (short s : indexEntries) indexDataBuffer.addLocalIndexEntry(s);
     }
 
     public void setPosition(int vertex, float x, float y, float z) {
