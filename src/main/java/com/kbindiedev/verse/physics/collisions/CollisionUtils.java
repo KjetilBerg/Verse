@@ -1,12 +1,8 @@
 package com.kbindiedev.verse.physics.collisions;
 
-import com.kbindiedev.verse.math.helpers.Line;
-import com.kbindiedev.verse.math.helpers.Point2Df;
 import com.kbindiedev.verse.math.shape.Polygon;
 import com.kbindiedev.verse.math.shape.Rectanglef;
-import org.joml.Vector2f;
-
-import java.util.Iterator;
+import org.joml.Vector3f;
 
 /** A collection of collision checking methods. */
 public class CollisionUtils {
@@ -20,8 +16,12 @@ public class CollisionUtils {
     // TODO: float vs int etc
     // TODO: GJK (?), this is O(n*m), n = num points in p1, m = num points in p2
     // heavily inspired by DIAG - https://www.youtube.com/watch?v=7Ik2vowGcU0&ab_channel=javidx9
-    public static Vector2f testPolygonCollision(Polygon p1, Polygon p2) {
 
+    public static Vector3f testPolygonCollision(Polygon p1, Polygon p2) {
+
+        return new Vector3f();
+    }
+        /*
         Polygon poly1 = p1, poly2 = p2;
         Point2Df center = poly1.getCenter();
         Vector2f poly1OldCenter = new Vector2f(center.getX(), center.getY());
@@ -79,6 +79,7 @@ public class CollisionUtils {
         return totalDisplacement;
 
     }
+    */
 
 
 }

@@ -4,8 +4,12 @@ import com.kbindiedev.verse.ecs.*;
 import com.kbindiedev.verse.ecs.components.PolygonCollider2D;
 import com.kbindiedev.verse.ecs.components.RigidBody2D;
 import com.kbindiedev.verse.ecs.components.Transform;
+import com.kbindiedev.verse.gfx.Mesh;
+import com.kbindiedev.verse.gfx.Pixel;
+import com.kbindiedev.verse.gfx.ShapeDrawer;
+import com.kbindiedev.verse.gfx.strategy.index.*;
+import com.kbindiedev.verse.gfx.strategy.providers.ColoredPolygon;
 import com.kbindiedev.verse.physics.collisions.CollisionUtils;
-import org.joml.Vector2f;
 import org.joml.Vector3f;
 
 import java.util.*;
@@ -49,11 +53,8 @@ public class PolygonCollider2DSystem extends ComponentSystem {
             colliderMap.get(body).addAll(colliders);
 
             // TODO TEMP:
-            Vector2f destination = new Vector2f();
             for (PolygonCollider2D collider : colliders) {
-                Vector3f v = entity.getTransform().position;
-                destination.set(v.x, v.y);
-                collider.polgyon.translateTo(destination);
+                collider.polgyon.translateTo(entity.getTransform().position);
             }
         }
 
@@ -72,13 +73,30 @@ public class PolygonCollider2DSystem extends ComponentSystem {
 
             for (PolygonCollider2D c1 : myColliders) {
                 for (PolygonCollider2D c2 : possibleColliders) {
-                    Vector2f displacement = CollisionUtils.testPolygonCollision(c1.polgyon, c2.polgyon);
-                    transform.position.add(displacement.x, displacement.y, 0);
+                    Vector3f displacement = CollisionUtils.testPolygonCollision(c1.polgyon, c2.polgyon);
+                    transform.position.add(displacement);
                 }
             }
 
+        }
 
+    }
 
+    @Override
+    public void onDrawGizmos(RenderContext context) {
+
+        ShapeDrawer drawer = getSpace().getShapeDrawer();
+        Iterator<Entity> entities = query.execute().iterator();
+        while (entities.hasNext()) {
+            Entity entity = entities.next();
+
+            PolygonCollider2D collider = entity.getComponent(PolygonCollider2D.class);
+
+            List<Vector3f> points = collider.polgyon.getPoints();
+            List<Vector3f> pos = new ArrayList<>(points);
+
+            ColoredPolygon p = new ColoredPolygon(new Vector3f(), pos, Pixel.RED);
+            drawer.getLineBatch().drawConvexPolygon(p);
         }
 
     }

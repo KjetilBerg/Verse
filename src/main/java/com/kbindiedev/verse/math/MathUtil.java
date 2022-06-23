@@ -1,5 +1,9 @@
 package com.kbindiedev.verse.math;
 
+import org.joml.Vector3f;
+
+import java.util.List;
+
 /** Better Math utilities than what java provides. */
 public class MathUtil {
 
@@ -65,6 +69,13 @@ public class MathUtil {
         double lowest = Double.MAX_VALUE;
         for (double n : numbers) { if (n < lowest) lowest = n; }
         return lowest;
+    }
+
+    public static Vector3f findCenter(List<Vector3f> vectors) {
+        Vector3f center = new Vector3f();
+        for (Vector3f v : vectors) center.add(v);
+        center.div(vectors.size());
+        return center;
     }
 
 }

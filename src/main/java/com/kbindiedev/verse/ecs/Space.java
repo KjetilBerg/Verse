@@ -2,6 +2,9 @@ package com.kbindiedev.verse.ecs;
 
 import com.kbindiedev.verse.ecs.systems.ComponentSystem;
 import com.kbindiedev.verse.gfx.GraphicsEngine;
+import com.kbindiedev.verse.gfx.Mesh;
+import com.kbindiedev.verse.gfx.PolygonBatch;
+import com.kbindiedev.verse.gfx.ShapeDrawer;
 import com.kbindiedev.verse.input.InputSystem;
 import com.kbindiedev.verse.input.keyboard.KeyEventTracker;
 import com.kbindiedev.verse.input.keyboard.event.KeyEvent;
@@ -34,6 +37,8 @@ public class Space {
 
     private Thread runner;
 
+    private ShapeDrawer shapeDrawer;
+
     public Space(GraphicsEngine gfxImplementation) { this(gfxImplementation, new InputSystem()); }
     public Space(GraphicsEngine gfxImplementation, InputSystem input) { this(gfxImplementation, input, new EntityManager()); }
     public Space(GraphicsEngine gfxImplementation, InputSystem input, EntityManager entityManager) { // TODO: remove manager ?
@@ -42,6 +47,12 @@ public class Space {
         this.entityManager = entityManager;
         systems = new FastList<>();
         lastTimestamp = System.currentTimeMillis();
+
+        // TODO numbers
+        PolygonBatch triangleBatch = new PolygonBatch(gfxImplementation, 128, 128, Mesh.RenderMode.TRIANGLES);
+        PolygonBatch lineBatch = new PolygonBatch(gfxImplementation, 128, 128, Mesh.RenderMode.LINES);
+        PolygonBatch pointBatch = new PolygonBatch(gfxImplementation, 128, 128, Mesh.RenderMode.POINTS);
+        shapeDrawer = new ShapeDrawer(triangleBatch, lineBatch, pointBatch);
     }
 
     /**
@@ -51,6 +62,8 @@ public class Space {
     public GraphicsEngine getGfxImplementation() { return gfxImplementation; }
 
     public EntityManager getEntityManager() { return entityManager; }
+
+    public ShapeDrawer getShapeDrawer() { return shapeDrawer; }
 
     public void addSystem(ComponentSystem system) {
         systems.add(system);
@@ -97,7 +110,14 @@ public class Space {
      * @param context - The context (details) to take into account when rendering the scene.
      */
     public void render(RenderContext context) {
+        context.prepare();
+        shapeDrawer.setProjectionMatrix(context.getCameraComponent().projectionMatrix);
+        shapeDrawer.setViewMatrix(context.getCameraComponent().viewMatrix);
+
+        shapeDrawer.begin();
         for (ComponentSystem system : systems) system.render(context);
+        for (ComponentSystem system : systems) system.onDrawGizmos(context);
+        shapeDrawer.end();
     }
 
     public InputSystem getInput() { return input; }

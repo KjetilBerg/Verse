@@ -21,4 +21,10 @@ public interface ILogicBehaviour {
 
     default void fixedUpdate(float dt) {}    // TODO: registration? how long is "fixed" ?
 
+    default void render(RenderContext context) {}
+
+    default void onDrawGizmos(RenderContext context) {}
+
+    default void onDrawGizmosSelected(RenderContext context, Entity entity) {}
+
 }

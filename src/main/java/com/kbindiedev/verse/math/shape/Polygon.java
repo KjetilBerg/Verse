@@ -1,53 +1,68 @@
 package com.kbindiedev.verse.math.shape;
 
-import com.kbindiedev.verse.math.helpers.Line;
-import com.kbindiedev.verse.math.helpers.Point2Df;
-import org.joml.Vector2f;
+import com.kbindiedev.verse.math.MathTransform;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-/** A collection of points and lines. */
+/** A collection of points that form lines based by the order of the points. */
 public class Polygon {
 
-    private Point2Df center;
-    private List<Point2Df> points;
-    private List<Line<Point2Df>> lines;
+    protected MathTransform transform;
+    protected List<Vector3f> points;
 
-    public Polygon(Point2Df center) {
-        this.center = center;
-        points = new ArrayList<>();
-        lines = new ArrayList<>();
+    public Polygon() { this(new MathTransform(), new ArrayList<>()); }
+    public Polygon(Vector3f center, List<Vector3f> points) { this(new MathTransform(center), points); }
+    public Polygon(MathTransform transform, List<Vector3f> points) {
+        this.transform = transform;
+        this.points = points;
     }
 
-    public Point2Df getCenter() { return center; }
-    public void setCenter(Point2Df center) { this.center = center; }
+    public Vector3f getCenter() { return transform.getPosition(); }
+    public Vector3f getScale() { return transform.getScale(); }
+    public Quaternionf getRotation() { return transform.getRotation(); }
 
-    public void translate(Vector2f vector) {
-        center.translate(vector);
-        for (Point2Df point : points) point.translate(vector);
-    }
+    protected MathTransform getTransform() { return transform; }
 
-    public void translateTo(Vector2f vector) {
-        float ox = vector.x, oy = vector.y;
-        vector.x -= center.getX();
-        vector.y -= center.getY();
-        translate(vector);
-        vector.x = ox; vector.y = oy;
-    }
-
-    public void addPoint(Point2Df point) {
+    public void addPoint(Vector3f point) {
         points.add(point);
-        if (points.size() < 2) return;
-
-        Point2Df prev = points.get(points.size() - 2), next = points.get(0);
-        if (lines.size() > 0) lines.remove(lines.get(lines.size() - 1));
-        lines.add(new Line<>(prev, point));
-        lines.add(new Line<>(point, next));
     }
 
-    public Iterator<Point2Df> iteratePoints() { return points.iterator(); }
-    public Iterator<Line<Point2Df>> iterateLines() { return lines.iterator(); }
+    /** Set the position of a single vertex. */
+    public void setPointPosition(int index, Vector3f position) { points.get(index).set(position); }
+
+    public List<Vector3f> getPoints() { return points; }
+
+    /** Assume that this polygon's center is the given center. existing vertices positions will not be changed. */
+    public void assumeCenter(Vector3f center) { this.transform.setPosition(center); }
+
+    /** Set this polygon's center by translating all points so that its center is at the given destination. */
+    public void translateTo(Vector3f dest) {
+        Vector3f by = transform.distanceTo(dest);
+        translate(by);
+    }
+
+    /** Set this polygon's final scale by a given vector3f. */
+    public void scaleTo(Vector3f scale) {
+        Vector3f s = transform.scaleTo(scale);
+        Vector3f center = transform.getPosition();
+        for (Vector3f p : points) p.sub(center).mul(s).add(center);
+    }
+
+    /** Set this polygon's rotation by a given quaternion. */
+    public void rotateTo(Quaternionf rotation) {
+        Quaternionf rot = transform.rotateTo(rotation);
+        Vector3f center = transform.getPosition();
+        for (Vector3f p : points) p.sub(center).rotate(rot).add(center);
+    }
+
+    /** Translate center and all points by the given vector3f. */
+    public void translate(Vector3f by) {
+        transform.translate(by);
+        for (Vector3f vec : points) vec.add(by);
+    }
 
 }

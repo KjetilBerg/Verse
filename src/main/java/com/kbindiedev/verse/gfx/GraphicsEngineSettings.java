@@ -9,7 +9,7 @@ public class GraphicsEngineSettings {
         backgroundColor = new Pixel(0, 0, 0);
     }
 
-    public void setBackgroundColor(Pixel pixel) { backgroundColor = pixel; }
     public Pixel getBackgroundColor() { return backgroundColor; }
+    public void setBackgroundColor(Pixel pixel) { backgroundColor = pixel; }
 
 }

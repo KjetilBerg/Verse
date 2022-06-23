@@ -1,17 +1,18 @@
 package com.kbindiedev.verse.gfx;
 
-import com.kbindiedev.verse.gfx.strategy.providers.MeshDataProvider;
+import com.kbindiedev.verse.gfx.strategy.providers.IMeshDataProvider;
 import com.kbindiedev.verse.profiling.Assertions;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.BufferUtils;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
-// TODO: considering MeshDataProvider, could SpriteBatch extend PolygonTriangleBatch ?
+// TODO: considering IMeshDataProvider, could SpriteBatch extend PolygonBatch ?
 
 /** Batches polygons as triangles for rendering. */
-public class PolygonTriangleBatch {
+public class PolygonBatch {
 
     private Mesh mesh;
     private ByteBuffer vertexData;
@@ -28,9 +29,9 @@ public class PolygonTriangleBatch {
     private short currentVertex;
 
 
-    public PolygonTriangleBatch(GraphicsEngine implementation, int maxVertices, int maxIndices, Mesh.RenderMode renderMode) {
-        if (maxVertices > 32767) throw new IllegalArgumentException(String.format("maximum vertex index is 32767. PolygonTriangleBatch requested max %d vertices", maxVertices));
-        System.out.printf("Creating new PolygonTriangleBatch of size: vertices: %d, indices: %d\n", maxVertices, maxIndices); //TODO: Verse needs some notification system
+    public PolygonBatch(GraphicsEngine implementation, int maxVertices, int maxIndices, Mesh.RenderMode renderMode) {
+        if (maxVertices > 32767) throw new IllegalArgumentException(String.format("maximum vertex index is 32767. PolygonBatch requested max %d vertices", maxVertices));
+        System.out.printf("Creating new PolygonBatch of size: vertices: %d, indices: %d\n", maxVertices, maxIndices); //TODO: Verse needs some notification system
 
         this.maxVertices = maxVertices;
         this.maxIndices = maxIndices;
@@ -73,7 +74,7 @@ public class PolygonTriangleBatch {
         drawing = false;
     }
 
-    public void drawConvexPolygon(MeshDataProvider provider) {
+    public void drawConvexPolygon(IMeshDataProvider provider) {
 
         if (provider.getNumVertices() > maxVertices) Assertions.warn("vertexCount (n=%d) > maxVertices (%d). will cause crash.", provider.getNumVertices(), maxVertices); // TODO: allocate more memory
         if (provider.getNumIndexEntries(mesh.getRenderMode()) > maxIndices) Assertions.warn("polygon indices (%d) > maxIndices (%d). render-mode: %s, will cause crash", provider.getNumIndexEntries(mesh.getRenderMode()), maxIndices, mesh.getRenderMode().name()); // TODO: allocate more memory
@@ -113,19 +114,6 @@ public class PolygonTriangleBatch {
 
         vertexData.position(0);
         currentVertex = 0;
-    }
-
-    // TODO: allow rotation if attributes contain position etc
-    // TODO: 3d rotation ?
-    /**
-     * Rotate points around its center, adjusting the given array.
-     * All elements in the array are replaced with new vectors, and so the originals remain unedited.
-     */
-    private void rotateAroundCenterZ(float rotation, Vector3f[] points) {
-        Vector3f center = new Vector3f();
-        for (Vector3f point : points) center.add(point);
-        center.div(points.length);
-        for (int i = 0; i < points.length; ++i) points[i] = new Vector3f(points[i]).sub(center).rotateZ(rotation).add(center);
     }
 
 }

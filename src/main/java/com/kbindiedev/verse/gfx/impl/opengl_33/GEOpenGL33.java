@@ -43,8 +43,8 @@ public class GEOpenGL33 extends GraphicsEngine {
         int numShaders = setupDefaultShaders();
         System.out.printf("GEOpenGL33: %d default shaders prepared\n", numShaders);
 
-        //glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
-        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        Pixel background = settings.getBackgroundColor();
+        glClearColor(background.rn(), background.gn(), background.bn(), background.an());
     }
 
     // TODO: temp

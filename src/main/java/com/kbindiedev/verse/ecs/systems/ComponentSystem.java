@@ -1,5 +1,6 @@
 package com.kbindiedev.verse.ecs.systems;
 
+import com.kbindiedev.verse.ecs.Entity;
 import com.kbindiedev.verse.ecs.ILogicBehaviour;
 import com.kbindiedev.verse.ecs.RenderContext;
 import com.kbindiedev.verse.ecs.Space;
@@ -29,6 +30,10 @@ public abstract class ComponentSystem implements ILogicBehaviour {
     public void fixedUpdate(float dt) {}    // TODO: registration? how long is "fixed" ?
 
     public void render(RenderContext context) {}
+
+    public void onDrawGizmos(RenderContext context) {}
+
+    public void onDrawGizmosSelected(RenderContext context, Entity entity) {}
 
     // TODO: some registration method. systems may "run once", be "self managed" or "run on update"
     // TODO: with respect to awake/start/run, .dependsOn() should maybe exist

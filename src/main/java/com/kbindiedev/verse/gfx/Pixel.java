@@ -7,6 +7,7 @@ import java.util.Random;
 public class Pixel {
 
     public static final Pixel SOLID_WHITE = new Pixel(255, 255, 255, 255);
+    public static final Pixel RED = new Pixel(255, 0, 0, 255);
 
     private static final Random STATIC_RANDOM = new Random();
 
@@ -36,6 +37,12 @@ public class Pixel {
                 ((b & 0xFF) << 0);
     }
 
+    /** Create a copy of a pixel- */
+    public Pixel(Pixel other) { value = other.value; }
+
+    /** Set my value equal to that of the provided pixel. */
+    public void set(Pixel other) { value = other.value; }
+
     private void testValueWithinRange(int r, int g, int b, int a) {
         if ((r > 255 || r < 0) || (g > 255 || g < 0) || (b > 255 || b < 0) || (a > 255 || a < 0)) {
             Assertions.error("pixel value outside allowed range");
@@ -56,5 +63,17 @@ public class Pixel {
 
     /** Get the packed value */
     public int packed() { return value; }
+
+    /** Get the normalized alpha value (0.0f - 1.0f) */
+    public float an() { return a() / 255f; }
+
+    /** Get the normalized red value (0.0f - 1.0f) */
+    public float rn() { return r() / 255f; }
+
+    /** Get the normalized green value (0.0f - 1.0f) */
+    public float gn() { return g() / 255f; }
+
+    /** Get the normalized blue value (0.0f - 1.0f) */
+    public float bn() { return b() / 255f; }
 
 }

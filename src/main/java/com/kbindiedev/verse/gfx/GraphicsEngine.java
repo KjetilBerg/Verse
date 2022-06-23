@@ -30,7 +30,7 @@ public abstract class GraphicsEngine {
     *
     */
 
-    //Note: implementations could more easily be implemented if, for example, ShapeBatch instead was replaced with some ImmediateRenderer that accepted vertices and some parameters
+    //Note: implementations could more easily be implemented if, for example, ShapeDrawer instead was replaced with some ImmediateRenderer that accepted vertices and some parameters
     //          would make all easy except SpriteBatch and MeshBatch (and potentially ParticleBatch)
 
 

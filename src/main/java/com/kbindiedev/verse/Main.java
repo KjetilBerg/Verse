@@ -12,13 +12,13 @@ import com.kbindiedev.verse.gfx.Pixel;
 import com.kbindiedev.verse.gfx.Sprite;
 import com.kbindiedev.verse.gfx.impl.opengl_33.GEOpenGL33;
 import com.kbindiedev.verse.gfx.impl.opengl_33.GLTexture;
+import com.kbindiedev.verse.gfx.strategy.providers.ColoredPolygon;
 import com.kbindiedev.verse.io.files.Files;
 import com.kbindiedev.verse.maps.LayeredTileMap;
 import com.kbindiedev.verse.maps.TileMapLoader;
 import com.kbindiedev.verse.maps.TilesetResourceFetcher;
-import com.kbindiedev.verse.math.helpers.Point2Df;
+import com.kbindiedev.verse.math.helpers.PolygonMaker;
 import com.kbindiedev.verse.math.shape.Polygon;
-import com.kbindiedev.verse.math.shape.Rectanglef;
 import com.kbindiedev.verse.sfx.Sound;
 import com.kbindiedev.verse.sfx.SoundEngineSettings;
 import com.kbindiedev.verse.sfx.Source;
@@ -30,6 +30,7 @@ import com.kbindiedev.verse.z_example.ExampleComponent;
 import com.kbindiedev.verse.z_example.ExampleSystem;
 import com.kbindiedev.verse.z_example.PlayerComponent;
 import com.kbindiedev.verse.z_example.PlayerMovementSystem;
+import org.joml.Vector3f;
 
 import java.io.File;
 import java.io.IOException;
@@ -143,21 +144,21 @@ public class Main {
             exampleComponent.slashSoundSource = source2;
 
             PolygonCollider2D collider = new PolygonCollider2D();
-            Polygon polygon = new Polygon(new Point2Df(8f, 8f));
-            polygon.addPoint(new Point2Df(0f, 0f));
-            polygon.addPoint(new Point2Df(16f, 0f));
-            polygon.addPoint(new Point2Df(16f, 16f));
-            polygon.addPoint(new Point2Df(0f, 16f));
+            Polygon polygon = new Polygon();
+            polygon.addPoint(new Vector3f(0f, 0f, 0f));
+            polygon.addPoint(new Vector3f(16f, 0f, 0f));
+            polygon.addPoint(new Vector3f(16f, 16f, 0f));
+            polygon.addPoint(new Vector3f(0f, 16f, 0f));
             collider.polgyon = polygon;
 
             space.getEntityManager().instantiate(exampleComponent, animator, new SpriteRenderer(), playerTransform, new PlayerComponent(), collider, new RigidBody2D());
 
             PolygonCollider2D collider2 = new PolygonCollider2D();
-            Polygon polygon2 = new Polygon(new Point2Df(8f, 8f));
-            polygon2.addPoint(new Point2Df(0f, 0f));
-            polygon2.addPoint(new Point2Df(16f, 0f));
-            polygon2.addPoint(new Point2Df(16f, 16f));
-            polygon2.addPoint(new Point2Df(0f, 16f));
+            Polygon polygon2 = new Polygon();
+            polygon2.addPoint(new Vector3f(0f, 0f, 0f));
+            polygon2.addPoint(new Vector3f(16f, 0f, 0f));
+            polygon2.addPoint(new Vector3f(16f, 16f, 0f));
+            polygon2.addPoint(new Vector3f(0f, 16f, 0f));
             collider2.polgyon = polygon2;
             SpriteRenderer renderer2 = new SpriteRenderer();
             renderer2.sprite = TilesetResourceFetcher.getSprite(testTileMap.getTileset(), 347);
@@ -190,12 +191,24 @@ public class Main {
         cameraTransform.position.y = -200f;
         Entity cameraEntity = space.getEntityManager().instantiate(camera, cameraTransform);
 
-        space.getEntityManager().instantiate(new ShapeRenderer());
+        ShapeRenderer shape1 = new ShapeRenderer();
+        //ColoredPolygon polygon1 = ColoredPolygonGenerator.generatePolygon(Pixel.SOLID_WHITE, 5, 32f, 0f, false);
+        ColoredPolygon polygon1 = ColoredPolygon.fromPolygon(PolygonMaker.generatePolygon(5, 32f, 0f), Pixel.SOLID_WHITE);
+
+        polygon1.setColor(0, new Pixel(255, 255, 255));
+        polygon1.setColor(1, new Pixel(255, 0, 0));
+        polygon1.setColor(2, new Pixel(255, 255, 0));
+        polygon1.setColor(3, new Pixel(0, 255, 0));
+        polygon1.setColor(4, new Pixel(0, 255, 255));
+
+        shape1.polygon = polygon1;
+
+        space.getEntityManager().instantiate(shape1);
 
         RenderContextPreparerSystem rcps = new RenderContextPreparerSystem(space);
         space.addSystem(new ExampleSystem(space));
         space.addSystem(new PlayerMovementSystem(space));
-        //space.addSystem(new PolygonCollider2DSystem(space));
+        space.addSystem(new PolygonCollider2DSystem(space));
         space.addSystem(rcps);
         space.addSystem(new CameraSystem(space));
         space.addSystem(new SpriteAnimatorSystem(space));

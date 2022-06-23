@@ -8,9 +8,9 @@ import com.kbindiedev.verse.ecs.Entity;
 import com.kbindiedev.verse.ecs.EntityManager;
 import com.kbindiedev.verse.ecs.components.*;
 import com.kbindiedev.verse.maps.*;
-import com.kbindiedev.verse.math.helpers.Point2Df;
 import com.kbindiedev.verse.math.shape.Polygon;
 import com.kbindiedev.verse.profiling.Assertions;
+import org.joml.Vector3f;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -69,11 +69,11 @@ public class LayeredTileMapToEntitiesGenerator {
                     if (tile == layeredTileMap.getTileset().getTile(16)) {
                         System.out.println("GENERATING POLYGON COLLIDER");
                         PolygonCollider2D collider2D = new PolygonCollider2D();
-                        Polygon polygon = new Polygon(new Point2Df(8f, 8f));
-                        polygon.addPoint(new Point2Df(0f, 0f));
-                        polygon.addPoint(new Point2Df(16f, 0f));
-                        polygon.addPoint(new Point2Df(16f, 16f));
-                        polygon.addPoint(new Point2Df(0f, 16f));
+                        Polygon polygon = new Polygon();
+                        polygon.addPoint(new Vector3f(0f, 0f, 0f));
+                        polygon.addPoint(new Vector3f(16f, 0f, 0f));
+                        polygon.addPoint(new Vector3f(16f, 16f, 0f));
+                        polygon.addPoint(new Vector3f(0f, 16f, 0f));
                         collider2D.polgyon = polygon;
                         list.add(collider2D);
                     }

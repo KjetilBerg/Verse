@@ -73,6 +73,9 @@ public class IndexDataBuffer {
         unlimit();
     }
 
+    /** Get the base vertex, to be added to every index that go through {@link #addLocalIndexEntry(int)}. */
+    public int getBaseVertex() { return baseVertex; }
+
     /** Set the base vertex, to be added to every index that go through {@link #addLocalIndexEntry(int)}. */
     public void setBaseVertex(int baseVertex) {
         this.baseVertex = baseVertex;
