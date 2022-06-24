@@ -2,6 +2,7 @@ package com.kbindiedev.verse.gfx;
 
 import com.kbindiedev.verse.gfx.strategy.index.*;
 import com.kbindiedev.verse.gfx.strategy.providers.ColoredPolygon;
+import com.kbindiedev.verse.math.helpers.PolygonMaker;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
@@ -55,26 +56,35 @@ public class ShapeDrawer {
         pointBatch.end();
     }
 
-    public void drawOutlineConvexPolygon(Pixel color, List<Vector3f> points) {
+    public void drawOutlineConvexPolygon(Vector3f position, List<Vector3f> points, Pixel color) {
         ColoredPolygon p = new ColoredPolygon(new Vector3f(), points, color);
+        p.translateTo(position);
         lineBatch.drawConvexPolygon(p);
     }
 
-    public void drawOutlineSquare(Pixel color, float x, float y, float width, float height) {
-        List<Vector3f> arr = new ArrayList<>(4);
-        arr.add(new Vector3f(x, y, 0f));
-        arr.add(new Vector3f(x+width, y, 0f));
-        arr.add(new Vector3f(x+width, y+height, 0f));
-        arr.add(new Vector3f(x, y+height, 0f));
-        drawOutlineConvexPolygon(color, arr);
+    public void drawOutlineSquare(Vector3f position, float width, float height, Pixel color) {
+        ColoredPolygon p = ColoredPolygon.fromPolygon(PolygonMaker.generateRectangle(position.x, position.y, width, height), color);
+        //p.translateTo(position); // already covered by generateSquare
+        lineBatch.drawConvexPolygon(p);
     }
 
-    /*
-    public void drawPoint(Pixel color, float x, float y, float radius) {
-        PolygonIndexMode trianglesOnly = new PolygonIndexMode(PolygonTriangleMode.NORMAL, PolygonLineMode.NONE, PointMode.NONE);
-        StaticIndicesProvider indices = StaticIndicesProvider.newByPolygonShape(POINT_EDGES_COUNT, trianglesOnly);
+    /** Draws a circle with the given radius, in the given color. */
+    public void drawPoint(Vector3f position, float radius, Pixel color) { drawPoint(position, radius, 8, color); }
 
-        ColoredPolygon polygon = ColoredPolygonGenerator.generatePolygon()
-    }*/
+    /** Draws a circle with the given radius and number of edges, in the given color. */
+    public void drawPoint(Vector3f position, float radius, int edges, Pixel color) {
+        ColoredPolygon p = ColoredPolygon.fromPolygon(PolygonMaker.generatePolygon(edges, radius), color);
+        p.translateTo(position);
+        triangleBatch.drawConvexPolygon(p);
+    }
+
+    public void drawLineTo(Vector3f source, Vector3f destination, float thickness, Pixel color) {
+        ColoredPolygon p = ColoredPolygon.fromPolygon(PolygonMaker.generateRectangleFromTo(source, destination, thickness), color);
+        triangleBatch.drawConvexPolygon(p);
+    }
+
+    public void drawLine(Vector3f source, Vector3f direction, float thickness, Pixel color) {
+        drawLineTo(source, new Vector3f(source).add(direction), thickness, color);
+    }
 
 }

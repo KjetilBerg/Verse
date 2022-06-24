@@ -74,7 +74,7 @@ public class LayeredTileMapToEntitiesGenerator {
                         polygon.addPoint(new Vector3f(16f, 0f, 0f));
                         polygon.addPoint(new Vector3f(16f, 16f, 0f));
                         polygon.addPoint(new Vector3f(0f, 16f, 0f));
-                        collider2D.polgyon = polygon;
+                        collider2D.polygon = polygon;
                         list.add(collider2D);
                     }
 

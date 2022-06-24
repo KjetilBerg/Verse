@@ -5,8 +5,8 @@ import org.joml.Vector3f;
 
 /**
  * A structure containing position, scale and rotation.
- * Different from {@link com.kbindiedev.verse.ecs.components.Transform} in that there is no parenting,
- *      and this class implements some simple functionality.
+ * Different from {@link com.kbindiedev.verse.ecs.components.Transform}
+ *      in that this class implements some simple functionality.
  *
  * @see com.kbindiedev.verse.ecs.components.Transform
  */

@@ -149,7 +149,7 @@ public class Main {
             polygon.addPoint(new Vector3f(16f, 0f, 0f));
             polygon.addPoint(new Vector3f(16f, 16f, 0f));
             polygon.addPoint(new Vector3f(0f, 16f, 0f));
-            collider.polgyon = polygon;
+            collider.polygon = polygon;
 
             space.getEntityManager().instantiate(exampleComponent, animator, new SpriteRenderer(), playerTransform, new PlayerComponent(), collider, new RigidBody2D());
 
@@ -159,7 +159,7 @@ public class Main {
             polygon2.addPoint(new Vector3f(16f, 0f, 0f));
             polygon2.addPoint(new Vector3f(16f, 16f, 0f));
             polygon2.addPoint(new Vector3f(0f, 16f, 0f));
-            collider2.polgyon = polygon2;
+            collider2.polygon = polygon2;
             SpriteRenderer renderer2 = new SpriteRenderer();
             renderer2.sprite = TilesetResourceFetcher.getSprite(testTileMap.getTileset(), 347);
             Transform transform2 = new Transform();

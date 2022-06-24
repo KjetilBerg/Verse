@@ -4,11 +4,8 @@ import com.kbindiedev.verse.ecs.*;
 import com.kbindiedev.verse.ecs.components.PolygonCollider2D;
 import com.kbindiedev.verse.ecs.components.RigidBody2D;
 import com.kbindiedev.verse.ecs.components.Transform;
-import com.kbindiedev.verse.gfx.Mesh;
 import com.kbindiedev.verse.gfx.Pixel;
 import com.kbindiedev.verse.gfx.ShapeDrawer;
-import com.kbindiedev.verse.gfx.strategy.index.*;
-import com.kbindiedev.verse.gfx.strategy.providers.ColoredPolygon;
 import com.kbindiedev.verse.physics.collisions.CollisionUtils;
 import org.joml.Vector3f;
 
@@ -54,7 +51,7 @@ public class PolygonCollider2DSystem extends ComponentSystem {
 
             // TODO TEMP:
             for (PolygonCollider2D collider : colliders) {
-                collider.polgyon.translateTo(entity.getTransform().position);
+                collider.polygon.translateTo(entity.getTransform().position);
             }
         }
 
@@ -73,7 +70,7 @@ public class PolygonCollider2DSystem extends ComponentSystem {
 
             for (PolygonCollider2D c1 : myColliders) {
                 for (PolygonCollider2D c2 : possibleColliders) {
-                    Vector3f displacement = CollisionUtils.testPolygonCollision(c1.polgyon, c2.polgyon);
+                    Vector3f displacement = CollisionUtils.testPolygonCollision(c1.polygon, c2.polygon);
                     transform.position.add(displacement);
                 }
             }
@@ -87,18 +84,31 @@ public class PolygonCollider2DSystem extends ComponentSystem {
 
         ShapeDrawer drawer = getSpace().getShapeDrawer();
         Iterator<Entity> entities = query.execute().iterator();
+
         while (entities.hasNext()) {
             Entity entity = entities.next();
 
             PolygonCollider2D collider = entity.getComponent(PolygonCollider2D.class);
-
+/*
             List<Vector3f> points = collider.polgyon.getPoints();
             List<Vector3f> pos = new ArrayList<>(points);
 
             ColoredPolygon p = new ColoredPolygon(new Vector3f(), pos, Pixel.RED);
             drawer.getLineBatch().drawConvexPolygon(p);
+*/
+            drawer.drawOutlineConvexPolygon(new Vector3f(), collider.polygon.getPoints(), Pixel.RED);
+
+            Vector3f contact = new Vector3f(8f, 0f, 0f).add(collider.polygon.getPoints().get(0));
+            Vector3f normal = new Vector3f(0f, -4f, 0f);
+            drawContactPoint(contact, normal);
         }
 
+    }
+
+    private void drawContactPoint(Vector3f point, Vector3f normal) {
+        ShapeDrawer drawer = getSpace().getShapeDrawer();
+        drawer.drawPoint(point, 1f, Pixel.SOLID_WHITE);
+        drawer.drawLine(point, normal, 0.5f, Pixel.SOLID_WHITE);
     }
 
 }
