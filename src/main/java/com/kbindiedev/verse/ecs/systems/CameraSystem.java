@@ -39,8 +39,8 @@ public class CameraSystem extends ComponentSystem {
 
             // TODO: better following
             if (camera.target != null) {
-                transform.position.x = camera.target.position.x + camera.target.scale.x / 2;
-                transform.position.y = camera.target.position.y + camera.target.scale.y / 2;
+                transform.position.x = camera.target.position.x;
+                transform.position.y = camera.target.position.y;
             }
 
             // TODO: this is only if perspective camera / 3d camera

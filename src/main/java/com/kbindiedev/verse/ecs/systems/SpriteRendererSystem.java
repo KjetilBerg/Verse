@@ -3,6 +3,8 @@ package com.kbindiedev.verse.ecs.systems;
 import com.kbindiedev.verse.ecs.*;
 import com.kbindiedev.verse.ecs.components.SpriteRenderer;
 import com.kbindiedev.verse.ecs.components.Transform;
+import com.kbindiedev.verse.gfx.Pixel;
+import com.kbindiedev.verse.gfx.ShapeDrawer;
 import com.kbindiedev.verse.gfx.SpriteBatch;
 
 import java.util.*;
@@ -58,8 +60,18 @@ public class SpriteRendererSystem extends ComponentSystem {
             batch.setColor(sprite.color);
             //batch.setZPos(transform.position.z());
             // TODO sprite width/height ?
-            batch.draw(sprite.sprite, transform.position.x(), transform.position.y(), 0f, 0f, 1f, 1f,
-                    transform.scale.x(), transform.scale.y(), transform.rotation.angle(), sprite.flipX, sprite.flipY);
+
+            /*
+            batch.draw(sprite.sprite, transform.position.x() + sprite.offset.x(), transform.position.y() + sprite.offset.y(),
+                    0.5f, 0.5f, 1f, 1f, transform.scale.x(), transform.scale.y(), transform.rotation.angle(),
+                   sprite.flipX, sprite.flipY);
+                   */
+
+            batch.draw(sprite.sprite, transform.position.x() + sprite.offset.x() - transform.scale.x() / 2,
+                    transform.position.y() + sprite.offset.y() - transform.scale.y() / 2,
+                    0.0f, 0.0f, transform.scale.x(), transform.scale.y(), 1f, 1f, transform.rotation.angle(),
+                    sprite.flipX, sprite.flipY);
+
         }
         batch.end();
     }
@@ -82,5 +94,19 @@ public class SpriteRendererSystem extends ComponentSystem {
             return 1;
         });
     }
+
+    /*
+    @Override
+    public void onDrawGizmos(RenderContext context) {
+        ShapeDrawer drawer = getSpace().getShapeDrawer();
+
+        Iterator<Entity> entities = query.execute().iterator();
+        while (entities.hasNext()) {
+            Transform t = entities.next().getTransform();
+
+            drawer.drawPoint(t.position, 1f, new Pixel(127, 127, 127));
+        }
+    }
+    */
 
 }

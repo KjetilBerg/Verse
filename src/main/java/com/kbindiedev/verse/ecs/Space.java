@@ -8,6 +8,8 @@ import com.kbindiedev.verse.gfx.ShapeDrawer;
 import com.kbindiedev.verse.input.InputSystem;
 import com.kbindiedev.verse.input.keyboard.KeyEventTracker;
 import com.kbindiedev.verse.input.keyboard.event.KeyEvent;
+import com.kbindiedev.verse.physics.PhysicsEnvironment;
+import com.kbindiedev.verse.physics.PhysicsSystem2D;
 import com.kbindiedev.verse.system.FastList;
 
 import java.util.Queue;
@@ -28,6 +30,7 @@ import java.util.Queue;
  */
 public class Space {
 
+    private PhysicsEnvironment physicsEnvironment;
     private InputSystem input;
     private GraphicsEngine gfxImplementation;
     private EntityManager entityManager;
@@ -42,6 +45,7 @@ public class Space {
     public Space(GraphicsEngine gfxImplementation) { this(gfxImplementation, new InputSystem()); }
     public Space(GraphicsEngine gfxImplementation, InputSystem input) { this(gfxImplementation, input, new EntityManager()); }
     public Space(GraphicsEngine gfxImplementation, InputSystem input, EntityManager entityManager) { // TODO: remove manager ?
+        physicsEnvironment = PhysicsSystem2D.newEnvironment(); // TODO on unload, remove environment
         this.gfxImplementation = gfxImplementation;
         this.input = input;
         this.entityManager = entityManager;
@@ -49,11 +53,13 @@ public class Space {
         lastTimestamp = System.currentTimeMillis();
 
         // TODO numbers
-        PolygonBatch triangleBatch = new PolygonBatch(gfxImplementation, 128, 128, Mesh.RenderMode.TRIANGLES);
-        PolygonBatch lineBatch = new PolygonBatch(gfxImplementation, 128, 128, Mesh.RenderMode.LINES);
-        PolygonBatch pointBatch = new PolygonBatch(gfxImplementation, 128, 128, Mesh.RenderMode.POINTS);
+        PolygonBatch triangleBatch = new PolygonBatch(gfxImplementation, 2048, 2048, Mesh.RenderMode.TRIANGLES);
+        PolygonBatch lineBatch = new PolygonBatch(gfxImplementation, 2048, 2048, Mesh.RenderMode.LINES);
+        PolygonBatch pointBatch = new PolygonBatch(gfxImplementation, 2048, 2048, Mesh.RenderMode.POINTS);
         shapeDrawer = new ShapeDrawer(triangleBatch, lineBatch, pointBatch);
     }
+
+    public PhysicsEnvironment getPhysicsEnvironment() { return physicsEnvironment; }
 
     /**
      * A Space may only have a single GraphicsEngine implementation. This defines how things are rendered.

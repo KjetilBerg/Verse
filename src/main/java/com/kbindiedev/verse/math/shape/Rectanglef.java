@@ -14,6 +14,10 @@ public class Rectanglef {
         set(x, y, width, height);
     }
 
+    public static Rectanglef newByCoordinates(float x1, float y1, float x2, float y2) {
+        return new Rectanglef(x1, y1, x2 - x1, y2 - y1);
+    }
+
     public void set(float x, float y, float width, float height) {
         this.x = x; this.y = y; this.width = width; this.height = height;
     }
@@ -85,8 +89,6 @@ public class Rectanglef {
         width = Math.min(getX2(), rectangle.getX2()) - x;
         height = Math.min(getY2(), rectangle.getY2()) - y;
     }
-
-    // TODO: remove these methods ??
 
     /**
      * Bound this rectangle by shrinking it.

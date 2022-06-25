@@ -48,10 +48,9 @@ public class ShapeRendererSystem extends ComponentSystem {
 
             ColoredPolygon polygon = renderer.polygon;
             if (polygon == null) continue;
-            //polygon.setCenter(transform.position);
-            //polygon.setRotation(transform.rotation);
-            //polygon.setScale(transform.scale);
-            //polygon.setScale(new Vector3f(2, 2, 1));
+            polygon.translateTo(transform.position);
+            polygon.rotateTo(transform.rotation);
+            polygon.scaleTo(transform.scale);
 
             batch.drawConvexPolygon(polygon);
 

@@ -6,6 +6,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
+// TODO: Two keys pointing to same value causes mismap in valueToKeyMap.
+
 /** Bi-directional map */
 public class BiMap<K, V> implements Map<K, V> {
 

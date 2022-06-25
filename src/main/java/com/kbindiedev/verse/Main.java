@@ -19,6 +19,7 @@ import com.kbindiedev.verse.maps.TileMapLoader;
 import com.kbindiedev.verse.maps.TilesetResourceFetcher;
 import com.kbindiedev.verse.math.helpers.PolygonMaker;
 import com.kbindiedev.verse.math.shape.Polygon;
+import com.kbindiedev.verse.math.shape.Rectanglef;
 import com.kbindiedev.verse.sfx.Sound;
 import com.kbindiedev.verse.sfx.SoundEngineSettings;
 import com.kbindiedev.verse.sfx.Source;
@@ -26,10 +27,8 @@ import com.kbindiedev.verse.sfx.impl.openal_10.SEOpenAL10;
 import com.kbindiedev.verse.util.condition.Condition;
 import com.kbindiedev.verse.util.condition.ConditionEqual;
 import com.kbindiedev.verse.util.condition.ConditionTrigger;
-import com.kbindiedev.verse.z_example.ExampleComponent;
-import com.kbindiedev.verse.z_example.ExampleSystem;
-import com.kbindiedev.verse.z_example.PlayerComponent;
-import com.kbindiedev.verse.z_example.PlayerMovementSystem;
+import com.kbindiedev.verse.z_example.*;
+import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import java.io.File;
@@ -145,13 +144,17 @@ public class Main {
 
             PolygonCollider2D collider = new PolygonCollider2D();
             Polygon polygon = new Polygon();
-            polygon.addPoint(new Vector3f(0f, 0f, 0f));
-            polygon.addPoint(new Vector3f(16f, 0f, 0f));
-            polygon.addPoint(new Vector3f(16f, 16f, 0f));
-            polygon.addPoint(new Vector3f(0f, 16f, 0f));
+            polygon.addPoint(new Vector3f(-7.5f, -12f, 0f));
+            polygon.addPoint(new Vector3f(8.5f, -12f, 0f));
+            polygon.addPoint(new Vector3f(8.5f, -6f, 0f));
+            polygon.addPoint(new Vector3f(-7.5f, -6f, 0f));
             collider.polygon = polygon;
 
-            space.getEntityManager().instantiate(exampleComponent, animator, new SpriteRenderer(), playerTransform, new PlayerComponent(), collider, new RigidBody2D());
+            // TODO: animator controls offset
+            SpriteRenderer renderer = new SpriteRenderer();
+            renderer.offset.set(0f, 6f);
+
+            space.getEntityManager().instantiate(exampleComponent, animator, renderer, playerTransform, new PlayerComponent(), collider, new RigidBody2D());
 
             PolygonCollider2D collider2 = new PolygonCollider2D();
             Polygon polygon2 = new Polygon();
@@ -167,7 +170,7 @@ public class Main {
             transform2.position.y = 20f;
             transform2.position.z = 1f;
             transform2.scale.x = 32f; transform2.scale.y = 32f;
-            space.getEntityManager().instantiate(collider2, renderer2, transform2);
+            //space.getEntityManager().instantiate(collider2, renderer2, transform2);
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -176,7 +179,7 @@ public class Main {
         Camera camera = new Camera();
         camera.aspectRatio = 16f/9;
         camera.zoom = 250f;
-        //camera.bounds = new Rectanglef(0 * 16f, 1 * 16f, 30 * 16f, 20 * 16f);
+        camera.bounds = new Rectanglef(0 * 16f -8f, 1 * 16f -8f, 30 * 16f, 20 * 16f);
         //camera.bounds = new Rectanglef(-100f, -100f, 200f, 200f);
         camera.target = playerTransform;
         //GL30.glViewport(0, 0, 1920, 1080); //TODO temp, until RenderingStrategy
@@ -192,6 +195,8 @@ public class Main {
         Entity cameraEntity = space.getEntityManager().instantiate(camera, cameraTransform);
 
         ShapeRenderer shape1 = new ShapeRenderer();
+        ConstantRotatorComponent rotatorComponent = new ConstantRotatorComponent();
+        rotatorComponent.amountPerSecond = 1f;
         //ColoredPolygon polygon1 = ColoredPolygonGenerator.generatePolygon(Pixel.SOLID_WHITE, 5, 32f, 0f, false);
         ColoredPolygon polygon1 = ColoredPolygon.fromPolygon(PolygonMaker.generatePolygon(5, 32f, 0f), Pixel.SOLID_WHITE);
 
@@ -203,12 +208,17 @@ public class Main {
 
         shape1.polygon = polygon1;
 
-        space.getEntityManager().instantiate(shape1);
+        polygon1.translateTo(new Vector3f(32f, 64f, 0f));
+        Transform polygonTransform = new Transform();
+        polygonTransform.position = polygon1.getCenter();
+
+        space.getEntityManager().instantiate(shape1, rotatorComponent, polygonTransform);
 
         RenderContextPreparerSystem rcps = new RenderContextPreparerSystem(space);
         space.addSystem(new ExampleSystem(space));
         space.addSystem(new PlayerMovementSystem(space));
-        space.addSystem(new PolygonCollider2DSystem(space));
+        space.addSystem(new PhysicsManagerSystem(space));
+        space.addSystem(new ConstantRotatorSystem(space));
         space.addSystem(rcps);
         space.addSystem(new CameraSystem(space));
         space.addSystem(new SpriteAnimatorSystem(space));

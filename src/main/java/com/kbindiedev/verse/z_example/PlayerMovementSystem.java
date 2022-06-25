@@ -72,10 +72,10 @@ public class PlayerMovementSystem extends ComponentSystem {
             // TODO BUG: can transition from slash to run for some reason
 
             // temporary bounds
-            if (transform.position.x < -16f) transform.position.x = -16f;
-            if (transform.position.y < 12f) transform.position.y = 12f;
-            if (transform.position.x > 28 * 16f) transform.position.x = 28 * 16f;
-            if (transform.position.y > 13 * 24f) transform.position.y = 13 * 24f;
+            if (transform.position.x < 0f) transform.position.x = 0f;
+            if (transform.position.y < 20f) transform.position.y = 20f;
+            if (transform.position.x > 29 * 16f) transform.position.x = 29 * 16f;
+            if (transform.position.y > 13.5f * 24f) transform.position.y = 13.5f * 24f;
 
             if (count++ % 60 == 0) System.out.println("Player pos: " + transform.position.x + " " + transform.position.y);
         }

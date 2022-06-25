@@ -3,20 +3,27 @@ package com.kbindiedev.verse.physics;
 import com.kbindiedev.verse.math.MathTransform;
 import com.kbindiedev.verse.math.shape.Polygon;
 
-//TODO FUTURE: consider LocalMathTransform (or something) so that fixtures could be reused (?)
-
 public class Fixture {
 
+    private PhysicsRigidBody body;
     private MathTransform transform;
     private Polygon shape;
 
-    protected Fixture(MathTransform transform, Polygon shape) {
+    protected Fixture(PhysicsRigidBody body, MathTransform transform, Polygon shape) {
+        this.body = body;
         this.transform = transform;
         this.shape = shape;
     }
 
+    public PhysicsRigidBody getBody() { return body; }
+
     public MathTransform getTransform() { return transform; }
 
     public Polygon getShape() { return shape; }
+
+    /** Remove this fixture from the body that I belong to. */
+    public void remove() {
+        body.removeFixture(this);
+    }
 
 }

@@ -7,9 +7,11 @@ import com.kbindiedev.verse.animation.SpriteAnimationMap;
 import com.kbindiedev.verse.ecs.Entity;
 import com.kbindiedev.verse.ecs.EntityManager;
 import com.kbindiedev.verse.ecs.components.*;
+import com.kbindiedev.verse.gfx.Sprite;
 import com.kbindiedev.verse.maps.*;
 import com.kbindiedev.verse.math.shape.Polygon;
 import com.kbindiedev.verse.profiling.Assertions;
+import org.joml.Vector2f;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
@@ -70,10 +72,10 @@ public class LayeredTileMapToEntitiesGenerator {
                         System.out.println("GENERATING POLYGON COLLIDER");
                         PolygonCollider2D collider2D = new PolygonCollider2D();
                         Polygon polygon = new Polygon();
-                        polygon.addPoint(new Vector3f(0f, 0f, 0f));
-                        polygon.addPoint(new Vector3f(16f, 0f, 0f));
-                        polygon.addPoint(new Vector3f(16f, 16f, 0f));
-                        polygon.addPoint(new Vector3f(0f, 16f, 0f));
+                        polygon.addPoint(new Vector3f(-8f, -8f, 0f));
+                        polygon.addPoint(new Vector3f(8f, -8f, 0f));
+                        polygon.addPoint(new Vector3f(8f, 8f, 0f));
+                        polygon.addPoint(new Vector3f(-8f, 8f, 0f));
                         collider2D.polygon = polygon;
                         list.add(collider2D);
                     }
@@ -90,6 +92,10 @@ public class LayeredTileMapToEntitiesGenerator {
 
                     AnimationController<SpriteAnimation> controller = new AnimationController<>(map, new AnimatorContext());
                     spriteAnimator.controller = controller;
+
+                    // TODO: this is temp
+                    Sprite ex = controller.pickAnimation().getFrames().get(0).getSprite();
+                    spriteRenderer.offset = new Vector2f(ex.getWidth() / 4f, ex.getHeight() / 4f);
 
                     list.add(spriteAnimator);
                     list.add(spriteRenderer);
