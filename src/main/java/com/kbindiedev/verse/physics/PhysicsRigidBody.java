@@ -17,7 +17,7 @@ public class PhysicsRigidBody {
     private MathTransform transform;
     private FastList<Fixture> fixtures;
 
-    private Vector3f force, velocity, acceleration;
+    private Vector3f force, velocity;
     private float mass, inverseMass;
     private float restitution;
     private boolean dynamic;
@@ -25,7 +25,7 @@ public class PhysicsRigidBody {
     public PhysicsRigidBody(PhysicsEnvironment environment, MathTransform transform, boolean dynamic) {
         this.environment = environment;
         this.transform = transform;
-        force = new Vector3f(); velocity = new Vector3f(); acceleration = new Vector3f();
+        force = new Vector3f(); velocity = new Vector3f();
         fixtures = new FastList<>();
 
         // TODO:
@@ -39,13 +39,10 @@ public class PhysicsRigidBody {
     public List<Fixture> getFixtures() { return fixtures.asList(); }
 
     public Vector3f getForceVector() { return force; }
-    public void setForceVector(Vector3f force) { this.force = force; }
+    public void setForceVector(Vector3f force) { this.force.set(force); }
 
     public Vector3f getVelocity() { return velocity; }
-    public void setVelocity(Vector3f velocity) { this.velocity = velocity; }
-
-    public Vector3f getAcceleration() { return acceleration; }
-    public void setAcceleration(Vector3f acceleration) { this.acceleration = acceleration; }
+    public void setVelocity(Vector3f velocity) { this.velocity.set(velocity); }
 
     public float getMass() { return mass; }
     public void setMass(float mass) { this.mass = mass; }
@@ -67,9 +64,20 @@ public class PhysicsRigidBody {
 
     public boolean removeFixture(Fixture fixture) { return fixtures.remove(fixture); }
 
-    /** Remove this body from the PhysicsEnvironment that i belong to. */
+    /** Remove this body from the PhysicsEnvironment that it belongs to. */
     public void remove() {
         environment.removeBody(this);
+    }
+
+    /** Add a force to this body. */
+    public void applyForce(Vector3f force) { this.force.add(force); }
+    /** Add an instantaneous change in velocity to this body. */
+    public void applyImpulse(Vector3f impulse) { velocity.add(impulse); }
+
+    /** Apply my current forces to velocity and velocity to position by the given time interval. */
+    public void tick(float dt) {
+        velocity.add(new Vector3f(force).div(mass).mul(dt)); // F = ma -> a = F/m
+        transform.getPosition().add(new Vector3f(velocity).mul(dt));
     }
 
 }

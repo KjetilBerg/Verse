@@ -158,10 +158,10 @@ public class Main {
 
             PolygonCollider2D collider2 = new PolygonCollider2D();
             Polygon polygon2 = new Polygon();
-            polygon2.addPoint(new Vector3f(0f, 0f, 0f));
-            polygon2.addPoint(new Vector3f(16f, 0f, 0f));
-            polygon2.addPoint(new Vector3f(16f, 16f, 0f));
-            polygon2.addPoint(new Vector3f(0f, 16f, 0f));
+            polygon2.addPoint(new Vector3f(0f, 32f, 0f));
+            polygon2.addPoint(new Vector3f(96f, 32f, 0f));
+            polygon2.addPoint(new Vector3f(96f, 48f, 0f));
+            polygon2.addPoint(new Vector3f(0f, 48f, 0f));
             collider2.polygon = polygon2;
             SpriteRenderer renderer2 = new SpriteRenderer();
             renderer2.sprite = TilesetResourceFetcher.getSprite(testTileMap.getTileset(), 347);
@@ -170,7 +170,7 @@ public class Main {
             transform2.position.y = 20f;
             transform2.position.z = 1f;
             transform2.scale.x = 32f; transform2.scale.y = 32f;
-            //space.getEntityManager().instantiate(collider2, renderer2, transform2);
+            space.getEntityManager().instantiate(collider2, renderer2, transform2);
 
         } catch (IOException e) {
             e.printStackTrace();

@@ -21,7 +21,7 @@ public class Fixture {
 
     public Polygon getShape() { return shape; }
 
-    /** Remove this fixture from the body that I belong to. */
+    /** Remove this fixture from the body that it belongs to. */
     public void remove() {
         body.removeFixture(this);
     }

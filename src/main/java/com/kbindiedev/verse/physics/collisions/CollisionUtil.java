@@ -38,7 +38,8 @@ public class CollisionUtil {
         if (rightPenetrationDepth < currentDepth) { smallest = 2; currentDepth = rightPenetrationDepth; }
         if (leftPenetrationDepth < currentDepth) { smallest = 3; currentDepth = leftPenetrationDepth; }
 
-        if (currentDepth < 0f) return new CollisionManifold(new ArrayList<>(), new Vector3f(), 0f);
+        //if (currentDepth < 0f) return new CollisionManifold(new ArrayList<>(), new Vector3f(), 0f);
+        if (currentDepth < 0f) return null;
 
         List<Vector3f> contacts = new ArrayList<>();
         Vector3f normal = new Vector3f();

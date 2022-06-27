@@ -1,6 +1,7 @@
 package com.kbindiedev.verse.z_example;
 
 import com.kbindiedev.verse.ecs.*;
+import com.kbindiedev.verse.ecs.components.RigidBody2D;
 import com.kbindiedev.verse.ecs.components.SpriteAnimator;
 import com.kbindiedev.verse.ecs.components.SpriteRenderer;
 import com.kbindiedev.verse.ecs.components.Transform;
@@ -22,10 +23,43 @@ public class PlayerMovementSystem extends ComponentSystem {
 
     @Override
     public void start() {
-        EntityQueryDesc desc = new EntityQueryDesc(new ComponentTypeGroup(Transform.class, PlayerComponent.class, SpriteRenderer.class, SpriteAnimator.class), null, null);
+        EntityQueryDesc desc = new EntityQueryDesc(new ComponentTypeGroup(Transform.class, PlayerComponent.class, SpriteRenderer.class, SpriteAnimator.class, RigidBody2D.class), null, null);
         query = desc.compile(getSpace().getEntityManager());
 
         attackTrigger = new Trigger();
+    }
+
+    @Override
+    public void fixedUpdate(float dt) {
+        Iterator<Entity> entities = query.execute().iterator();
+
+        float dx = 0f, dy = 0f;
+        if (getSpace().getKeyboardTracker().isKeyDown(Keys.KEY_UP)) dy += 1;
+        if (getSpace().getKeyboardTracker().isKeyDown(Keys.KEY_DOWN)) dy -= 1;
+        if (getSpace().getKeyboardTracker().isKeyDown(Keys.KEY_LEFT)) dx -= 1;
+        if (getSpace().getKeyboardTracker().isKeyDown(Keys.KEY_RIGHT)) dx += 1;
+
+        //dx *= dt; dy *= dt;
+
+        boolean running = false;
+        if (getSpace().getKeyboardTracker().isKeyDown(Keys.KEY_LEFT_SHIFT)) running = true;
+
+        boolean attack = (getSpace().getKeyboardTracker().isKeyDown(Keys.KEY_F));
+        attackTrigger.reset();
+        if (attack) attackTrigger.trigger();
+
+        while (entities.hasNext()) {
+            Entity entity = entities.next();
+
+            PlayerComponent player = entity.getComponent(PlayerComponent.class);
+            RigidBody2D body = entity.getComponent(RigidBody2D.class);
+
+            float speed = (running ? player.runSpeed : player.speed);
+            body.velocity.x = dx * speed;
+            body.velocity.y = dy * speed;
+            //transform.position.x += dx * speed;
+            //transform.position.y += dy * speed;
+        }
     }
 
 
@@ -35,13 +69,11 @@ public class PlayerMovementSystem extends ComponentSystem {
         Iterator<Entity> entities = query.execute().iterator();
 
         float dx = 0f, dy = 0f;
-        if (getSpace().getKeyboardTracker().isKeyDown(Keys.KEY_UP)) dy += dt;
-        if (getSpace().getKeyboardTracker().isKeyDown(Keys.KEY_DOWN)) dy -= dt;
-        if (getSpace().getKeyboardTracker().isKeyDown(Keys.KEY_LEFT)) dx -= dt;
-        if (getSpace().getKeyboardTracker().isKeyDown(Keys.KEY_RIGHT)) dx += dt;
+        if (getSpace().getKeyboardTracker().isKeyDown(Keys.KEY_UP)) dy += 1;
+        if (getSpace().getKeyboardTracker().isKeyDown(Keys.KEY_DOWN)) dy -= 1;
+        if (getSpace().getKeyboardTracker().isKeyDown(Keys.KEY_LEFT)) dx -= 1;
+        if (getSpace().getKeyboardTracker().isKeyDown(Keys.KEY_RIGHT)) dx += 1;
 
-        boolean running = false;
-        if (getSpace().getKeyboardTracker().isKeyDown(Keys.KEY_LEFT_SHIFT)) running = true;
 
         boolean attack = (getSpace().getKeyboardTracker().isKeyDown(Keys.KEY_F));
         attackTrigger.reset();
@@ -55,9 +87,6 @@ public class PlayerMovementSystem extends ComponentSystem {
             SpriteRenderer renderer = entity.getComponent(SpriteRenderer.class);
             SpriteAnimator animator = entity.getComponent(SpriteAnimator.class);
 
-            float speed = (running ? player.runSpeed : player.speed);
-            transform.position.x += dx * speed;
-            transform.position.y += dy * speed;
 
             if (dx > 0) player.facingRight = true;
             if (dx < 0) player.facingRight = false;
@@ -81,4 +110,5 @@ public class PlayerMovementSystem extends ComponentSystem {
         }
     }
     private int count = 0;
+
 }

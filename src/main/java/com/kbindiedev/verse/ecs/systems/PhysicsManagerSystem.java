@@ -3,6 +3,7 @@ package com.kbindiedev.verse.ecs.systems;
 import com.kbindiedev.verse.ecs.*;
 import com.kbindiedev.verse.ecs.components.PolygonCollider2D;
 import com.kbindiedev.verse.ecs.components.RigidBody2D;
+import com.kbindiedev.verse.ecs.components.Transform;
 import com.kbindiedev.verse.gfx.Pixel;
 import com.kbindiedev.verse.gfx.ShapeDrawer;
 import com.kbindiedev.verse.physics.Collision;
@@ -17,6 +18,8 @@ import java.util.*;
 /** Responsible for connecting an ECS space to a physics implementation. */
 public class PhysicsManagerSystem extends ComponentSystem {
 
+    private HashMap<RigidBody2D, Transform> transforms; // TODO TEMP
+
     private BiHashMap<RigidBody2D, PhysicsRigidBody> bodies;
     private BiHashMap<PolygonCollider2D, Fixture> fixtures;
 
@@ -28,6 +31,7 @@ public class PhysicsManagerSystem extends ComponentSystem {
 
     @Override
     public void start() {
+        transforms = new HashMap<>();
         bodies = new BiHashMap<>();
         fixtures = new BiHashMap<>();
 
@@ -45,6 +49,9 @@ public class PhysicsManagerSystem extends ComponentSystem {
             if (colliders == null) continue;
 
             registerCollidersForBody(body, colliders);
+
+            Transform transform = entity.getComponent(Transform.class);
+            if (body != null && transform != null) transforms.put(body, transform);
         }
     }
 
@@ -54,15 +61,31 @@ public class PhysicsManagerSystem extends ComponentSystem {
 
         updateAllTransforms();
 
+        for (Map.Entry<RigidBody2D, PhysicsRigidBody> b : bodies.entrySet()) {
+            b.getValue().getTransform().setPosition(transforms.get(b.getKey()).position);
+            b.getValue().setVelocity(b.getKey().velocity);
+        }
+
         getSpace().getPhysicsEnvironment().simulate(dt);
 
         // TODO: retrieve transforms / rigidbody details from physics environment and apply to entities.
+
+        resolveBodies();
 
     }
 
 
     @Override
-    public void update(float dt) { updateAllTransforms(); }
+    public void update(float dt) { updateAllTransforms(); resolveBodies(); }
+
+    private void resolveBodies() {
+
+        for (Map.Entry<RigidBody2D, PhysicsRigidBody> b : bodies.entrySet()) {
+            transforms.get(b.getKey()).position.set(b.getValue().getTransform().getPosition());
+            b.getKey().velocity.set(b.getValue().getVelocity());
+        }
+
+    }
 
     // TODO: (temp?) fixedUpdate and update(). (move "update" to lateUpdate when supported?)
     private void updateAllTransforms() {
