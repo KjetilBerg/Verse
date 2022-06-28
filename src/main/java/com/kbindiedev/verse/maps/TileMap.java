@@ -12,6 +12,7 @@ public class TileMap {
 
     private String name;
     private Collection<Entry> entries;
+    private Tileset tileset;
 
     /*
     public TileMap(Tileset tileset) { this(tileset, ""); }
@@ -21,11 +22,14 @@ public class TileMap {
         entries = new ArrayList<>();
     }
     */
-    public TileMap() { this(""); }
-    public TileMap(String name) {
+    public TileMap(Tileset tileset) { this(tileset, ""); }
+    public TileMap(Tileset tileset, String name) {
+        this.tileset = tileset;
         this.name = name;
         entries = new ArrayList<>();
     }
+
+    public Tileset getTileset() { return tileset; }
 
     public String getName()  { return name; }
 

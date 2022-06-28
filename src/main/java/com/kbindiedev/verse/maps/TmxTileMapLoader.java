@@ -102,7 +102,7 @@ public class TmxTileMapLoader implements ITileMapLoaderImplementation {
         String[] indices = dataElement.getTextContent().replaceAll("\\r?\\n", "").split(",");
         int index = 0;
 
-        TileMap map = new TileMap(layerElement.getAttribute("name"));
+        TileMap map = new TileMap(tileset, layerElement.getAttribute("name"));
         while (index < indices.length) {
             int tileId = Integer.parseInt(indices[index]);
             if (tileId != 0) {

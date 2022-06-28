@@ -67,7 +67,7 @@ public class LayeredTileMap {
     /** Add a layer if it does not exist, otherwise do nothing and return false. */
     private boolean ensureExistsLayer(int layer) {
         if (layers.containsKey(layer)) return false;
-        return makeExist(layer, new TileMap());
+        return makeExist(layer, new TileMap(tileset));
     }
 
     /** Add the given map to layers if none exist for that layer, otherwise do nothing and return false. */
