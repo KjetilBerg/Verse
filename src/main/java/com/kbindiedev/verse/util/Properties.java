@@ -38,4 +38,7 @@ public class Properties {
     /** Set the value for a given key. */
     public void put(String key, Object value) { properties.put(key, value); }
 
+    /** @return true if some value exists for the given key. */
+    public boolean containsKey(String key) { return properties.containsKey(key); }
+
 }

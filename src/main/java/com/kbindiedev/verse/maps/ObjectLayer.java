@@ -3,7 +3,7 @@ package com.kbindiedev.verse.maps;
 import com.kbindiedev.verse.gfx.Pixel;
 import com.kbindiedev.verse.util.Properties;
 
-/** Describes a group layer in a TileMap. */
+/** Describes a group layer in a {@link TileMap}. */
 public class ObjectLayer {
 
     private TileMap tilemap;
@@ -23,7 +23,7 @@ public class ObjectLayer {
     public ObjectLayer(TileMap tilemap, String name, String type) {
         this.tilemap = tilemap;
         properties = new Properties();
-        objects = new MapObjects();
+        objects = new MapObjects(tilemap.getTileset());
 
         this.name = name;
         this.type = type;

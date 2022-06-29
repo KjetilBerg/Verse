@@ -9,6 +9,7 @@ import com.kbindiedev.verse.ecs.systems.ComponentSystem;
 import com.kbindiedev.verse.input.keyboard.Keys;
 import com.kbindiedev.verse.util.Properties;
 import com.kbindiedev.verse.util.Trigger;
+import org.joml.Vector3f;
 
 import java.util.Iterator;
 
@@ -99,12 +100,6 @@ public class PlayerMovementSystem extends ComponentSystem {
             properties.put("moving", moving);
             properties.put("attack", attackTrigger);
             // TODO BUG: can transition from slash to run for some reason
-
-            // temporary bounds
-            if (transform.position.x < 0f) transform.position.x = 0f;
-            if (transform.position.y < 20f) transform.position.y = 20f;
-            if (transform.position.x > 29 * 16f) transform.position.x = 29 * 16f;
-            if (transform.position.y > 13.5f * 24f) transform.position.y = 13.5f * 24f;
 
             if (count++ % 60 == 0) System.out.println("Player pos: " + transform.position.x + " " + transform.position.y);
         }

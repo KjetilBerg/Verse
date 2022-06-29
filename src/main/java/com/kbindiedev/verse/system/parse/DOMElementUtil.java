@@ -14,7 +14,17 @@ public class DOMElementUtil {
 
         String attrib = element.getAttribute(attributeName);
         try { return Integer.parseInt(attrib); } catch (NumberFormatException e) {
-            Assertions.warn("element attributeName: '%s' is not a number. Got: %s", attributeName, attrib);
+            Assertions.warn("element attributeName: '%s' is not an integer. Got: %s", attributeName, attrib);
+            return def;
+        }
+    }
+
+    public static float getFloatAttribute(Element element, String attributeName, float def) {
+        if (!element.hasAttribute(attributeName)) return def;
+
+        String attrib = element.getAttribute(attributeName);
+        try { return Float.parseFloat(attrib); } catch (NumberFormatException e) {
+            Assertions.warn("element attributeName: '%s' is not a float. Got: %s", attributeName, attrib);
             return def;
         }
     }

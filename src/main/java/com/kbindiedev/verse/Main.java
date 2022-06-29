@@ -118,7 +118,7 @@ public class Main {
 
             playerTransform.position.x = 100f;
             playerTransform.position.y = 100f;
-            playerTransform.position.z = 0.8f;
+            playerTransform.position.z = 0.4f;
             playerTransform.scale.x = playerIdle.getFrames().get(0).getSprite().getWidth();
             playerTransform.scale.y = playerIdle.getFrames().get(0).getSprite().getHeight();
 
@@ -213,6 +213,32 @@ public class Main {
         polygonTransform.position = polygon1.getCenter();
 
         space.getEntityManager().instantiate(shape1, rotatorComponent, polygonTransform);
+
+        // walls around stage TODO: constraints in physics ? (enforce body >= 0 (x,y) ?)
+        float x1 = -8f, y1 = 8f, x2 = 30 * 16f - 8f, y2 = 20 * 16f, thickness = 20f;
+        Polygon wallLeft = new Polygon(), wallTop = new Polygon(), wallRight = new Polygon(), wallBottom = new Polygon();
+        wallLeft.addPoint(new Vector3f(x1-thickness, y1, 0f));
+        wallLeft.addPoint(new Vector3f(x1-thickness, y2, 0f));
+        wallLeft.addPoint(new Vector3f(x1, y2, 0f));
+        wallLeft.addPoint(new Vector3f(x1, y1, 0f));
+        wallRight.addPoint(new Vector3f(x2, y1, 0f));
+        wallRight.addPoint(new Vector3f(x2, y2, 0f));
+        wallRight.addPoint(new Vector3f(x2+thickness, y2, 0f));
+        wallRight.addPoint(new Vector3f(x2+thickness, y1, 0f));
+        wallBottom.addPoint(new Vector3f(x1, y1-thickness, 0f));
+        wallBottom.addPoint(new Vector3f(x1, y1, 0f));
+        wallBottom.addPoint(new Vector3f(x2, y1, 0f));
+        wallBottom.addPoint(new Vector3f(x1, y1-thickness, 0f));
+        wallTop.addPoint(new Vector3f(x1, y2, 0f));
+        wallTop.addPoint(new Vector3f(x2, y2, 0f));
+        wallTop.addPoint(new Vector3f(x2, y2+thickness, 0f));
+        wallTop.addPoint(new Vector3f(x1, y2+thickness, 0f));
+        Polygon[] walls = new Polygon[]{ wallLeft, wallRight, wallBottom, wallTop };
+        for (Polygon p : walls) {
+            PolygonCollider2D collider = new PolygonCollider2D();
+            collider.polygon = p;
+            space.getEntityManager().instantiate(collider);
+        }
 
         RenderContextPreparerSystem rcps = new RenderContextPreparerSystem(space);
         space.addSystem(new ExampleSystem(space));

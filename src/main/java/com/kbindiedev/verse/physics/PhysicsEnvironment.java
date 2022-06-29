@@ -96,13 +96,15 @@ public class PhysicsEnvironment {
                 if (allManifolds.size() == 0) continue;
                 didCollide = true;
 
-                // sort by closest average contact point
+                // sort by biggest depth, then closest average contact point
                 allManifolds.sort((m1, m2) -> {
+                    if (m1.getDepth() > m2.getDepth()) return -1;
+                    if (m1.getDepth() < m2.getDepth()) return 1;
                     float l1 = new Vector3f(body1.getTransform().getPosition()).sub(averageContactPoints(m1)).lengthSquared();
                     float l2 = new Vector3f(body1.getTransform().getPosition()).sub(averageContactPoints(m2)).lengthSquared();
-                    if (l1 == l2) return 0;
                     if (l1 < l2) return -1;
-                    return 1;
+                    if (l1 > l2) return 1;
+                    return 0;
                 });
 
                 // consider first point only (do not get caught on corners)

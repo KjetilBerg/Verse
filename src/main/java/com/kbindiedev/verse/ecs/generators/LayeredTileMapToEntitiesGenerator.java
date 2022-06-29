@@ -60,6 +60,30 @@ public class LayeredTileMapToEntitiesGenerator {
                 transform.scale.y = entry.getHeight();
                 list.add(transform);
 
+                TiledTileMetadata metadata = t.getProperties().getAs(TmxTileMapLoader.TILE_METADATA_PROPERTY_NAME, TiledTileMetadata.class);
+                if (metadata != null) {
+                    for (MapObject object : metadata.getObjects().getByType("collider")) {
+                        System.out.println("Generating collider from TileMap");
+                        PolygonCollider2D collider2D = new PolygonCollider2D();
+
+                        float x1 = object.getX() - 8;
+                        float x2 = x1 + object.getWidth();
+
+                        float y1 = 16 - (object.getY() + object.getHeight()) - 8;
+                        float y2 = y1 + object.getHeight();
+
+                        System.out.println(object.getX());
+
+                        Polygon polygon = new Polygon();
+                        polygon.addPoint(new Vector3f(x1, y1, 0f));
+                        polygon.addPoint(new Vector3f(x2, y1, 0f));
+                        polygon.addPoint(new Vector3f(x2, y2, 0f));
+                        polygon.addPoint(new Vector3f(x1, y2, 0f));
+                        collider2D.polygon = polygon;
+                        list.add(collider2D);
+                    }
+                }
+
                 if (t instanceof StaticTile) {
 
                     StaticTile tile = (StaticTile)t;
@@ -68,6 +92,7 @@ public class LayeredTileMapToEntitiesGenerator {
                     list.add(spriteRenderer);
 
                     // TODO: TEMP
+                    /*
                     if (tile == layeredTileMap.getTileset().getTile(16)) {
                         System.out.println("GENERATING POLYGON COLLIDER");
                         PolygonCollider2D collider2D = new PolygonCollider2D();
@@ -78,7 +103,7 @@ public class LayeredTileMapToEntitiesGenerator {
                         polygon.addPoint(new Vector3f(-8f, 8f, 0f));
                         collider2D.polygon = polygon;
                         list.add(collider2D);
-                    }
+                    }*/
 
                 } else if (t instanceof AnimatedTile) {
 

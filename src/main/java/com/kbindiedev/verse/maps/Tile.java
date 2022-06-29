@@ -11,7 +11,11 @@ import com.kbindiedev.verse.util.Properties;
 public abstract class Tile {
 
     private Properties properties;
-    private ObjectLayer objectGroup;
+
+    public Tile() { this(new Properties()); }
+    public Tile(Properties properties) { this.properties = properties; }
+
+    public Properties getProperties() { return properties; }
 
     // TODO: int or float?
     public abstract int getWidth();

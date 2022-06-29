@@ -76,14 +76,22 @@ public class PhysicsManagerSystem extends ComponentSystem {
 
 
     @Override
-    public void update(float dt) { updateAllTransforms(); resolveBodies(); }
+    public void update(float dt) { resolveBodies(); }
 
     private void resolveBodies() {
 
+        // copy physics state onto ecs state
         for (Map.Entry<RigidBody2D, PhysicsRigidBody> b : bodies.entrySet()) {
-            transforms.get(b.getKey()).position.set(b.getValue().getTransform().getPosition());
-            b.getKey().velocity.set(b.getValue().getVelocity());
+            RigidBody2D component = b.getKey();
+            PhysicsRigidBody prb = b.getValue();
+            Transform transformForComponent = transforms.get(component);
+
+            transformForComponent.position.set(prb.getTransform().getPosition());
+            component.velocity.set(prb.getVelocity());
         }
+
+        // resolve polygon world positions
+        updateAllTransforms();
 
     }
 
@@ -108,19 +116,12 @@ public class PhysicsManagerSystem extends ComponentSystem {
         while (entities.hasNext()) {
             Entity entity = entities.next();
 
-            PolygonCollider2D collider = entity.getComponent(PolygonCollider2D.class);
-/*
-            List<Vector3f> points = collider.polgyon.getPoints();
-            List<Vector3f> pos = new ArrayList<>(points);
+            List<PolygonCollider2D> colliders = entity.getComponents(PolygonCollider2D.class);
+            if (colliders == null) continue;
+            for (PolygonCollider2D collider : colliders) {
+                drawer.drawOutlineConvexPolygon(new Vector3f(), collider.polygon.getPoints(), Pixel.RED);
+            }
 
-            ColoredPolygon p = new ColoredPolygon(new Vector3f(), pos, Pixel.RED);
-            drawer.getLineBatch().drawConvexPolygon(p);
-*/
-            drawer.drawOutlineConvexPolygon(new Vector3f(), collider.polygon.getPoints(), Pixel.RED);
-
-            Vector3f contact = new Vector3f(8f, 0f, 0f).add(collider.polygon.getPoints().get(0));
-            Vector3f normal = new Vector3f(0f, -4f, 0f);
-            //drawContactPoint(contact, normal);
         }
 
         List<Collision> collisions = getSpace().getPhysicsEnvironment().tempListCollisions();

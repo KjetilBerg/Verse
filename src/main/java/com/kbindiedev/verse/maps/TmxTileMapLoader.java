@@ -8,6 +8,7 @@ import com.kbindiedev.verse.gfx.impl.opengl_33.GLTexture;
 import com.kbindiedev.verse.profiling.Assertions;
 import com.kbindiedev.verse.profiling.exceptions.InvalidDataException;
 import com.kbindiedev.verse.system.parse.DOMElementUtil;
+import com.kbindiedev.verse.util.Properties;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -25,6 +26,8 @@ import java.io.InputStream;
 
 /** Loads .tmx files (Tiled maps). */
 public class TmxTileMapLoader implements ITileMapLoaderImplementation {
+
+    public static final String TILE_METADATA_PROPERTY_NAME = "tiled_metadata";
 
     private static DocumentBuilderFactory dbf;
 
@@ -194,6 +197,34 @@ public class TmxTileMapLoader implements ITileMapLoaderImplementation {
 
                     }
 
+                    TiledTileMetadata metadata = new TiledTileMetadata(tileset); // TODO: does tileset work?
+                    Element objectgroupElement = DOMElementUtil.getChildByName(element, "objectgroup");
+                    if (objectgroupElement != null) {
+                        for (Element objectElement : DOMElementUtil.getChildrenByName(objectgroupElement, "object")) {
+                            String name = DOMElementUtil.getStringAttribute(objectElement, "name", "");
+                            String type = DOMElementUtil.getStringAttribute(objectElement, "class", "");
+                            if (type.equals("")) type = DOMElementUtil.getStringAttribute(objectElement, "type", ""); // pre Tiled 1.9
+                            float x = DOMElementUtil.getFloatAttribute(objectElement, "x", 0f);
+                            float y = DOMElementUtil.getFloatAttribute(objectElement, "y", 0f);
+                            float width = DOMElementUtil.getFloatAttribute(objectElement, "width", 0f);
+                            float height = DOMElementUtil.getFloatAttribute(objectElement, "height", 0f);
+                            float rotation = DOMElementUtil.getFloatAttribute(objectElement, "rotation", 0f);
+                            int localgid = DOMElementUtil.getIntAttribute(objectElement, "gid", -1);
+
+                            int referencedTileId = firstgid + localgid;
+                            if (localgid < 0) referencedTileId = localgid;
+
+                            // TODO: visible ?
+
+                            // TODO: tileset works, but ideally should be the finalized global tileset. instantiate metadata after tileset created?
+                            MapObject object = new MapObject(tileset, new Properties(), name, type, x, y, width, height, rotation, referencedTileId);
+                            metadata.getObjects().addMapObject(object);
+                        }
+                    }
+
+                    // TODO: dirty. clean up
+                    tileset.getTile(firstgid + tileid).getProperties().put(TILE_METADATA_PROPERTY_NAME, metadata);
+
 
                 }
 
@@ -203,6 +234,12 @@ public class TmxTileMapLoader implements ITileMapLoaderImplementation {
 
             tileset.merge(animatedTileset, firstgid, true);
 
+        }
+
+        // ensure all have non-null metadata
+        for (Tile tile : tileset.getAllTiles()) {
+            Properties properties = tile.getProperties();
+            if (!properties.containsKey(TILE_METADATA_PROPERTY_NAME)) properties.put(TILE_METADATA_PROPERTY_NAME, new TiledTileMetadata(tileset)); // TODO: does tileset work?
         }
 
         return tileset;
