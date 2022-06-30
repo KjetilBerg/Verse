@@ -5,10 +5,13 @@ import com.kbindiedev.verse.ecs.components.Camera;
 import com.kbindiedev.verse.ecs.components.SpriteAnimator;
 import com.kbindiedev.verse.ecs.components.Transform;
 import com.kbindiedev.verse.ecs.systems.ComponentSystem;
+import com.kbindiedev.verse.gfx.Pixel;
+import com.kbindiedev.verse.gfx.ShapeDrawer;
 import com.kbindiedev.verse.input.keyboard.KeyEventTracker;
 import com.kbindiedev.verse.input.keyboard.Keys;
 import com.kbindiedev.verse.util.Trigger;
 import org.joml.Vector2f;
+import org.joml.Vector3f;
 
 import java.util.Iterator;
 
@@ -135,4 +138,5 @@ public class ExampleSystem extends ComponentSystem {
         wWidth = context.getApplicationWindow().getWindowWidth();
         wHeight = context.getApplicationWindow().getWindowHeight();
     }
+
 }

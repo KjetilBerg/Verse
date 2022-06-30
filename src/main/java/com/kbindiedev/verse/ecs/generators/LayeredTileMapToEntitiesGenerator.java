@@ -17,6 +17,7 @@ import org.joml.Vector3f;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * Creates an Entity structure (hierarchy) by a given LayeredTileMap.
@@ -24,6 +25,9 @@ import java.util.List;
  * @see com.kbindiedev.verse.maps.LayeredTileMap
  */
 public class LayeredTileMapToEntitiesGenerator {
+
+
+    public static final Function<Integer, Float> depthFunction = (y -> -y * 0.0005f); //TODO TEMP
 
     /**
      * Generate a hierarchical set of entities that are applied to the destination, from the LayeredTileMap.
@@ -44,7 +48,7 @@ public class LayeredTileMapToEntitiesGenerator {
             TileMap tilemap = iterator.next();
 
             zLayer += 0.1f;
-
+            System.out.println(tilemap.getName() + " = z: " + zLayer);
             for (TileMap.Entry entry : tilemap.getAllEntries()) {
 
                 Tile t = entry.getTile();
@@ -55,7 +59,8 @@ public class LayeredTileMapToEntitiesGenerator {
                 // TODO: transforms. better? widht/height
                 transform.position.x = entry.getX();
                 transform.position.y = entry.getY();
-                transform.position.z = zLayer;
+                int relativeFooting = entry.getTile().getProperties().getAsOrDefault("relativeFooting", Integer.class, 0);
+                transform.position.z = zLayer + depthFunction.apply(entry.getY() - 8 + relativeFooting);
                 transform.scale.x = entry.getWidth();
                 transform.scale.y = entry.getHeight();
                 list.add(transform);
@@ -63,7 +68,6 @@ public class LayeredTileMapToEntitiesGenerator {
                 TiledTileMetadata metadata = t.getProperties().getAs(TmxTileMapLoader.TILE_METADATA_PROPERTY_NAME, TiledTileMetadata.class);
                 if (metadata != null) {
                     for (MapObject object : metadata.getObjects().getByType("collider")) {
-                        System.out.println("Generating collider from TileMap");
                         PolygonCollider2D collider2D = new PolygonCollider2D();
 
                         float x1 = object.getX() - 8;
@@ -72,13 +76,11 @@ public class LayeredTileMapToEntitiesGenerator {
                         float y1 = 16 - (object.getY() + object.getHeight()) - 8;
                         float y2 = y1 + object.getHeight();
 
-                        System.out.println(object.getX());
-
                         Polygon polygon = new Polygon();
-                        polygon.addPoint(new Vector3f(x1, y1, 0f));
-                        polygon.addPoint(new Vector3f(x2, y1, 0f));
-                        polygon.addPoint(new Vector3f(x2, y2, 0f));
-                        polygon.addPoint(new Vector3f(x1, y2, 0f));
+                        polygon.addPoint(new Vector3f(x1, y1, 0f).div(16));
+                        polygon.addPoint(new Vector3f(x2, y1, 0f).div(16));
+                        polygon.addPoint(new Vector3f(x2, y2, 0f).div(16));
+                        polygon.addPoint(new Vector3f(x1, y2, 0f).div(16));
                         collider2D.polygon = polygon;
                         list.add(collider2D);
                     }

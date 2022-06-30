@@ -41,7 +41,8 @@ public class SpriteRendererSystem extends ComponentSystem {
         // TODO: or have angle be part of SpriteRenderer component
     @Override
     public void render(RenderContext context) {
-        ensureTargetsUpToDate();
+        //ensureTargetsUpToDate();
+        buildSortedRenderers(); // TODO: always sort, because of changing positions etc
 
         // TODO: temp (context prepare). When change rendering pipeline, batch renders to FBO (on camera). Renderer then considers context.
         context.prepare();

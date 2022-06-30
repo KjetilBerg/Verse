@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Map;
 
 // TODO: mention unsupported parts
 
@@ -197,7 +198,11 @@ public class TmxTileMapLoader implements ITileMapLoaderImplementation {
 
                     }
 
+                    Properties properties = new Properties();
+
                     TiledTileMetadata metadata = new TiledTileMetadata(tileset); // TODO: does tileset work?
+                    properties.put(TILE_METADATA_PROPERTY_NAME, metadata);
+
                     Element objectgroupElement = DOMElementUtil.getChildByName(element, "objectgroup");
                     if (objectgroupElement != null) {
                         for (Element objectElement : DOMElementUtil.getChildrenByName(objectgroupElement, "object")) {
@@ -222,9 +227,43 @@ public class TmxTileMapLoader implements ITileMapLoaderImplementation {
                         }
                     }
 
-                    // TODO: dirty. clean up
-                    tileset.getTile(firstgid + tileid).getProperties().put(TILE_METADATA_PROPERTY_NAME, metadata);
+                    Element propertiesElement = DOMElementUtil.getChildByName(element, "properties");
+                    if (propertiesElement != null) {
+                        for (Element propertyElement : DOMElementUtil.getChildrenByName(propertiesElement, "property")) {
 
+                            String name = DOMElementUtil.getStringAttribute(propertyElement, "name", "");
+                            String type = DOMElementUtil.getStringAttribute(propertyElement, "type", "string");
+                            // TODO: propertytype ?
+                            switch (type) {
+                                case "string":
+                                case "color":
+                                case "file":
+                                case "object":
+                                case "class":
+                                    properties.put(name, DOMElementUtil.getStringAttribute(propertyElement, "value", ""));
+                                    break;
+                                case "int":
+                                    properties.put(name, DOMElementUtil.getIntAttribute(propertyElement, "value", 0));
+                                    break;
+                                case "float":
+                                    properties.put(name, DOMElementUtil.getFloatAttribute(propertyElement, "value", 0f));
+                                    break;
+                                case "bool":
+                                    properties.put(name, DOMElementUtil.getStringAttribute(propertyElement, "value", "false")); // TODO: boolean
+                                    break;
+                                default:
+                                    Assertions.warn("unknown property type: %s", type);
+                            }
+
+                        }
+                    }
+
+                    // TODO: dirty. clean up
+
+                    Properties tileProperties = tileset.getTile(firstgid + tileid).getProperties();
+                    for (Map.Entry<String, Object> property : properties.entrySet()) {
+                        tileProperties.put(property.getKey(), property.getValue());
+                    }
 
                 }
 

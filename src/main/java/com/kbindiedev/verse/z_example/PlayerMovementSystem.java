@@ -5,8 +5,10 @@ import com.kbindiedev.verse.ecs.components.RigidBody2D;
 import com.kbindiedev.verse.ecs.components.SpriteAnimator;
 import com.kbindiedev.verse.ecs.components.SpriteRenderer;
 import com.kbindiedev.verse.ecs.components.Transform;
+import com.kbindiedev.verse.ecs.generators.LayeredTileMapToEntitiesGenerator;
 import com.kbindiedev.verse.ecs.systems.ComponentSystem;
 import com.kbindiedev.verse.input.keyboard.Keys;
+import com.kbindiedev.verse.sfx.impl.openal_10.ALSound;
 import com.kbindiedev.verse.util.Properties;
 import com.kbindiedev.verse.util.Trigger;
 import org.joml.Vector3f;
@@ -95,15 +97,30 @@ public class PlayerMovementSystem extends ComponentSystem {
 
             boolean moving = (dx != 0 || dy != 0);
 
+            if (player.wasMoving && !moving) {
+                player.walkSound.stop();
+            } else if (moving && !player.wasMoving) {
+                player.walkSound.play();
+            }
+
+            player.wasMoving = moving;
+
             Properties properties = animator.controller.getContext().getProperties();
 
             properties.put("moving", moving);
             properties.put("attack", attackTrigger);
             // TODO BUG: can transition from slash to run for some reason
 
-            if (count++ % 60 == 0) System.out.println("Player pos: " + transform.position.x + " " + transform.position.y);
+            if (count++ % 60 == 0) System.out.println("Player pos: " + transform.position.x + " " + transform.position.y + " " + transform.position.z);
+
+            Transform actualTransform = entity.getComponent(Transform.class);
+            if (actualTransform == null) continue;
+            actualTransform.position.z = baseZ + LayeredTileMapToEntitiesGenerator.depthFunction.apply((int)(actualTransform.position.y - 12f));
+
         }
     }
     private int count = 0;
+
+    private float baseZ = 0.4f;
 
 }

@@ -2,6 +2,7 @@ package com.kbindiedev.verse.util;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 public class Properties {
 
@@ -40,5 +41,8 @@ public class Properties {
 
     /** @return true if some value exists for the given key. */
     public boolean containsKey(String key) { return properties.containsKey(key); }
+
+    /** @return the entry set of all entries in this property object. */
+    public Set<Map.Entry<String, Object>> entrySet() { return properties.entrySet(); }
 
 }

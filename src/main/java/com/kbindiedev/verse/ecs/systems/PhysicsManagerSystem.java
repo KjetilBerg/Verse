@@ -11,6 +11,7 @@ import com.kbindiedev.verse.physics.CollisionManifold;
 import com.kbindiedev.verse.physics.Fixture;
 import com.kbindiedev.verse.physics.PhysicsRigidBody;
 import com.kbindiedev.verse.system.BiHashMap;
+import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import java.util.*;
@@ -18,10 +19,9 @@ import java.util.*;
 /** Responsible for connecting an ECS space to a physics implementation. */
 public class PhysicsManagerSystem extends ComponentSystem {
 
-    private HashMap<RigidBody2D, Transform> transforms; // TODO TEMP
-
     private BiHashMap<RigidBody2D, PhysicsRigidBody> bodies;
     private BiHashMap<PolygonCollider2D, Fixture> fixtures;
+    private BiHashMap<Entity, PhysicsRigidBody> entityPrbs;
 
     private EntityQuery query;
 
@@ -31,9 +31,9 @@ public class PhysicsManagerSystem extends ComponentSystem {
 
     @Override
     public void start() {
-        transforms = new HashMap<>();
         bodies = new BiHashMap<>();
         fixtures = new BiHashMap<>();
+        entityPrbs = new BiHashMap<>();
 
         EntityQueryDesc desc = new EntityQueryDesc(new ComponentTypeGroup(PolygonCollider2D.class), null, null);
         query = desc.compile(getSpace().getEntityManager());
@@ -48,10 +48,9 @@ public class PhysicsManagerSystem extends ComponentSystem {
 
             if (colliders == null) continue;
 
-            registerCollidersForBody(body, colliders);
+            PhysicsRigidBody prb = registerCollidersForBody(body, colliders);
 
-            Transform transform = entity.getComponent(Transform.class);
-            if (body != null && transform != null) transforms.put(body, transform);
+            entityPrbs.put(entity, prb);
         }
     }
 
@@ -59,53 +58,67 @@ public class PhysicsManagerSystem extends ComponentSystem {
     @Override
     public void fixedUpdate(float dt) {
 
-        updateAllTransforms();
-
-        for (Map.Entry<RigidBody2D, PhysicsRigidBody> b : bodies.entrySet()) {
-            b.getValue().getTransform().setPosition(transforms.get(b.getKey()).position);
-            b.getValue().setVelocity(b.getKey().velocity);
-        }
+        project();
 
         getSpace().getPhysicsEnvironment().simulate(dt);
 
-        // TODO: retrieve transforms / rigidbody details from physics environment and apply to entities.
-
-        resolveBodies();
+        unproject();
 
     }
 
+    /** Project ECS state onto PhysicsEnvironment state. */
+    private void project() {
+        for (Map.Entry<Entity, PhysicsRigidBody> e : entityPrbs.entrySet()) {
+            Entity entity = e.getKey();
+            RigidBody2D rb = entity.getComponent(RigidBody2D.class);
+            PhysicsRigidBody prb = e.getValue();
 
-    @Override
-    public void update(float dt) { resolveBodies(); }
+            Transform transform = entity.getTransform();
+            prb.setPosition(transform.position);
+            prb.setScale(transform.scale);
+            prb.setRotation(transform.rotation);
 
-    private void resolveBodies() {
+            if (rb != null) {
+                prb.setVelocity(rb.velocity);
+                // TODO: mass, restitution...
+            }
 
-        // copy physics state onto ecs state
-        for (Map.Entry<RigidBody2D, PhysicsRigidBody> b : bodies.entrySet()) {
-            RigidBody2D component = b.getKey();
-            PhysicsRigidBody prb = b.getValue();
-            Transform transformForComponent = transforms.get(component);
-
-            transformForComponent.position.set(prb.getTransform().getPosition());
-            component.velocity.set(prb.getVelocity());
         }
 
-        // resolve polygon world positions
-        updateAllTransforms();
+        for (Map.Entry<PolygonCollider2D, Fixture> e : fixtures.entrySet()) {
+            PolygonCollider2D collider = e.getKey();
+            Fixture fixture = e.getValue();
 
+            //fixture.getShape().translateTo(collider.polygon.getCenter());
+        }
     }
 
-    // TODO: (temp?) fixedUpdate and update(). (move "update" to lateUpdate when supported?)
-    private void updateAllTransforms() {
-        Iterator<Entity> entities = query.execute().iterator();
-        while (entities.hasNext()) {
-            Entity entity = entities.next();
-            List<PolygonCollider2D> colliders = entity.getComponents(PolygonCollider2D.class);
-            for (PolygonCollider2D collider : colliders) {
-                collider.polygon.translateTo(entity.getTransform().position);
+    /** Project PhysicsEnvironment state onto ECS state. */
+    private void unproject() {
+        for (Map.Entry<Entity, PhysicsRigidBody> e : entityPrbs.entrySet()) {
+            Entity entity = e.getKey();
+            RigidBody2D rb = entity.getComponent(RigidBody2D.class);
+            PhysicsRigidBody prb = e.getValue();
+
+            Transform transform = entity.getTransform();
+            transform.position = new Vector3f(prb.getPosition());
+            transform.scale = new Vector3f(prb.getScale());
+            transform.rotation = new Quaternionf(prb.getRotation());
+
+            if (rb != null) {
+                rb.velocity = prb.getVelocity();
+                // TODO: mass, restitution...
             }
         }
+
+        for (Map.Entry<PolygonCollider2D, Fixture> e : fixtures.entrySet()) {
+            PolygonCollider2D collider = e.getKey();
+            Fixture fixture = e.getValue();
+
+            collider.polygon.translateTo(fixture.getShape().getCenter());
+        }
     }
+
 
     @Override
     public void onDrawGizmos(RenderContext context) {
@@ -142,21 +155,21 @@ public class PhysicsManagerSystem extends ComponentSystem {
         drawer.drawLine(point, normal, 0.5f, Pixel.SOLID_WHITE);
     }
 
-    private PhysicsRigidBody newPhysicsBody(boolean dynamic) {
-        return getSpace().getPhysicsEnvironment().createBody(dynamic);
+    private PhysicsRigidBody newPhysicsBody(boolean dynamic, boolean sensor) {
+        return getSpace().getPhysicsEnvironment().createBody(dynamic, sensor);
     }
 
     /** Register colliders for a given body. if body == null, colliders are assumed to be static */
-    private void registerCollidersForBody(RigidBody2D body, List<PolygonCollider2D> colliders) {
-        System.out.println("registering body...");
+    private PhysicsRigidBody registerCollidersForBody(RigidBody2D body, List<PolygonCollider2D> colliders) {
         boolean dynamicBody = (body != null);
-        PhysicsRigidBody prb = newPhysicsBody(dynamicBody);
+        PhysicsRigidBody prb = newPhysicsBody(dynamicBody, false); // TODO: should sensor be on fixture ?
         for (PolygonCollider2D collider : colliders) {
             if (collider.polygon == null) continue; // TODO: if change polygon during runtime
             Fixture fixture = prb.createFixture(collider.polygon);
             fixtures.put(collider, fixture);
         }
         if (body != null) bodies.put(body, prb);
+        return prb;
     }
 
     /** Unregister a collider from the physics system. */

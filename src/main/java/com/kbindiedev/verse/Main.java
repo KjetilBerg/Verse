@@ -28,9 +28,11 @@ import com.kbindiedev.verse.util.condition.Condition;
 import com.kbindiedev.verse.util.condition.ConditionEqual;
 import com.kbindiedev.verse.util.condition.ConditionTrigger;
 import com.kbindiedev.verse.z_example.*;
+import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
+import javax.sound.sampled.UnsupportedAudioFileException;
 import java.io.File;
 import java.io.IOException;
 
@@ -144,24 +146,32 @@ public class Main {
 
             PolygonCollider2D collider = new PolygonCollider2D();
             Polygon polygon = new Polygon();
-            polygon.addPoint(new Vector3f(-7.5f, -12f, 0f));
-            polygon.addPoint(new Vector3f(8.5f, -12f, 0f));
-            polygon.addPoint(new Vector3f(8.5f, -6f, 0f));
-            polygon.addPoint(new Vector3f(-7.5f, -6f, 0f));
+            polygon.addPoint(new Vector3f(-7.5f, -12f, 0f).div(playerTransform.scale));
+            polygon.addPoint(new Vector3f(8.5f, -12f, 0f).div(playerTransform.scale));
+            polygon.addPoint(new Vector3f(8.5f, -6f, 0f).div(playerTransform.scale));
+            polygon.addPoint(new Vector3f(-7.5f, -6f, 0f).div(playerTransform.scale));
             collider.polygon = polygon;
 
             // TODO: animator controls offset
             SpriteRenderer renderer = new SpriteRenderer();
             renderer.offset.set(0f, 6f);
 
-            space.getEntityManager().instantiate(exampleComponent, animator, renderer, playerTransform, new PlayerComponent(), collider, new RigidBody2D());
+            PlayerComponent playerComponent = new PlayerComponent();
+            try {
+                Sound x = al10.createSound("../run-dirt.wav");
+                Source y = al10.createSource();
+                y.setSound(x);
+                playerComponent.walkSound = y;
+            } catch (Exception e) { throw new RuntimeException(e); }
+
+            space.getEntityManager().instantiate(exampleComponent, animator, renderer, playerTransform, playerComponent, collider, new RigidBody2D());
 
             PolygonCollider2D collider2 = new PolygonCollider2D();
             Polygon polygon2 = new Polygon();
-            polygon2.addPoint(new Vector3f(0f, 32f, 0f));
-            polygon2.addPoint(new Vector3f(96f, 32f, 0f));
-            polygon2.addPoint(new Vector3f(96f, 48f, 0f));
-            polygon2.addPoint(new Vector3f(0f, 48f, 0f));
+            polygon2.addPoint(new Vector3f(0f, 0f, 0f).div(16f));
+            polygon2.addPoint(new Vector3f(96f, 0f, 0f).div(16f));
+            polygon2.addPoint(new Vector3f(96f, 16f, 0f).div(16f));
+            polygon2.addPoint(new Vector3f(0f, 16f, 0f).div(16f));
             collider2.polygon = polygon2;
             SpriteRenderer renderer2 = new SpriteRenderer();
             renderer2.sprite = TilesetResourceFetcher.getSprite(testTileMap.getTileset(), 347);
@@ -238,6 +248,16 @@ public class Main {
             PolygonCollider2D collider = new PolygonCollider2D();
             collider.polygon = p;
             space.getEntityManager().instantiate(collider);
+        }
+
+        // play ambient sound
+        try {
+            Source s = al10.createSource();
+            Sound so = al10.createSound("../ambience.wav");
+            s.setSound(so);
+            s.play();
+        } catch (UnsupportedAudioFileException | IOException e) {
+            e.printStackTrace();
         }
 
         RenderContextPreparerSystem rcps = new RenderContextPreparerSystem(space);

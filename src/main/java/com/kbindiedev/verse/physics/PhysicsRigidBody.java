@@ -3,6 +3,7 @@ package com.kbindiedev.verse.physics;
 import com.kbindiedev.verse.math.MathTransform;
 import com.kbindiedev.verse.math.shape.Polygon;
 import com.kbindiedev.verse.system.FastList;
+import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import java.util.List;
@@ -21,8 +22,9 @@ public class PhysicsRigidBody {
     private float mass, inverseMass;
     private float restitution;
     private boolean dynamic;
+    private boolean sensor;
 
-    public PhysicsRigidBody(PhysicsEnvironment environment, MathTransform transform, boolean dynamic) {
+    public PhysicsRigidBody(PhysicsEnvironment environment, MathTransform transform, boolean dynamic, boolean sensor) {
         this.environment = environment;
         this.transform = transform;
         force = new Vector3f(); velocity = new Vector3f();
@@ -33,10 +35,34 @@ public class PhysicsRigidBody {
         inverseMass = 1f / mass;
         restitution = 1f;
         this.dynamic = dynamic;
+        this.sensor = sensor;
     }
 
-    public MathTransform getTransform() { return transform; }
     public List<Fixture> getFixtures() { return fixtures.asList(); }
+
+    public Vector3f getPosition() { return transform.getPosition(); }
+    public void setPosition(Vector3f position) {
+        if (position.equals(transform.getPosition())) return;
+
+        transform.setPosition(position);
+        for (Fixture fixture : fixtures) fixture.translateTo(position);
+    }
+
+    public Vector3f getScale() { return transform.getScale(); }
+    public void setScale(Vector3f scale) {
+        if (scale.equals(transform.getScale())) return;
+
+        transform.setScale(scale);
+        for (Fixture fixture : fixtures) fixture.scaleTo(scale);
+    }
+
+    public Quaternionf getRotation() { return transform.getRotation(); }
+    public void setRotation(Quaternionf rotation) {
+        if (rotation.equals(transform.getRotation())) return;
+
+        transform.setRotation(rotation);
+        for (Fixture fixture : fixtures) fixture.rotateTo(rotation);
+    }
 
     public Vector3f getForceVector() { return force; }
     public void setForceVector(Vector3f force) { this.force.set(force); }
@@ -54,6 +80,8 @@ public class PhysicsRigidBody {
     public void setRestitution(float restitution) { this.restitution = restitution; }
 
     public boolean isDynamic() { return dynamic; }
+
+    public boolean isSensor() { return sensor; }
 
     public Fixture createFixture(Polygon polygon) { return createFixture(new MathTransform(polygon.getCenter(), polygon.getScale(), polygon.getRotation()), polygon); }
     public Fixture createFixture(MathTransform transform, Polygon polygon) {
@@ -73,11 +101,16 @@ public class PhysicsRigidBody {
     public void applyForce(Vector3f force) { this.force.add(force); }
     /** Add an instantaneous change in velocity to this body. */
     public void applyImpulse(Vector3f impulse) { velocity.add(impulse); }
+    /** Add a change in position for this body. */
+    public void applyMovement(Vector3f movement) {
+        transform.getPosition().add(movement);
+        for (Fixture fixture : fixtures) fixture.move(movement);
+    }
 
     /** Apply my current forces to velocity and velocity to position by the given time interval. */
     public void tick(float dt) {
         velocity.add(new Vector3f(force).div(mass).mul(dt)); // F = ma -> a = F/m
-        transform.getPosition().add(new Vector3f(velocity).mul(dt));
+        applyMovement(new Vector3f(velocity).mul(dt));
     }
 
 }

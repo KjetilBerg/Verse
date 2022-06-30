@@ -6,9 +6,7 @@ import com.kbindiedev.verse.system.FastList;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class PhysicsEnvironment {
 
@@ -20,9 +18,9 @@ public class PhysicsEnvironment {
         staticBodies = new FastList<>();
     }
 
-    public PhysicsRigidBody createBody(boolean dynamic) { return createBody(new MathTransform(), dynamic); }
-    public PhysicsRigidBody createBody(MathTransform transform, boolean dynamic) {
-        PhysicsRigidBody body = new PhysicsRigidBody(this, transform, dynamic);
+    public PhysicsRigidBody createBody(boolean dynamic, boolean sensor) { return createBody(new MathTransform(), dynamic, sensor); }
+    public PhysicsRigidBody createBody(MathTransform transform, boolean dynamic, boolean sensor) {
+        PhysicsRigidBody body = new PhysicsRigidBody(this, transform, dynamic, sensor);
         if (dynamic) dynamicBodies.add(body); else staticBodies.add(body);
         return body;
     }
@@ -100,8 +98,8 @@ public class PhysicsEnvironment {
                 allManifolds.sort((m1, m2) -> {
                     if (m1.getDepth() > m2.getDepth()) return -1;
                     if (m1.getDepth() < m2.getDepth()) return 1;
-                    float l1 = new Vector3f(body1.getTransform().getPosition()).sub(averageContactPoints(m1)).lengthSquared();
-                    float l2 = new Vector3f(body1.getTransform().getPosition()).sub(averageContactPoints(m2)).lengthSquared();
+                    float l1 = new Vector3f(body1.getPosition()).sub(averageContactPoints(m1)).lengthSquared();
+                    float l2 = new Vector3f(body1.getPosition()).sub(averageContactPoints(m2)).lengthSquared();
                     if (l1 < l2) return -1;
                     if (l1 > l2) return 1;
                     return 0;
@@ -110,8 +108,9 @@ public class PhysicsEnvironment {
                 // consider first point only (do not get caught on corners)
                 Vector3f adjustment = new Vector3f(allManifolds.get(0).getNormal()).mul(allManifolds.get(0).getDepth());
 
-                body1.getTransform().getPosition().add(adjustment);
-                body1.getFixtures().forEach(f -> f.getShape().translateTo(body1.getTransform().getPosition())); // TODO TEMP
+                //body1.getTransform().getPosition().add(adjustment);
+                //body1.getFixtures().forEach(f -> f.getShape().translateTo(body1.getTransform().getPosition())); // TODO TEMP
+                body1.applyMovement(adjustment);
             }
             if (!didCollide) break;
         }
