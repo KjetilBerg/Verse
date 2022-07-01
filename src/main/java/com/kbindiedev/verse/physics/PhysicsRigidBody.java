@@ -22,9 +22,8 @@ public class PhysicsRigidBody {
     private float mass, inverseMass;
     private float restitution;
     private boolean dynamic;
-    private boolean sensor;
 
-    public PhysicsRigidBody(PhysicsEnvironment environment, MathTransform transform, boolean dynamic, boolean sensor) {
+    public PhysicsRigidBody(PhysicsEnvironment environment, MathTransform transform, boolean dynamic) {
         this.environment = environment;
         this.transform = transform;
         force = new Vector3f(); velocity = new Vector3f();
@@ -35,7 +34,6 @@ public class PhysicsRigidBody {
         inverseMass = 1f / mass;
         restitution = 1f;
         this.dynamic = dynamic;
-        this.sensor = sensor;
     }
 
     public List<Fixture> getFixtures() { return fixtures.asList(); }
@@ -81,11 +79,9 @@ public class PhysicsRigidBody {
 
     public boolean isDynamic() { return dynamic; }
 
-    public boolean isSensor() { return sensor; }
-
-    public Fixture createFixture(Polygon polygon) { return createFixture(new MathTransform(polygon.getCenter(), polygon.getScale(), polygon.getRotation()), polygon); }
-    public Fixture createFixture(MathTransform transform, Polygon polygon) {
-        Fixture fixture = new Fixture(this, transform, polygon);
+    public Fixture createFixture(Polygon polygon, boolean sensor) { return createFixture(new MathTransform(polygon.getCenter(), polygon.getScale(), polygon.getRotation()), polygon, sensor); }
+    public Fixture createFixture(MathTransform transform, Polygon polygon, boolean sensor) {
+        Fixture fixture = new Fixture(this, transform, polygon, sensor);
         fixtures.add(fixture);
         return fixture;
     }

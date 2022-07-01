@@ -6,14 +6,13 @@ import org.lwjgl.openal.AL10;
 
 public class ALSource extends Source {
 
-    private boolean loop;
     private boolean playing;
 
     private int id;
     private ALSound sound;
 
-    public ALSource(boolean loop) {
-        this.loop = loop;
+    public ALSource(boolean looping) {
+        super(looping);
         playing = false;
         sound = null;
 
@@ -22,7 +21,7 @@ public class ALSource extends Source {
         AL10.alSource3f(id, AL10.AL_VELOCITY, 0f, 0f, 0f);
         AL10.alSourcef(id, AL10.AL_PITCH, 1);
         AL10.alSourcef(id, AL10.AL_GAIN, 1f);
-        AL10.alSourcei(id, AL10.AL_LOOPING, loop ? AL10.AL_TRUE : AL10.AL_FALSE);
+        AL10.alSourcei(id, AL10.AL_LOOPING, looping ? AL10.AL_TRUE : AL10.AL_FALSE);
     }
 
     @Override

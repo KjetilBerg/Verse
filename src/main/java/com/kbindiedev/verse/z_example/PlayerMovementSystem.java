@@ -5,13 +5,11 @@ import com.kbindiedev.verse.ecs.components.RigidBody2D;
 import com.kbindiedev.verse.ecs.components.SpriteAnimator;
 import com.kbindiedev.verse.ecs.components.SpriteRenderer;
 import com.kbindiedev.verse.ecs.components.Transform;
-import com.kbindiedev.verse.ecs.generators.LayeredTileMapToEntitiesGenerator;
+import com.kbindiedev.verse.ecs.generators.TilemapToEntitiesGenerator;
 import com.kbindiedev.verse.ecs.systems.ComponentSystem;
 import com.kbindiedev.verse.input.keyboard.Keys;
-import com.kbindiedev.verse.sfx.impl.openal_10.ALSound;
 import com.kbindiedev.verse.util.Properties;
 import com.kbindiedev.verse.util.Trigger;
-import org.joml.Vector3f;
 
 import java.util.Iterator;
 
@@ -77,6 +75,10 @@ public class PlayerMovementSystem extends ComponentSystem {
         if (getSpace().getKeyboardTracker().isKeyDown(Keys.KEY_LEFT)) dx -= 1;
         if (getSpace().getKeyboardTracker().isKeyDown(Keys.KEY_RIGHT)) dx += 1;
 
+        // diagonal walks *= sqrt(2)
+        if (dx != 0) dy *= 1.4;
+        if (dy != 0) dx *= 1.4;
+
 
         boolean attack = (getSpace().getKeyboardTracker().isKeyDown(Keys.KEY_F));
         attackTrigger.reset();
@@ -115,7 +117,7 @@ public class PlayerMovementSystem extends ComponentSystem {
 
             Transform actualTransform = entity.getComponent(Transform.class);
             if (actualTransform == null) continue;
-            actualTransform.position.z = baseZ + LayeredTileMapToEntitiesGenerator.depthFunction.apply((int)(actualTransform.position.y - 12f));
+            actualTransform.position.z = baseZ + TilemapToEntitiesGenerator.depthFunction.apply((int)(actualTransform.position.y - 12f));
 
         }
     }

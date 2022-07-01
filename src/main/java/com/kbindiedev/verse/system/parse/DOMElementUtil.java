@@ -34,8 +34,16 @@ public class DOMElementUtil {
         return element.getAttribute(attributeName);
     }
 
-    /** @return the element's first child that matches the given tagName, or null if none found. */
-    public static Element getChildByName(Element element, String tagName) {
+    /** @return all elements that are descendants of the given element, with the given tagName. */
+    public static Collection<Element> getDescendantsByName(Element element, String tagName) {
+        Collection<Element> list = new ArrayList<>();
+        NodeList nList = element.getElementsByTagName(tagName);
+        for (int i = 0; i < nList.getLength(); ++i) list.add((Element)nList.item(i));
+        return list;
+    }
+
+    /** @return the element's first direct descendant (1 generation down) that matches the given tagName, or null if none found. */
+    public static Element getDirectChildByName(Element element, String tagName) {
         Node child = element.getFirstChild();
         while (child != null) {
             if (child instanceof Element && child.getNodeName().equals(tagName)) return (Element)child;
@@ -44,11 +52,17 @@ public class DOMElementUtil {
         return null;
     }
 
-    public static Collection<Element> getChildrenByName(Element element, String tagName) {
+    /** @return all elements that are direct descendants (1 generation down), with the given tagName. */
+    public static Collection<Element> getDirectChildrenByName(Element element, String tagName) {
         Collection<Element> list = new ArrayList<>();
-        NodeList nList = element.getElementsByTagName(tagName);
-        for (int i = 0; i < nList.getLength(); ++i) list.add((Element)nList.item(i));
+        Node child = element.getFirstChild();
+        while (child != null) {
+            if (child instanceof Element && child.getNodeName().equals(tagName)) list.add((Element)child);
+            child = child.getNextSibling();
+        }
         return list;
     }
+
+
 
 }

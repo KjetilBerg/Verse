@@ -1,26 +1,39 @@
 package com.kbindiedev.verse.physics;
 
 import com.kbindiedev.verse.math.MathTransform;
+import com.kbindiedev.verse.math.helpers.Tuple;
 import com.kbindiedev.verse.physics.collisions.CollisionUtil;
 import com.kbindiedev.verse.system.FastList;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class PhysicsEnvironment {
 
+    private static final ICollisionListener BLANK_LISTENER = new ICollisionListener() {
+        @Override public void onCollision(CollisionManifold manifold) {}
+    };
+
+    private ICollisionListener listener;
+    private List<Collision> collisionsThisIteration;
     private FastList<PhysicsRigidBody> dynamicBodies;
     private FastList<PhysicsRigidBody> staticBodies;
 
     public PhysicsEnvironment() {
+        listener = BLANK_LISTENER;
+        collisionsThisIteration = new ArrayList<>();
         dynamicBodies = new FastList<>();
         staticBodies = new FastList<>();
     }
 
-    public PhysicsRigidBody createBody(boolean dynamic, boolean sensor) { return createBody(new MathTransform(), dynamic, sensor); }
-    public PhysicsRigidBody createBody(MathTransform transform, boolean dynamic, boolean sensor) {
-        PhysicsRigidBody body = new PhysicsRigidBody(this, transform, dynamic, sensor);
+    public List<Collision> getActiveCollisions() { return collisionsThisIteration; }
+
+    public PhysicsRigidBody createBody(boolean dynamic) { return createBody(new MathTransform(), dynamic); }
+    public PhysicsRigidBody createBody(MathTransform transform, boolean dynamic) {
+        PhysicsRigidBody body = new PhysicsRigidBody(this, transform, dynamic);
         if (dynamic) dynamicBodies.add(body); else staticBodies.add(body);
         return body;
     }
@@ -32,6 +45,9 @@ public class PhysicsEnvironment {
         for (PhysicsRigidBody prb : dynamicBodies) prb.tick(dt);
 
         simplestStaticResolution(5);
+
+        collisionsThisIteration.clear();
+        collisionsThisIteration.addAll(doCollisionChecks());
 
         /*
         List<Collision> collisions = findAllCollisions();
@@ -67,53 +83,106 @@ public class PhysicsEnvironment {
 
     }
 
+
+    // TODO: for now, quite simple. should use octree.
+    /**
+     * The broad phase.
+     * The returned list is guaranteed to contain all colliding fixture pairs, however
+     *      it may also contain fixture pairs that are not colliding.
+     * @return a list of fixtures that may or may not be colliding.
+     */
+    private List<Tuple<Fixture, Fixture>> getPotentialCollisions() {
+        List<Tuple<Fixture, Fixture>> potentialCollisions = new ArrayList<>();
+
+        FastList<Fixture> primaryFixtures = new FastList<>();
+        FastList<Fixture> allFixtures = new FastList<>();
+
+        for (PhysicsRigidBody b : dynamicBodies) {
+            primaryFixtures.addAll(b.getFixtures());
+            allFixtures.addAll(b.getFixtures());
+        }
+        for (PhysicsRigidBody b : staticBodies) {
+            allFixtures.addAll(b.getFixtures());
+        }
+
+        for (Fixture fixture1 : primaryFixtures) {
+            for (Fixture fixture2 : allFixtures) {
+                //if (fixture1 == fixture2) continue;
+                if (fixture1.getBody() == fixture2.getBody()) continue;
+
+                potentialCollisions.add(new Tuple<>(fixture1, fixture2));
+            }
+        }
+
+        return potentialCollisions;
+    }
+
+    /**
+     * Narrow phase.
+     * @return a list of all collisions.
+     */
+    private List<Collision> doCollisionChecks() {
+        List<Collision> collisions = new ArrayList<>();
+
+        List<Tuple<Fixture, Fixture>> potentialCollisions = getPotentialCollisions();
+        for (Tuple<Fixture, Fixture> pCollision : potentialCollisions) {
+            Fixture fixture1 = pCollision.getFirst();
+            Fixture fixture2 = pCollision.getSecond();
+
+            CollisionManifold manifold = CollisionUtil.checkCollisions(fixture1, fixture2);
+            if (manifold == null) continue;
+
+            Collision collision = new Collision(fixture1, fixture2, manifold);
+            collisions.add(collision);
+        }
+
+        return collisions;
+    }
+
     /** Perform the simplest static resolution I can think of */
     private void simplestStaticResolution(int maxIterations) {
-        FastList<PhysicsRigidBody> allBodies = new FastList<>();
-        allBodies.addAll(dynamicBodies);
-        allBodies.addAll(staticBodies);
 
+        HashMap<PhysicsRigidBody, List<Collision>> singleMap = new HashMap<>();
 
-        for (int m = 0; m < maxIterations; ++m) {
-            boolean didCollide = false;
-            for (PhysicsRigidBody body1 : dynamicBodies) {
+        for (int i = 0; i < maxIterations; ++i) {
 
-                List<CollisionManifold> allManifolds = new ArrayList<>();
+            List<Collision> collisions = doCollisionChecks();
+            collisions.removeIf(c -> c.getFixture1().isSensor() || c.getFixture2().isSensor());
+            if (collisions.size() == 0) break;
 
-                // find all collisions with body1
-                for (PhysicsRigidBody body2 : allBodies) {
-                    if (body1 == body2) continue;
+            singleMap.clear();
 
-                    CollisionManifold manifold = CollisionUtil.checkCollisions(body1, body2);
-                    if (manifold == null) continue;
+            for (Collision collision : collisions) {
+                PhysicsRigidBody body = collision.getFixture1().getBody();
+                if (!singleMap.containsKey(body)) singleMap.put(body, new ArrayList<>());
+                singleMap.get(body).add(collision);
+            }
 
-                    allManifolds.add(manifold);
+            for (Map.Entry<PhysicsRigidBody, List<Collision>> e : singleMap.entrySet()) {
 
-                }
+                PhysicsRigidBody body = e.getKey();
+                List<Collision> c = e.getValue();
 
-                if (allManifolds.size() == 0) continue;
-                didCollide = true;
-
-                // sort by biggest depth, then closest average contact point
-                allManifolds.sort((m1, m2) -> {
+                c.sort((c1, c2) -> {
+                    CollisionManifold m1 = c1.getManifold(), m2 = c2.getManifold();
                     if (m1.getDepth() > m2.getDepth()) return -1;
                     if (m1.getDepth() < m2.getDepth()) return 1;
-                    float l1 = new Vector3f(body1.getPosition()).sub(averageContactPoints(m1)).lengthSquared();
-                    float l2 = new Vector3f(body1.getPosition()).sub(averageContactPoints(m2)).lengthSquared();
+                    float l1 = new Vector3f(body.getPosition()).sub(averageContactPoints(m1)).lengthSquared();
+                    float l2 = new Vector3f(body.getPosition()).sub(averageContactPoints(m2)).lengthSquared();
                     if (l1 < l2) return -1;
                     if (l1 > l2) return 1;
                     return 0;
                 });
 
-                // consider first point only (do not get caught on corners)
-                Vector3f adjustment = new Vector3f(allManifolds.get(0).getNormal()).mul(allManifolds.get(0).getDepth());
+                CollisionManifold prioritizedCollision = c.get(0).getManifold();
 
-                //body1.getTransform().getPosition().add(adjustment);
-                //body1.getFixtures().forEach(f -> f.getShape().translateTo(body1.getTransform().getPosition())); // TODO TEMP
-                body1.applyMovement(adjustment);
+                Vector3f adjustment = new Vector3f(prioritizedCollision.getNormal()).mul(prioritizedCollision.getDepth());
+                body.applyMovement(adjustment);
+
             }
-            if (!didCollide) break;
+
         }
+
     }
 
     private Vector3f averageContactPoints(CollisionManifold manifold) {
@@ -123,6 +192,7 @@ public class PhysicsEnvironment {
         return avg;
     }
 
+    /*
     private List<Collision> findAllCollisions() {
         // TODO: for now very primitive. no octree, just compare everything to everything else
         FastList<PhysicsRigidBody> allBodies = new FastList<>();
@@ -147,5 +217,6 @@ public class PhysicsEnvironment {
     public List<Collision> tempListCollisions() {
         return findAllCollisions();
     }
+    */
 
 }

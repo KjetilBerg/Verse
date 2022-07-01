@@ -39,4 +39,5 @@ out vec4 color;
 void main()
 {
     color = texture(uTexArray[int(fTexId)], fTexCoords) * fColor;
+    //color = color * vec4(0.25, 0.2, 0.3, 1.0); // temp dark test
 }

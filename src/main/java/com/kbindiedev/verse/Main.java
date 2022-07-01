@@ -5,7 +5,7 @@ import com.kbindiedev.verse.ecs.Entity;
 import com.kbindiedev.verse.ecs.RenderContext;
 import com.kbindiedev.verse.ecs.Space;
 import com.kbindiedev.verse.ecs.components.*;
-import com.kbindiedev.verse.ecs.generators.LayeredTileMapToEntitiesGenerator;
+import com.kbindiedev.verse.ecs.generators.TilemapToEntitiesGenerator;
 import com.kbindiedev.verse.ecs.systems.*;
 import com.kbindiedev.verse.gfx.GraphicsEngineSettings;
 import com.kbindiedev.verse.gfx.Pixel;
@@ -16,6 +16,7 @@ import com.kbindiedev.verse.gfx.strategy.providers.ColoredPolygon;
 import com.kbindiedev.verse.io.files.Files;
 import com.kbindiedev.verse.maps.LayeredTileMap;
 import com.kbindiedev.verse.maps.TileMapLoader;
+import com.kbindiedev.verse.maps.Tilemap;
 import com.kbindiedev.verse.maps.TilesetResourceFetcher;
 import com.kbindiedev.verse.math.helpers.PolygonMaker;
 import com.kbindiedev.verse.math.shape.Polygon;
@@ -28,8 +29,6 @@ import com.kbindiedev.verse.util.condition.Condition;
 import com.kbindiedev.verse.util.condition.ConditionEqual;
 import com.kbindiedev.verse.util.condition.ConditionTrigger;
 import com.kbindiedev.verse.z_example.*;
-import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
-import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import javax.sound.sampled.UnsupportedAudioFileException;
@@ -83,8 +82,8 @@ public class Main {
 
         Transform playerTransform = new Transform();
         try {
-            LayeredTileMap testTileMap = TileMapLoader.loadTileMap(new File("./../spritepack_demo/paths.tmx"));
-            LayeredTileMapToEntitiesGenerator.generateEntities(space.getEntityManager(), testTileMap);
+            Tilemap testTileMap = TileMapLoader.loadTileMap(new File("./../spritepack_demo/paths.tmx"));
+            TilemapToEntitiesGenerator.generateEntities(space.getEntityManager(), testTileMap);
 
             SpriteAnimation playerIdle = TilesetResourceFetcher.getAnimation(testTileMap.getTileset(), 346);
             SpriteAnimation playerRun = TilesetResourceFetcher.getAnimation(testTileMap.getTileset(), 346 + 6);
@@ -252,7 +251,7 @@ public class Main {
 
         // play ambient sound
         try {
-            Source s = al10.createSource();
+            Source s = al10.createSource(true);
             Sound so = al10.createSound("../ambience.wav");
             s.setSound(so);
             s.play();

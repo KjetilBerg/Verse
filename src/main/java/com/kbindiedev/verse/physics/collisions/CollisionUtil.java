@@ -4,6 +4,7 @@ import com.kbindiedev.verse.math.helpers.Line;
 import com.kbindiedev.verse.math.shape.Polygon;
 import com.kbindiedev.verse.math.shape.Rectanglef;
 import com.kbindiedev.verse.physics.CollisionManifold;
+import com.kbindiedev.verse.physics.Fixture;
 import com.kbindiedev.verse.physics.PhysicsRigidBody;
 import org.joml.Vector3f;
 
@@ -13,10 +14,10 @@ import java.util.List;
 /** A collection of collision checking methods. */
 public class CollisionUtil {
 
-    public static CollisionManifold checkCollisions(PhysicsRigidBody body1, PhysicsRigidBody body2) {
+    public static CollisionManifold checkCollisions(Fixture fixture1, Fixture fixture2) {
         // TODO: List of manifolds? combine fixtures to single shape ??
         //return testPolygonCollision(body1.getFixtures().get(0).getShape(), body2.getFixtures().get(0).getShape());
-        return testAABBCollision(body1.getFixtures().get(0).getShape(), body2.getFixtures().get(0).getShape());
+        return testAABBCollision(fixture1.getShape(), fixture2.getShape());
     }
 
     // TODO: input AABB, for now assume polygons are AABB

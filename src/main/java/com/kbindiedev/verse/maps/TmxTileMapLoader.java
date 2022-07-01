@@ -1,7 +1,6 @@
 package com.kbindiedev.verse.maps;
 
 import com.kbindiedev.verse.animation.SpriteAnimation;
-import com.kbindiedev.verse.animation.SpriteFrame;
 import com.kbindiedev.verse.gfx.Sprite;
 import com.kbindiedev.verse.gfx.Texture;
 import com.kbindiedev.verse.gfx.impl.opengl_33.GLTexture;
@@ -40,7 +39,7 @@ public class TmxTileMapLoader implements ITileMapLoaderImplementation {
     }
 
     @Override
-    public LayeredTileMap loadTileMap(InputStream stream) throws IOException, InvalidDataException {
+    public Tilemap loadTileMap(InputStream stream) throws IOException, InvalidDataException {
 
         Document document = parseXML(stream);
 
@@ -48,7 +47,7 @@ public class TmxTileMapLoader implements ITileMapLoaderImplementation {
         //document.getDocumentElement().getName
 
         Tileset mainSet = new Tileset();
-        for (Element tilesetElement : DOMElementUtil.getChildrenByName(document.getDocumentElement(), "tileset")) {
+        for (Element tilesetElement : DOMElementUtil.getDirectChildrenByName(document.getDocumentElement(), "tileset")) {
             Tileset tileset = loadTileset(tilesetElement);
             boolean didClash = !mainSet.merge(tileset, 0, true);
             if (didClash) Assertions.warn("unexpected clash in main merge for .tmx file");
@@ -79,38 +78,39 @@ public class TmxTileMapLoader implements ITileMapLoaderImplementation {
     }
 
     // TODO tileoffset etc
-    private LayeredTileMap loadAllLayers(Element root, Tileset tileset, int tileWidth, int tileHeight) {
-        LayeredTileMap map = new LayeredTileMap(tileset);
-        int index = 0;
-        for (Element layerElement : DOMElementUtil.getChildrenByName(root, "layer")) {
-            TileMap tilemap = loadLayer(layerElement, tileset, tileWidth, tileHeight);
-            map.putForLayer(index++, tilemap);
+    private Tilemap loadAllLayers(Element root, Tileset tileset, int tileWidth, int tileHeight) {
+        Tilemap map = new Tilemap(tileset);
+        for (Element layerElement : DOMElementUtil.getDirectChildrenByName(root, "layer")) {
+            loadLayer(layerElement, map, tileWidth, tileHeight);
+        }
+        for (Element layerElement : DOMElementUtil.getDirectChildrenByName(root, "objectgroup")) { // TODO: inline with other for-loop, TODO 2: layers have ids in .tmx
+            loadObjectLayer(layerElement, map);
         }
         return map;
     }
 
-    private TileMap loadLayer(Element layerElement, Tileset tileset, int tileWidth, int tileHeight) {
+    private void loadLayer(Element layerElement, Tilemap tilemap, int tileWidth, int tileHeight) {
         if (layerElement == null) throw new IllegalArgumentException("element must be a 'layer', but got null");
         if (!layerElement.getNodeName().equals("layer"))
             throw new IllegalArgumentException("element must be a 'layer', but got '" + layerElement.getNodeName() + "'");
 
-        if (DOMElementUtil.getChildByName(layerElement, "chunk") != null) throw new IllegalArgumentException("infinite Tiled maps are not supported");
+        if (DOMElementUtil.getDirectChildByName(layerElement, "chunk") != null) throw new IllegalArgumentException("infinite Tiled maps are not supported");
 
         int mapWidth = DOMElementUtil.getIntAttribute(layerElement, "width", 1);
         int mapHeight = DOMElementUtil.getIntAttribute(layerElement, "height", 1);
 
-        Element dataElement = DOMElementUtil.getChildByName(layerElement, "data");
+        Element dataElement = DOMElementUtil.getDirectChildByName(layerElement, "data");
 
         if (!dataElement.getAttribute("encoding").equals("csv")) throw new IllegalArgumentException("Unsupported encoding: " + dataElement.getAttribute("encoding"));
 
         String[] indices = dataElement.getTextContent().replaceAll("\\r?\\n", "").split(",");
         int index = 0;
 
-        TileMap map = new TileMap(tileset, layerElement.getAttribute("name"));
+        TileLayer layer = tilemap.createTileLayer(new Properties(), layerElement.getAttribute("name"));
         while (index < indices.length) {
             int tileId = Integer.parseInt(indices[index]);
             if (tileId != 0) {
-                Tile tile = tileset.getTile(tileId);
+                Tile tile = tilemap.getTileset().getTile(tileId);
 
                 int column = (index % mapWidth);
                 int row = mapHeight - (index / mapWidth);
@@ -119,11 +119,80 @@ public class TmxTileMapLoader implements ITileMapLoaderImplementation {
                 //int yPos = row * tileHeight + (tileHeight - tile.getHeight()); // .tmx assumes 0,0 is bottom left
                 int yPos = row * tileHeight; // TODO boolean: flipY
 
-                map.addEntry(tile, xPos, yPos); // TODO: is width and height right here?
+                layer.addEntry(tile, xPos, yPos); // TODO: is width and height right here?
             }
             index++;
         }
-        return map;
+    }
+
+    private void loadObjectLayer(Element objectgroupElement, Tilemap map) {
+
+        Element propertiesElement = DOMElementUtil.getDirectChildByName(objectgroupElement, "properties");
+        Properties objectLayerProperties = loadProperties(propertiesElement);
+
+        String layerName = DOMElementUtil.getStringAttribute(objectgroupElement, "name", "");
+        String typeName = DOMElementUtil.getStringAttribute(objectgroupElement, "class", "");
+        ObjectLayer layer = map.createObjectLayer(objectLayerProperties, layerName, typeName);
+
+        for (Element objectElement : DOMElementUtil.getDirectChildrenByName(objectgroupElement, "object")) {
+
+            String name = DOMElementUtil.getStringAttribute(objectElement, "name", "");
+            String type = DOMElementUtil.getStringAttribute(objectElement, "class", "");
+            if (type.equals("")) type = DOMElementUtil.getStringAttribute(objectElement, "type", ""); // pre Tiled 1.9
+            float x = DOMElementUtil.getFloatAttribute(objectElement, "x", 0f);
+            float y = DOMElementUtil.getFloatAttribute(objectElement, "y", 0f);
+            float width = DOMElementUtil.getFloatAttribute(objectElement, "width", 0f);
+            float height = DOMElementUtil.getFloatAttribute(objectElement, "height", 0f);
+            float rotation = DOMElementUtil.getFloatAttribute(objectElement, "rotation", 0f);
+            // TODO: visible ?
+
+            //int localgid = DOMElementUtil.getIntAttribute(objectElement, "gid", -1);
+            //int referencedTileId = firstgid + localgid; // TODO: (cannot appear in non-tilesets?)
+            //if (localgid < 0) referencedTileId = localgid;
+
+            Element objPropertiesElement = DOMElementUtil.getDirectChildByName(objectElement, "properties");
+            Properties properties = loadProperties(objPropertiesElement);
+
+            // TODO: layer.createMapObject() ?
+            MapObject object = new MapObject(map.getTileset(), properties, name, type, x, y, width, height, rotation, -1);
+            layer.addMapObject(object);
+        }
+    }
+
+    private Properties loadProperties(Element propertiesElement) {
+        Properties properties = new Properties();
+
+        if (propertiesElement == null) return properties;
+
+        for (Element propertyElement : DOMElementUtil.getDirectChildrenByName(propertiesElement, "property")) {
+
+            String name = DOMElementUtil.getStringAttribute(propertyElement, "name", "");
+            String type = DOMElementUtil.getStringAttribute(propertyElement, "type", "string");
+            // TODO: propertytype ?
+            switch (type) {
+                case "string":
+                case "color":
+                case "file":
+                case "object":
+                case "class":
+                    properties.put(name, DOMElementUtil.getStringAttribute(propertyElement, "value", ""));
+                    break;
+                case "int":
+                    properties.put(name, DOMElementUtil.getIntAttribute(propertyElement, "value", 0));
+                    break;
+                case "float":
+                    properties.put(name, DOMElementUtil.getFloatAttribute(propertyElement, "value", 0f));
+                    break;
+                case "bool":
+                    properties.put(name, DOMElementUtil.getStringAttribute(propertyElement, "value", "false")); // TODO: boolean
+                    break;
+                default:
+                    Assertions.warn("unknown property type: %s", type);
+            }
+
+        }
+
+        return properties;
     }
 
     private Tileset loadTileset(Element tilesetElement) throws IOException {
@@ -167,7 +236,7 @@ public class TmxTileMapLoader implements ITileMapLoaderImplementation {
                 } else if (element.getNodeName().equals("tile")) {
 
                     // TODO: tiles without images
-                    Element imageElement = DOMElementUtil.getChildByName(element, "image");
+                    Element imageElement = DOMElementUtil.getDirectChildByName(element, "image");
                     if (imageElement != null) {
                         Texture texture = new GLTexture(imageElement.getAttribute("source"));
                         Sprite sprite = new Sprite(texture);
@@ -180,10 +249,10 @@ public class TmxTileMapLoader implements ITileMapLoaderImplementation {
                     }
 
                     int tileid = DOMElementUtil.getIntAttribute(element, "id", 0);
-                    Element animationElement = DOMElementUtil.getChildByName(element, "animation");
+                    Element animationElement = DOMElementUtil.getDirectChildByName(element, "animation");
                     if (animationElement != null) {
                         SpriteAnimation animation = new SpriteAnimation();
-                        for (Element frameElement : DOMElementUtil.getChildrenByName(animationElement, "frame")) {
+                        for (Element frameElement : DOMElementUtil.getDirectChildrenByName(animationElement, "frame")) {
                             int localgid = DOMElementUtil.getIntAttribute(frameElement, "tileid", 0);
                             int durationMS = DOMElementUtil.getIntAttribute(frameElement, "duration", 100);
 
@@ -203,9 +272,9 @@ public class TmxTileMapLoader implements ITileMapLoaderImplementation {
                     TiledTileMetadata metadata = new TiledTileMetadata(tileset); // TODO: does tileset work?
                     properties.put(TILE_METADATA_PROPERTY_NAME, metadata);
 
-                    Element objectgroupElement = DOMElementUtil.getChildByName(element, "objectgroup");
+                    Element objectgroupElement = DOMElementUtil.getDirectChildByName(element, "objectgroup");
                     if (objectgroupElement != null) {
-                        for (Element objectElement : DOMElementUtil.getChildrenByName(objectgroupElement, "object")) {
+                        for (Element objectElement : DOMElementUtil.getDirectChildrenByName(objectgroupElement, "object")) {
                             String name = DOMElementUtil.getStringAttribute(objectElement, "name", "");
                             String type = DOMElementUtil.getStringAttribute(objectElement, "class", "");
                             if (type.equals("")) type = DOMElementUtil.getStringAttribute(objectElement, "type", ""); // pre Tiled 1.9
@@ -227,36 +296,9 @@ public class TmxTileMapLoader implements ITileMapLoaderImplementation {
                         }
                     }
 
-                    Element propertiesElement = DOMElementUtil.getChildByName(element, "properties");
-                    if (propertiesElement != null) {
-                        for (Element propertyElement : DOMElementUtil.getChildrenByName(propertiesElement, "property")) {
-
-                            String name = DOMElementUtil.getStringAttribute(propertyElement, "name", "");
-                            String type = DOMElementUtil.getStringAttribute(propertyElement, "type", "string");
-                            // TODO: propertytype ?
-                            switch (type) {
-                                case "string":
-                                case "color":
-                                case "file":
-                                case "object":
-                                case "class":
-                                    properties.put(name, DOMElementUtil.getStringAttribute(propertyElement, "value", ""));
-                                    break;
-                                case "int":
-                                    properties.put(name, DOMElementUtil.getIntAttribute(propertyElement, "value", 0));
-                                    break;
-                                case "float":
-                                    properties.put(name, DOMElementUtil.getFloatAttribute(propertyElement, "value", 0f));
-                                    break;
-                                case "bool":
-                                    properties.put(name, DOMElementUtil.getStringAttribute(propertyElement, "value", "false")); // TODO: boolean
-                                    break;
-                                default:
-                                    Assertions.warn("unknown property type: %s", type);
-                            }
-
-                        }
-                    }
+                    Element propertiesElement = DOMElementUtil.getDirectChildByName(element, "properties");
+                    Properties p = loadProperties(propertiesElement);
+                    properties.putAll(p, true);
 
                     // TODO: dirty. clean up
 

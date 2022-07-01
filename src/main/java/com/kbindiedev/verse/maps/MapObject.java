@@ -2,7 +2,7 @@ package com.kbindiedev.verse.maps;
 
 import com.kbindiedev.verse.util.Properties;
 
-/** Describes some object in a {@link TileMap}.
+/** Describes some object in a {@link OldTileMap}.
  *
  * @see MapObjects
  * @see ObjectLayer

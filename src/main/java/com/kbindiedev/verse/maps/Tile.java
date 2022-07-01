@@ -3,7 +3,7 @@ package com.kbindiedev.verse.maps;
 import com.kbindiedev.verse.util.Properties;
 
 /**
- * Describes a tile in a TileMap.
+ * Describes a tile in a OldTileMap.
  *
  * @see StaticTile
  * @see AnimatedTile

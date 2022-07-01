@@ -1,39 +1,20 @@
 package com.kbindiedev.verse.maps;
 
+import com.kbindiedev.verse.util.Properties;
+
 import java.util.ArrayList;
 import java.util.Collection;
 
-/**
- * Maps tiles onto a space with an arbitrary position and size.
- *
- * @see LayeredTileMap
- */
-public class TileMap {
+/** A collection of tiles in a {@link Tilemap}. */
+public class TileLayer extends TileMapLayer {
 
-    private String name;
-    private Collection<Entry> entries;
-    private Tileset tileset;
+    private Collection<Entry> entries; // TODO: refactor
 
-    /*
-    public TileMap(Tileset tileset) { this(tileset, ""); }
-    public TileMap(Tileset tileset, String name) {
-        this.tileset = tileset;
-        this.name = name;
-        entries = new ArrayList<>();
-    }
-    */
-    public TileMap(Tileset tileset) { this(tileset, ""); }
-    public TileMap(Tileset tileset, String name) {
-        this.tileset = tileset;
-        this.name = name;
+    public TileLayer(Tilemap tilemap, Properties properties, String name) {
+        super(tilemap, properties, name);
         entries = new ArrayList<>();
     }
 
-    public Tileset getTileset() { return tileset; }
-
-    public String getName()  { return name; }
-
-    // TODO: replace with addEntry(int tileid, int x, int y)... ?
     public void addEntry(Tile tile, int x, int y) {
         entries.add(new Entry(tile, x, y, tile.getWidth(), tile.getHeight()));
     }

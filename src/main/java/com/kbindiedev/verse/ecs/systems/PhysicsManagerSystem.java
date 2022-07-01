@@ -137,7 +137,7 @@ public class PhysicsManagerSystem extends ComponentSystem {
 
         }
 
-        List<Collision> collisions = getSpace().getPhysicsEnvironment().tempListCollisions();
+        List<Collision> collisions = getSpace().getPhysicsEnvironment().getActiveCollisions();
         for (Collision collision : collisions) {
             CollisionManifold manifold = collision.getManifold();
             for (Vector3f contact : manifold.getContactPoints()) {
@@ -155,17 +155,17 @@ public class PhysicsManagerSystem extends ComponentSystem {
         drawer.drawLine(point, normal, 0.5f, Pixel.SOLID_WHITE);
     }
 
-    private PhysicsRigidBody newPhysicsBody(boolean dynamic, boolean sensor) {
-        return getSpace().getPhysicsEnvironment().createBody(dynamic, sensor);
+    private PhysicsRigidBody newPhysicsBody(boolean dynamic) {
+        return getSpace().getPhysicsEnvironment().createBody(dynamic);
     }
 
     /** Register colliders for a given body. if body == null, colliders are assumed to be static */
     private PhysicsRigidBody registerCollidersForBody(RigidBody2D body, List<PolygonCollider2D> colliders) {
         boolean dynamicBody = (body != null);
-        PhysicsRigidBody prb = newPhysicsBody(dynamicBody, false); // TODO: should sensor be on fixture ?
+        PhysicsRigidBody prb = newPhysicsBody(dynamicBody);
         for (PolygonCollider2D collider : colliders) {
             if (collider.polygon == null) continue; // TODO: if change polygon during runtime
-            Fixture fixture = prb.createFixture(collider.polygon);
+            Fixture fixture = prb.createFixture(collider.polygon, collider.isTrigger);
             fixtures.put(collider, fixture);
         }
         if (body != null) bodies.put(body, prb);

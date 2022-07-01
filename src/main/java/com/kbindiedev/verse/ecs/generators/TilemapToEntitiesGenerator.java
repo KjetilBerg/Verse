@@ -24,7 +24,7 @@ import java.util.function.Function;
  *
  * @see com.kbindiedev.verse.maps.LayeredTileMap
  */
-public class LayeredTileMapToEntitiesGenerator {
+public class TilemapToEntitiesGenerator {
 
 
     public static final Function<Integer, Float> depthFunction = (y -> -y * 0.0005f); //TODO TEMP
@@ -33,23 +33,22 @@ public class LayeredTileMapToEntitiesGenerator {
      * Generate a hierarchical set of entities that are applied to the destination, from the LayeredTileMap.
      * The top-level entity (returned value) will be empty, and only contain the generated children.
      * @param destination - The destination of the generated entities.
-     * @param layeredTileMap - The LayeredTileMap to generate entities from.
+     * @param tilemap - The Tilemap to generate entities from.
      * @return the parent entity of the hierarchy.
      */
-    public static Entity generateEntities(EntityManager destination, LayeredTileMap layeredTileMap) {
+    public static Entity generateEntities(EntityManager destination, Tilemap tilemap) {
 
         //TODO SOON: parent system does not exist yet.
         Entity parent = null;
 
-        Iterator<TileMap> iterator = layeredTileMap.iterator();
+        List<TileLayer> tileLayers = tilemap.getLayersOfType(TileLayer.class);
         float zLayer = -0.1f; // TODO: different numbers (remember camera near/far planes)
 
-        while (iterator.hasNext()) {
-            TileMap tilemap = iterator.next();
+        for (TileLayer layer : tileLayers) {
 
             zLayer += 0.1f;
-            System.out.println(tilemap.getName() + " = z: " + zLayer);
-            for (TileMap.Entry entry : tilemap.getAllEntries()) {
+            System.out.println(layer.getName() + " = z: " + zLayer);
+            for (TileLayer.Entry entry : layer.getAllEntries()) {
 
                 Tile t = entry.getTile();
 
@@ -135,6 +134,22 @@ public class LayeredTileMapToEntitiesGenerator {
             }
 
         }
+
+        ObjectLayer soundmap = tilemap.getLayerByName("soundmap", ObjectLayer.class);
+        if (soundmap != null) {
+            for (MapObject o : soundmap.getMapObjects().getAllObjects()) {
+                System.out.println("Generating soundmap: " + o.getName());
+
+                PolygonCollider2D collider = new PolygonCollider2D();
+                Polygon polygon = new Polygon();
+
+                // TODO: objects don't actually have shapes yet.
+
+                collider.polygon = polygon;
+                destination.instantiate(collider);
+            }
+        }
+
 
         // parent = null up top to avoid NotImplementedException
         parent = destination.instantiate();

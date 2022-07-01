@@ -45,4 +45,20 @@ public class Properties {
     /** @return the entry set of all entries in this property object. */
     public Set<Map.Entry<String, Object>> entrySet() { return properties.entrySet(); }
 
+    /**
+     * Put all properties from the given properties onto myself.
+     * @param other - The set of properties to put onto myself.
+     * @param override - Whether or not to override existing properties for the same names.
+     * @return whether or not a property already existed for some key in the given properties.
+     */
+    public boolean putAll(Properties other, boolean override) {
+        boolean clash = false;
+        for (Map.Entry<String, Object> e : other.properties.entrySet()) {
+            boolean contains = properties.containsKey(e.getKey());
+            if (contains) clash = true;
+            if (!contains || override) properties.put(e.getKey(), e.getValue());
+        }
+        return clash;
+    }
+
 }

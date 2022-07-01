@@ -1,5 +1,6 @@
 package com.kbindiedev.verse.maps;
 
+import com.kbindiedev.verse.profiling.exceptions.UnsupportedFormatException;
 import com.kbindiedev.verse.system.FileUtils;
 
 import java.io.File;
@@ -17,25 +18,25 @@ public class TileMapLoader {
         loaders.put("tmx", new TmxTileMapLoader());
     }
 
-    public static LayeredTileMap loadTileMap(File file) throws IOException {
+    public static Tilemap loadTileMap(File file) throws IOException {
         return loadTileMap(file, FileUtils.getFileExtension(file));
     }
 
-    public static LayeredTileMap loadTileMap(File file, String format) throws IOException {
+    public static Tilemap loadTileMap(File file, String format) throws IOException {
         throwIfUnknownFormat(format);
         try (FileInputStream stream = new FileInputStream(file)) {
             return loadTileMap(stream, format);
         }
     }
 
-    public static LayeredTileMap loadTileMap(InputStream stream, String format) throws IOException {
+    public static Tilemap loadTileMap(InputStream stream, String format) throws IOException {
         throwIfUnknownFormat(format);
         ITileMapLoaderImplementation loader = loaders.get(format);
         return loader.loadTileMap(stream);
     }
 
     private static void throwIfUnknownFormat(String format) {
-        if (!loaders.containsKey(format)) throw new IllegalArgumentException("unknown TileMap format: " + format); // TODO: UnsupportedFormatException instead?
+        if (!loaders.containsKey(format)) throw new UnsupportedFormatException("unknown Tilemap format: " + format);
     }
 
 }

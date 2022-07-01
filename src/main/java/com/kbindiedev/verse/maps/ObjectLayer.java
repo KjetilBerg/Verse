@@ -3,14 +3,11 @@ package com.kbindiedev.verse.maps;
 import com.kbindiedev.verse.gfx.Pixel;
 import com.kbindiedev.verse.util.Properties;
 
-/** Describes a group layer in a {@link TileMap}. */
-public class ObjectLayer {
+/** Describes a group layer in a {@link OldTileMap}. */
+public class ObjectLayer extends TileMapLayer {
 
-    private TileMap tilemap;
-    private Properties properties;
     private MapObjects objects;
 
-    private String name;
     private String type;
     private float opacity;
     private boolean visible;
@@ -18,14 +15,11 @@ public class ObjectLayer {
     private float offsetX;
     private float offsetY;
 
-
-    public ObjectLayer(TileMap tilemap, String name) { this(tilemap, name, ""); }
-    public ObjectLayer(TileMap tilemap, String name, String type) {
-        this.tilemap = tilemap;
-        properties = new Properties();
+    public ObjectLayer(Tilemap tilemap, Properties properties, String name) { this(tilemap, properties, name,""); }
+    public ObjectLayer(Tilemap tilemap, Properties properties, String name, String type) {
+        super(tilemap, properties, name);
         objects = new MapObjects(tilemap.getTileset());
 
-        this.name = name;
         this.type = type;
         opacity = 1f;
         visible = true;
@@ -34,9 +28,10 @@ public class ObjectLayer {
         offsetY = 0f;
     }
 
-    public TileMap getTilemap() { return tilemap; }
-    public String getName() { return name; }
     public String getType() { return type; }
+
+    public void addMapObject(MapObject o) { objects.addMapObject(o); }
+    public MapObjects getMapObjects() { return objects; }
 
     public float getOpacity() { return opacity; }
     public void setOpacity(float opacity) { this.opacity = opacity; }

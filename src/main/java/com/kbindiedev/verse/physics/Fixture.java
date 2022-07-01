@@ -11,10 +11,13 @@ public class Fixture {
     private MathTransform transform;
     private Polygon shape;
 
-    protected Fixture(PhysicsRigidBody body, MathTransform transform, Polygon shape) {
+    private boolean sensor;
+
+    protected Fixture(PhysicsRigidBody body, MathTransform transform, Polygon shape, boolean sensor) {
         this.body = body;
         this.transform = transform;
         this.shape = shape;
+        this.sensor = sensor;
     }
 
     public PhysicsRigidBody getBody() { return body; }
@@ -22,6 +25,8 @@ public class Fixture {
     public MathTransform getTransform() { return transform; }
 
     public Polygon getShape() { return shape; }
+
+    public boolean isSensor() { return sensor; }
 
     /** Move this fixture by the given amount. */
     public void move(Vector3f movement) { shape.translate(movement); }

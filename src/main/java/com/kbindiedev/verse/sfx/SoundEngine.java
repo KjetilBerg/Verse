@@ -11,7 +11,8 @@ public abstract class SoundEngine {
 
     public abstract Sound createSound(String filepath) throws UnsupportedAudioFileException, IOException; // TODO: temp??
 
-    public abstract Source createSource();
+    public Source createSource() { return createSource(false); }
+    public abstract Source createSource(boolean looping);
 
     public abstract Listener createListener();
 

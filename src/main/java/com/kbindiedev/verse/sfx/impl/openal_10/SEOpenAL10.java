@@ -64,8 +64,8 @@ public class SEOpenAL10 extends SoundEngine {
     }
 
     @Override
-    public Source createSource() {
-        return new ALSource(false);
+    public Source createSource(boolean looping) {
+        return new ALSource(looping);
     }
 
     @Override
