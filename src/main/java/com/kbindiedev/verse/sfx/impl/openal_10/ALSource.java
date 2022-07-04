@@ -35,6 +35,9 @@ public class ALSource extends Source {
     }
 
     @Override
+    public boolean isPlaying() { return playing; }
+
+    @Override
     public void play() {
         playing = true;
         AL10.alSourcePlay(id);

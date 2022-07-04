@@ -11,6 +11,7 @@ public class MapObject {
 
     private Tileset tileset;
     private Properties properties;
+    private MapObjectContent content;
 
     private String name;
     private String type;
@@ -19,9 +20,11 @@ public class MapObject {
     private float rotation;
     private int referencedTileId;
 
-    public MapObject(Tileset tileset, Properties properties, String name, String type, float x, float y, float width, float height, float rotation, int referencedTileId) {
+    public MapObject(Tileset tileset, Properties properties, MapObjectContent content, String name, String type,
+                     float x, float y, float width, float height, float rotation, int referencedTileId) {
         this.tileset = tileset;
         this.properties = properties;
+        this.content = content;
 
         this.name = name;
         this.type = type;
@@ -40,5 +43,13 @@ public class MapObject {
     public float getHeight() { return height; }
     public float getRotation() { return rotation; }
     public Tile getReferencedTile() { return tileset.getTile(referencedTileId); }
+
+    public MapObjectContent getContent() { return content; }
+    public boolean isContentOfType(Class<? extends MapObjectContent> clazz) { return clazz.isInstance(content); }
+    /** @return the stored content as the given type, or null if no content exists or content is of a different type. */
+    public <T extends MapObjectContent> T getContentAs(Class<T> clazz) {
+        if (!isContentOfType(clazz)) return null;
+        return clazz.cast(content);
+    }
 
 }

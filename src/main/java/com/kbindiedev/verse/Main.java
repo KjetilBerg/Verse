@@ -14,10 +14,7 @@ import com.kbindiedev.verse.gfx.impl.opengl_33.GEOpenGL33;
 import com.kbindiedev.verse.gfx.impl.opengl_33.GLTexture;
 import com.kbindiedev.verse.gfx.strategy.providers.ColoredPolygon;
 import com.kbindiedev.verse.io.files.Files;
-import com.kbindiedev.verse.maps.LayeredTileMap;
-import com.kbindiedev.verse.maps.TileMapLoader;
-import com.kbindiedev.verse.maps.Tilemap;
-import com.kbindiedev.verse.maps.TilesetResourceFetcher;
+import com.kbindiedev.verse.maps.*;
 import com.kbindiedev.verse.math.helpers.PolygonMaker;
 import com.kbindiedev.verse.math.shape.Polygon;
 import com.kbindiedev.verse.math.shape.Rectanglef;
@@ -34,6 +31,9 @@ import org.joml.Vector3f;
 import javax.sound.sampled.UnsupportedAudioFileException;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 public class Main {
 
@@ -84,6 +84,59 @@ public class Main {
         try {
             Tilemap testTileMap = TileMapLoader.loadTileMap(new File("./../spritepack_demo/paths.tmx"));
             TilemapToEntitiesGenerator.generateEntities(space.getEntityManager(), testTileMap);
+
+            // TODO: somehow put inside some TilemapManager ?
+            ObjectLayer soundmap = testTileMap.getLayerByName("soundmap2", ObjectLayer.class);
+            if (soundmap != null) {
+                HashMap<String, Source> sources = new HashMap<>();
+                for (MapObject o : soundmap.getMapObjects().getAllObjects()) {
+/*
+                    if (!o.isContentOfType(MapObjectPolygon.class)) {
+                        System.out.println("not polygon");
+                        continue;
+                    }
+                    MapObjectPolygon content = o.getContentAs(MapObjectPolygon.class);
+                    Polygon polygon = content.getPolygon();
+                    */
+                     // TODO: some "object autogen polygon thing"
+
+
+                    int yOffset = 20 * 16; // very temp
+                    List<Vector3f> list = new ArrayList<>();
+                    list.add(new Vector3f(o.getX(), o.getY() + o.getHeight(), 0f));
+                    list.add(new Vector3f(o.getX() + o.getWidth(), o.getY() + o.getHeight(), 0f));
+                    list.add(new Vector3f(o.getX() + o.getWidth(), o.getY(), 0f));
+                    list.add(new Vector3f(o.getX(), o.getY(), 0f));
+                    list.forEach(v -> { v.y -=8; v.x -= 8; });
+                    list.forEach(v -> v.y = yOffset - v.y);
+                    Polygon polygon = new Polygon(list);
+
+                    System.out.println("Generating soundmap: " + o.getName());
+
+                    PolygonCollider2D collider = new PolygonCollider2D();
+                    collider.isTrigger = true;
+                    collider.polygon = polygon;
+
+                    GroundNoiseComponent noise = new GroundNoiseComponent();
+                    String filepath = "../" + o.getName() + "-walk.wav";
+                    if (!sources.containsKey(filepath)) {
+                        try {
+                            Sound sound = al10.createSound(filepath);
+                            Source source = al10.createSource(true);
+                            source.setSound(sound);
+                            sources.put(filepath, source);
+                        }
+                        catch (Exception e) { e.printStackTrace(); }
+                    }
+
+                    noise.source = sources.get(filepath);
+
+                    space.getEntityManager().instantiate(collider, noise);
+
+                }
+            }
+
+
 
             SpriteAnimation playerIdle = TilesetResourceFetcher.getAnimation(testTileMap.getTileset(), 346);
             SpriteAnimation playerRun = TilesetResourceFetcher.getAnimation(testTileMap.getTileset(), 346 + 6);
@@ -157,10 +210,11 @@ public class Main {
 
             PlayerComponent playerComponent = new PlayerComponent();
             try {
-                Sound x = al10.createSound("../run-dirt.wav");
-                Source y = al10.createSource();
+                Sound x = al10.createSound("../grass-walk.wav");
+                Source y = al10.createSource(true);
                 y.setSound(x);
                 playerComponent.walkSound = y;
+                playerComponent.defaultWalkSound = y;
             } catch (Exception e) { throw new RuntimeException(e); }
 
             space.getEntityManager().instantiate(exampleComponent, animator, renderer, playerTransform, playerComponent, collider, new RigidBody2D());
@@ -179,7 +233,7 @@ public class Main {
             transform2.position.y = 20f;
             transform2.position.z = 1f;
             transform2.scale.x = 32f; transform2.scale.y = 32f;
-            space.getEntityManager().instantiate(collider2, renderer2, transform2);
+            //space.getEntityManager().instantiate(collider2, renderer2, transform2);
 
         } catch (IOException e) {
             e.printStackTrace();

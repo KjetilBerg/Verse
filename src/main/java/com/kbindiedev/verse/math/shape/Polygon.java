@@ -1,6 +1,7 @@
 package com.kbindiedev.verse.math.shape;
 
 import com.kbindiedev.verse.math.MathTransform;
+import com.kbindiedev.verse.math.MathUtil;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
@@ -15,6 +16,7 @@ public class Polygon {
     protected List<Vector3f> points;
 
     public Polygon() { this(new MathTransform(), new ArrayList<>()); }
+    public Polygon(List<Vector3f> points) { this(MathUtil.findCenter(points), points); }
     public Polygon(Vector3f center, List<Vector3f> points) { this(new MathTransform(center), points); }
     public Polygon(MathTransform transform, List<Vector3f> points) {
         this.transform = transform;

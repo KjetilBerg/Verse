@@ -9,6 +9,8 @@ public abstract class Source {
 
     public boolean isLooping() { return looping; }
 
+    public abstract boolean isPlaying(); // TODO implement on this side ?
+
     public abstract void play();
 
     public abstract void stop();

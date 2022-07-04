@@ -13,11 +13,11 @@ import java.util.Map;
 
 public class PhysicsEnvironment {
 
-    private static final ICollisionListener BLANK_LISTENER = new ICollisionListener() {
-        @Override public void onCollision(CollisionManifold manifold) {}
+    private static final IPhysicsCollisionListener BLANK_LISTENER = new IPhysicsCollisionListener() {
+        @Override public void onCollision(Collision collision) {}
     };
 
-    private ICollisionListener listener;
+    private IPhysicsCollisionListener listener;
     private List<Collision> collisionsThisIteration;
     private FastList<PhysicsRigidBody> dynamicBodies;
     private FastList<PhysicsRigidBody> staticBodies;
@@ -28,6 +28,8 @@ public class PhysicsEnvironment {
         dynamicBodies = new FastList<>();
         staticBodies = new FastList<>();
     }
+
+    public void setListener(IPhysicsCollisionListener listener) { this.listener = listener; }
 
     public List<Collision> getActiveCollisions() { return collisionsThisIteration; }
 
@@ -48,6 +50,7 @@ public class PhysicsEnvironment {
 
         collisionsThisIteration.clear();
         collisionsThisIteration.addAll(doCollisionChecks());
+        for (Collision c : collisionsThisIteration) listener.onCollision(c);
 
         /*
         List<Collision> collisions = findAllCollisions();

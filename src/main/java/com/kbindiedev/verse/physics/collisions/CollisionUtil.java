@@ -6,6 +6,7 @@ import com.kbindiedev.verse.math.shape.Rectanglef;
 import com.kbindiedev.verse.physics.CollisionManifold;
 import com.kbindiedev.verse.physics.Fixture;
 import com.kbindiedev.verse.physics.PhysicsRigidBody;
+import com.kbindiedev.verse.profiling.Assertions;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
@@ -15,9 +16,18 @@ import java.util.List;
 public class CollisionUtil {
 
     public static CollisionManifold checkCollisions(Fixture fixture1, Fixture fixture2) {
+        int p1Size = fixture1.getShape().getPoints().size(), p2Size = fixture2.getShape().getPoints().size();
+
+        if (p1Size == 0 || p2Size == 0) {
+            Assertions.warn("collider has no points. fixture1: %d, fixture2: %d", p1Size, p2Size);
+            return null;
+        }
         // TODO: List of manifolds? combine fixtures to single shape ??
         //return testPolygonCollision(body1.getFixtures().get(0).getShape(), body2.getFixtures().get(0).getShape());
-        return testAABBCollision(fixture1.getShape(), fixture2.getShape());
+        if (p1Size == 4 && p2Size == 4) // for now, assume 4 points = AABB
+            return testAABBCollision(fixture1.getShape(), fixture2.getShape());
+
+        return testPolygonCollision(fixture1.getShape(), fixture2.getShape());
     }
 
     // TODO: input AABB, for now assume polygons are AABB

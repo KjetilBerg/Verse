@@ -11,6 +11,7 @@ import com.kbindiedev.verse.gfx.Sprite;
 import com.kbindiedev.verse.maps.*;
 import com.kbindiedev.verse.math.shape.Polygon;
 import com.kbindiedev.verse.profiling.Assertions;
+import com.kbindiedev.verse.z_example.GroundNoiseComponent;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 
@@ -92,20 +93,6 @@ public class TilemapToEntitiesGenerator {
                     spriteRenderer.sprite = tile.getSprite();
                     list.add(spriteRenderer);
 
-                    // TODO: TEMP
-                    /*
-                    if (tile == layeredTileMap.getTileset().getTile(16)) {
-                        System.out.println("GENERATING POLYGON COLLIDER");
-                        PolygonCollider2D collider2D = new PolygonCollider2D();
-                        Polygon polygon = new Polygon();
-                        polygon.addPoint(new Vector3f(-8f, -8f, 0f));
-                        polygon.addPoint(new Vector3f(8f, -8f, 0f));
-                        polygon.addPoint(new Vector3f(8f, 8f, 0f));
-                        polygon.addPoint(new Vector3f(-8f, 8f, 0f));
-                        collider2D.polygon = polygon;
-                        list.add(collider2D);
-                    }*/
-
                 } else if (t instanceof AnimatedTile) {
 
                     AnimatedTile tile = (AnimatedTile)t;
@@ -133,21 +120,6 @@ public class TilemapToEntitiesGenerator {
                 destination.instantiate(parent, list.toArray(new IComponent[0]));
             }
 
-        }
-
-        ObjectLayer soundmap = tilemap.getLayerByName("soundmap", ObjectLayer.class);
-        if (soundmap != null) {
-            for (MapObject o : soundmap.getMapObjects().getAllObjects()) {
-                System.out.println("Generating soundmap: " + o.getName());
-
-                PolygonCollider2D collider = new PolygonCollider2D();
-                Polygon polygon = new Polygon();
-
-                // TODO: objects don't actually have shapes yet.
-
-                collider.polygon = polygon;
-                destination.instantiate(collider);
-            }
         }
 
 

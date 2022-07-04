@@ -8,6 +8,8 @@ import com.kbindiedev.verse.profiling.Assertions;
 import com.kbindiedev.verse.profiling.exceptions.InvalidDataException;
 import com.kbindiedev.verse.system.parse.DOMElementUtil;
 import com.kbindiedev.verse.util.Properties;
+import org.joml.Vector2f;
+import org.joml.Vector3f;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -20,6 +22,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 // TODO: mention unsupported parts
@@ -46,6 +50,12 @@ public class TmxTileMapLoader implements ITileMapLoaderImplementation {
         System.out.println("Root element name: " + document.getDocumentElement().getNodeName());
         //document.getDocumentElement().getName
 
+        Element mapElement = document.getDocumentElement();
+        int widthInTiles = DOMElementUtil.getIntAttribute(mapElement, "width", 0);
+        int heightInTiles = DOMElementUtil.getIntAttribute(mapElement, "height", 0);
+        int tileWidth = DOMElementUtil.getIntAttribute(mapElement, "tilewidth", 0);
+        int tileHeight = DOMElementUtil.getIntAttribute(mapElement, "tileheight", 0);
+
         Tileset mainSet = new Tileset();
         for (Element tilesetElement : DOMElementUtil.getDirectChildrenByName(document.getDocumentElement(), "tileset")) {
             Tileset tileset = loadTileset(tilesetElement);
@@ -53,7 +63,8 @@ public class TmxTileMapLoader implements ITileMapLoaderImplementation {
             if (didClash) Assertions.warn("unexpected clash in main merge for .tmx file");
         }
 
-        return loadAllLayers(document.getDocumentElement(), mainSet, 16, 16);
+        Vector3f relativeOrigin = new Vector3f(0f, heightInTiles * tileHeight, 0f);
+        return loadAllLayers(document.getDocumentElement(), mainSet, tileWidth, tileHeight, relativeOrigin);
     }
 
     private Document parseXML(InputStream stream) throws IOException, InvalidDataException {
@@ -78,13 +89,13 @@ public class TmxTileMapLoader implements ITileMapLoaderImplementation {
     }
 
     // TODO tileoffset etc
-    private Tilemap loadAllLayers(Element root, Tileset tileset, int tileWidth, int tileHeight) {
+    private Tilemap loadAllLayers(Element root, Tileset tileset, int tileWidth, int tileHeight, Vector3f relativeOrigin) {
         Tilemap map = new Tilemap(tileset);
         for (Element layerElement : DOMElementUtil.getDirectChildrenByName(root, "layer")) {
             loadLayer(layerElement, map, tileWidth, tileHeight);
         }
         for (Element layerElement : DOMElementUtil.getDirectChildrenByName(root, "objectgroup")) { // TODO: inline with other for-loop, TODO 2: layers have ids in .tmx
-            loadObjectLayer(layerElement, map);
+            loadObjectLayer(layerElement, map, relativeOrigin);
         }
         return map;
     }
@@ -125,7 +136,7 @@ public class TmxTileMapLoader implements ITileMapLoaderImplementation {
         }
     }
 
-    private void loadObjectLayer(Element objectgroupElement, Tilemap map) {
+    private void loadObjectLayer(Element objectgroupElement, Tilemap map, Vector3f relativeOrigin) {
 
         Element propertiesElement = DOMElementUtil.getDirectChildByName(objectgroupElement, "properties");
         Properties objectLayerProperties = loadProperties(propertiesElement);
@@ -136,27 +147,50 @@ public class TmxTileMapLoader implements ITileMapLoaderImplementation {
 
         for (Element objectElement : DOMElementUtil.getDirectChildrenByName(objectgroupElement, "object")) {
 
-            String name = DOMElementUtil.getStringAttribute(objectElement, "name", "");
-            String type = DOMElementUtil.getStringAttribute(objectElement, "class", "");
-            if (type.equals("")) type = DOMElementUtil.getStringAttribute(objectElement, "type", ""); // pre Tiled 1.9
-            float x = DOMElementUtil.getFloatAttribute(objectElement, "x", 0f);
-            float y = DOMElementUtil.getFloatAttribute(objectElement, "y", 0f);
-            float width = DOMElementUtil.getFloatAttribute(objectElement, "width", 0f);
-            float height = DOMElementUtil.getFloatAttribute(objectElement, "height", 0f);
-            float rotation = DOMElementUtil.getFloatAttribute(objectElement, "rotation", 0f);
-            // TODO: visible ?
-
-            //int localgid = DOMElementUtil.getIntAttribute(objectElement, "gid", -1);
-            //int referencedTileId = firstgid + localgid; // TODO: (cannot appear in non-tilesets?)
-            //if (localgid < 0) referencedTileId = localgid;
-
-            Element objPropertiesElement = DOMElementUtil.getDirectChildByName(objectElement, "properties");
-            Properties properties = loadProperties(objPropertiesElement);
-
-            // TODO: layer.createMapObject() ?
-            MapObject object = new MapObject(map.getTileset(), properties, name, type, x, y, width, height, rotation, -1);
+            MapObject object = loadMapObject(objectElement, map, 0, relativeOrigin);
             layer.addMapObject(object);
         }
+    }
+
+    private MapObject loadMapObject(Element objectElement, Tilemap tilemap, int relativeGid, Vector3f relativeOrigin) {
+        if (objectElement == null) return null;
+
+        String name = DOMElementUtil.getStringAttribute(objectElement, "name", "");
+        String type = DOMElementUtil.getStringAttribute(objectElement, "class", "");
+        if (type.equals("")) type = DOMElementUtil.getStringAttribute(objectElement, "type", ""); // pre Tiled 1.9
+        float x = DOMElementUtil.getFloatAttribute(objectElement, "x", 0f);
+        float y = DOMElementUtil.getFloatAttribute(objectElement, "y", 0f);
+        float width = DOMElementUtil.getFloatAttribute(objectElement, "width", 0f);
+        float height = DOMElementUtil.getFloatAttribute(objectElement, "height", 0f);
+        float rotation = DOMElementUtil.getFloatAttribute(objectElement, "rotation", 0f);
+        // TODO: visible ?
+
+        int localgid = DOMElementUtil.getIntAttribute(objectElement, "gid", -1);
+        int referencedTileId = relativeGid + localgid;
+        if (localgid < 0) referencedTileId = localgid;
+
+        Element objPropertiesElement = DOMElementUtil.getDirectChildByName(objectElement, "properties");
+        Properties properties = loadProperties(objPropertiesElement);
+
+        // TODO: ellipse, point, polyline and text
+        MapObjectContent content = null;
+
+        Element polygonElement = DOMElementUtil.getDirectChildByName(objectElement, "polygon");
+        if (polygonElement != null) {
+            String p = DOMElementUtil.getStringAttribute(polygonElement, "points", "");
+            String[] coords = p.split(" ");
+            List<Vector2f> points = new ArrayList<>();
+            for (String coord : coords) {
+                String[] xy = coord.split(",");
+                float px = Float.parseFloat(xy[0]), py = Float.parseFloat(xy[1]);
+                points.add(new Vector2f(px + x - 8, relativeOrigin.y - (py + y - 8))); // TODO: better relative origin (tileDirection or something), TODO 2: -tileWidth/2, -tileHeight/2 because instead of -8 of centering
+            }
+            content = MapObjectPolygon.fromPoints(points);
+        }
+
+
+        // TODO: layer.createMapObject() ?
+        return new MapObject(tilemap.getTileset(), properties, content, name, type, x, y, width, height, rotation, referencedTileId);
     }
 
     private Properties loadProperties(Element propertiesElement) {
@@ -275,6 +309,10 @@ public class TmxTileMapLoader implements ITileMapLoaderImplementation {
                     Element objectgroupElement = DOMElementUtil.getDirectChildByName(element, "objectgroup");
                     if (objectgroupElement != null) {
                         for (Element objectElement : DOMElementUtil.getDirectChildrenByName(objectgroupElement, "object")) {
+
+                            //MapObject object = loadMapObject(objectElement, map, firstgid); // TODO: use loadMapObject, but find "map" somehow
+                            //metadata.getObjects().addMapObject(object);
+
                             String name = DOMElementUtil.getStringAttribute(objectElement, "name", "");
                             String type = DOMElementUtil.getStringAttribute(objectElement, "class", "");
                             if (type.equals("")) type = DOMElementUtil.getStringAttribute(objectElement, "type", ""); // pre Tiled 1.9
@@ -291,8 +329,9 @@ public class TmxTileMapLoader implements ITileMapLoaderImplementation {
                             // TODO: visible ?
 
                             // TODO: tileset works, but ideally should be the finalized global tileset. instantiate metadata after tileset created?
-                            MapObject object = new MapObject(tileset, new Properties(), name, type, x, y, width, height, rotation, referencedTileId);
+                            MapObject object = new MapObject(tileset, new Properties(), null, name, type, x, y, width, height, rotation, referencedTileId);
                             metadata.getObjects().addMapObject(object);
+
                         }
                     }
 

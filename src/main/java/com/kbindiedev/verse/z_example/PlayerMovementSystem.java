@@ -8,6 +8,8 @@ import com.kbindiedev.verse.ecs.components.Transform;
 import com.kbindiedev.verse.ecs.generators.TilemapToEntitiesGenerator;
 import com.kbindiedev.verse.ecs.systems.ComponentSystem;
 import com.kbindiedev.verse.input.keyboard.Keys;
+import com.kbindiedev.verse.physics.Collision;
+import com.kbindiedev.verse.sfx.Source;
 import com.kbindiedev.verse.util.Properties;
 import com.kbindiedev.verse.util.Trigger;
 
@@ -119,10 +121,42 @@ public class PlayerMovementSystem extends ComponentSystem {
             if (actualTransform == null) continue;
             actualTransform.position.z = baseZ + TilemapToEntitiesGenerator.depthFunction.apply((int)(actualTransform.position.y - 12f));
 
+            // TODO: for now, reset every frame (and assume onCollsionBegin will trigger other sounds every frame)
+            if (!player.collidedWalkAreaLastIteration) {
+                updateWalkSound(player, player.defaultWalkSound);
+            }
+
+            player.collidedWalkAreaLastIteration = false;
+
         }
     }
     private int count = 0;
 
     private float baseZ = 0.4f;
+
+    @Override
+    public void onCollisionBegin(Entity entity1, Entity entity2, Collision collision) {
+        groundCollision(entity1, entity2);
+        groundCollision(entity2, entity1);
+    }
+
+    private void groundCollision(Entity entity1, Entity entity2) {
+        PlayerComponent playerComponent = entity1.getComponent(PlayerComponent.class);
+        GroundNoiseComponent noise = entity2.getComponent(GroundNoiseComponent.class);
+        if (playerComponent == null || noise == null) return;
+
+        playerComponent.collidedWalkAreaLastIteration = true;
+        updateWalkSound(playerComponent, noise.source);
+    }
+
+    // TODO: some physicsManagerSystem.getAllCollidingEntities(entity) would be better (in .fixedUpdate())
+    private void updateWalkSound(PlayerComponent player, Source source) {
+        if (player.walkSound == source) return;
+        System.out.println("update walk sound: " + player.walkSound + " " + source);
+        boolean playing = player.walkSound.isPlaying();
+        player.walkSound.stop();
+        player.walkSound = source;
+        if (playing) player.walkSound.play();
+    }
 
 }

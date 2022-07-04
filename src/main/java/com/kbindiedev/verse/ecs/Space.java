@@ -1,5 +1,6 @@
 package com.kbindiedev.verse.ecs;
 
+import com.kbindiedev.verse.ecs.event.ICollisionListener;
 import com.kbindiedev.verse.ecs.systems.ComponentSystem;
 import com.kbindiedev.verse.gfx.GraphicsEngine;
 import com.kbindiedev.verse.gfx.Mesh;
@@ -7,12 +8,10 @@ import com.kbindiedev.verse.gfx.PolygonBatch;
 import com.kbindiedev.verse.gfx.ShapeDrawer;
 import com.kbindiedev.verse.input.InputSystem;
 import com.kbindiedev.verse.input.keyboard.KeyEventTracker;
-import com.kbindiedev.verse.input.keyboard.event.KeyEvent;
+import com.kbindiedev.verse.physics.Collision;
 import com.kbindiedev.verse.physics.PhysicsEnvironment;
 import com.kbindiedev.verse.physics.PhysicsSystem2D;
 import com.kbindiedev.verse.system.FastList;
-
-import java.util.Queue;
 
 // TODO: integration tests
 
@@ -28,7 +27,7 @@ import java.util.Queue;
  *
  * "Entities manifest themselves in a Space".
  */
-public class Space {
+public class Space implements ICollisionListener {
 
     private PhysicsEnvironment physicsEnvironment;
     private InputSystem input;
@@ -132,4 +131,13 @@ public class Space {
     /** @return an object describing the current state of the keyboard(s) associated with this Space, and also any events that have been passed by it. */
     public KeyEventTracker getKeyboardTracker() { return input.getKeyboardPipeline().getTracker(); }
 
+    @Override
+    public void onCollisionBegin(Entity entity1, Entity entity2, Collision collision) {
+        for (ComponentSystem system : systems) system.onCollisionBegin(entity1, entity2, collision);
+    }
+
+    @Override
+    public void onCollisionEnd(Entity entity1, Entity entity2, Collision collision) {
+        for (ComponentSystem system : systems) system.onCollisionEnd(entity1, entity2, collision);
+    }
 }

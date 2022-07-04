@@ -4,6 +4,7 @@ import com.kbindiedev.verse.ecs.Entity;
 import com.kbindiedev.verse.ecs.ILogicBehaviour;
 import com.kbindiedev.verse.ecs.RenderContext;
 import com.kbindiedev.verse.ecs.Space;
+import com.kbindiedev.verse.physics.Collision;
 import com.kbindiedev.verse.system.SequenceRunner;
 
 /**
@@ -34,6 +35,10 @@ public abstract class ComponentSystem implements ILogicBehaviour {
     public void onDrawGizmos(RenderContext context) {}
 
     public void onDrawGizmosSelected(RenderContext context, Entity entity) {}
+
+    public void onCollisionBegin(Entity entity1, Entity entity2, Collision collision) {}
+
+    public void onCollisionEnd(Entity entity1, Entity entity2, Collision collision) {}
 
     // TODO: some registration method. systems may "run once", be "self managed" or "run on update"
     // TODO: with respect to awake/start/run, .dependsOn() should maybe exist

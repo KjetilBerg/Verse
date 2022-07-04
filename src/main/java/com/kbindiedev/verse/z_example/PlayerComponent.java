@@ -11,5 +11,7 @@ public class PlayerComponent implements IComponent {
 
     public boolean wasMoving = false;
     public Source walkSound = null;
+    public Source defaultWalkSound = null;
+    public boolean collidedWalkAreaLastIteration = false;
 
 }

@@ -6,18 +6,17 @@ import com.kbindiedev.verse.ecs.components.RigidBody2D;
 import com.kbindiedev.verse.ecs.components.Transform;
 import com.kbindiedev.verse.gfx.Pixel;
 import com.kbindiedev.verse.gfx.ShapeDrawer;
-import com.kbindiedev.verse.physics.Collision;
-import com.kbindiedev.verse.physics.CollisionManifold;
-import com.kbindiedev.verse.physics.Fixture;
-import com.kbindiedev.verse.physics.PhysicsRigidBody;
+import com.kbindiedev.verse.physics.*;
+import com.kbindiedev.verse.profiling.Assertions;
 import com.kbindiedev.verse.system.BiHashMap;
+import com.kbindiedev.verse.z_example.GroundNoiseComponent;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import java.util.*;
 
 /** Responsible for connecting an ECS space to a physics implementation. */
-public class PhysicsManagerSystem extends ComponentSystem {
+public class PhysicsManagerSystem extends ComponentSystem implements IPhysicsCollisionListener {
 
     private BiHashMap<RigidBody2D, PhysicsRigidBody> bodies;
     private BiHashMap<PolygonCollider2D, Fixture> fixtures;
@@ -31,6 +30,8 @@ public class PhysicsManagerSystem extends ComponentSystem {
 
     @Override
     public void start() {
+        getSpace().getPhysicsEnvironment().setListener(this);
+
         bodies = new BiHashMap<>();
         fixtures = new BiHashMap<>();
         entityPrbs = new BiHashMap<>();
@@ -51,6 +52,7 @@ public class PhysicsManagerSystem extends ComponentSystem {
             PhysicsRigidBody prb = registerCollidersForBody(body, colliders);
 
             entityPrbs.put(entity, prb);
+
         }
     }
 
@@ -147,6 +149,19 @@ public class PhysicsManagerSystem extends ComponentSystem {
 
         }
 
+    }
+
+    @Override
+    public void onCollision(Collision collision) {
+        Entity entity1 = entityPrbs.getForValue(collision.getFixture1().getBody());
+        Entity entity2 = entityPrbs.getForValue(collision.getFixture2().getBody());
+
+        if (entity1 == null || entity2 == null) {
+            Assertions.error("collision body does not exist in PhysicsManagerSystem");
+            return;
+        }
+
+        getSpace().onCollisionBegin(entity1, entity2, collision); // TODO: temp for now
     }
 
     private void drawContactPoint(Vector3f point, Vector3f normal) {
