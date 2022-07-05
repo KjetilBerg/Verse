@@ -7,12 +7,18 @@ import com.kbindiedev.verse.ecs.components.Transform;
 import com.kbindiedev.verse.ecs.systems.ComponentSystem;
 import com.kbindiedev.verse.gfx.Pixel;
 import com.kbindiedev.verse.gfx.ShapeDrawer;
+import com.kbindiedev.verse.gfx.SpriteBatch;
 import com.kbindiedev.verse.input.keyboard.KeyEventTracker;
 import com.kbindiedev.verse.input.keyboard.Keys;
+import com.kbindiedev.verse.io.files.Files;
+import com.kbindiedev.verse.ui.font.BitmapFont;
+import com.kbindiedev.verse.ui.font.BitmapFontLoader;
+import com.kbindiedev.verse.ui.font.Text;
 import com.kbindiedev.verse.util.Trigger;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 
+import java.io.File;
 import java.util.Iterator;
 
 public class ExampleSystem extends ComponentSystem {
@@ -23,6 +29,9 @@ public class ExampleSystem extends ComponentSystem {
     private Trigger nextTrigger;
     private Trigger prevTrigger;
     private Trigger attackTrigger;
+
+    private BitmapFont font;
+    private SpriteBatch spritebatch; // TODO remove
 
     public ExampleSystem(Space space) {
         super(space);
@@ -39,6 +48,14 @@ public class ExampleSystem extends ComponentSystem {
         nextTrigger = new Trigger();
         prevTrigger = new Trigger();
         attackTrigger = new Trigger();
+
+        try {
+            font = BitmapFontLoader.getInstance().load(new File("../test.fnt"));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        spritebatch = new SpriteBatch(getSpace().getGfxImplementation(), 512, 8);
     }
 
     @Override
@@ -74,6 +91,7 @@ public class ExampleSystem extends ComponentSystem {
 
             if (playSlashSound) component.slashSoundSource.play();
             if (playGenericSound) component.genericSoundSource.play();
+
         }
     }
 
@@ -131,12 +149,16 @@ public class ExampleSystem extends ComponentSystem {
         }
     }
 
-    // TODO: very temp and very sketchy.
-    private int wWidth = 1, wHeight = 1;
     @Override
     public void render(RenderContext context) {
-        wWidth = context.getApplicationWindow().getWindowWidth();
-        wHeight = context.getApplicationWindow().getWindowHeight();
+
+        Text text = new Text("ToGo!", font);
+        spritebatch.setProjectionMatrix(context.getCameraComponent().projectionMatrix);
+        spritebatch.setViewMatrix(context.getCameraComponent().viewMatrix);
+        spritebatch.setZPos(0.3f);
+        spritebatch.begin();
+        text.draw(spritebatch, 100, 50);
+        spritebatch.end();
     }
 
 }

@@ -1,4 +1,4 @@
-package com.kbindiedev.verse.gfx.font;
+package com.kbindiedev.verse.ui.font;
 
 import com.kbindiedev.verse.gfx.Sprite;
 
@@ -39,6 +39,12 @@ public class Glyph {
     public int getGlyphSize() { return glyphSize; }
 
     public void setKerning(Glyph glyph, int kerning) { kernings.put(glyph, kerning); }
-    public int getKerning(Glyph glyph) { return kernings.get(glyph); }
+    public int getKerning(Glyph glyph) { return kernings.getOrDefault(glyph, 0); }
+
+    @Override
+    public String toString() {
+        return String.format("id=%d, width=%d, height=%d, xOffset=%d, yOffset=%d, xAdvance=%d, glyphSize=%d",
+                id, width, height, xOffset, yOffset, xAdvance, glyphSize);
+    }
 
 }

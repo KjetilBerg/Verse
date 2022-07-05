@@ -36,9 +36,26 @@ uniform sampler2D uTexArray[8]; //TODO: for now, only 8 supported
 
 out vec4 color;
 
+float average(vec4 v)
+{
+    return (v.x + v.y + v.z + v.a) / 4.0;
+}
+
 void main()
 {
     color = texture(uTexArray[int(fTexId)], fTexCoords) * fColor;
-    //color = color * vec4(0.25, 0.2, 0.3, 1.0); // temp dark test
-    color = color * vec4(0.5, 0.4, 0.6, 1.0); // temp dark test
+    //color = color * vec4(0.5, 0.4, 0.6, 1.0); // temp dark test
+
+    /*
+    float brightness = average(color);
+    if (brightness < 0.55) {
+        color.r = brightness;
+        color.g = brightness / 1.3;
+        color.b = brightness / 2;
+    } else {
+        color.r = brightness;
+        color.g = brightness;
+        color.b = brightness;
+    }
+    */
 }

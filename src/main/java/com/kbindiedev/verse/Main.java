@@ -10,6 +10,8 @@ import com.kbindiedev.verse.ecs.systems.*;
 import com.kbindiedev.verse.gfx.GraphicsEngineSettings;
 import com.kbindiedev.verse.gfx.Pixel;
 import com.kbindiedev.verse.gfx.Sprite;
+import com.kbindiedev.verse.ui.font.BitmapFont;
+import com.kbindiedev.verse.ui.font.BitmapFontLoader;
 import com.kbindiedev.verse.gfx.impl.opengl_33.GEOpenGL33;
 import com.kbindiedev.verse.gfx.impl.opengl_33.GLTexture;
 import com.kbindiedev.verse.gfx.strategy.providers.ColoredPolygon;
@@ -62,6 +64,16 @@ public class Main {
 
         // TODO: something like applicationWindow.attachInputs(space) may be ideal.
         space.getInput().getKeyboardPipeline().setQueue(gl33.getApplicationWindow().getKeyboardQueue());
+
+        /*
+        String fontPath = "../arial.fnt";
+        System.out.println("attempting to load font: " + fontPath);
+        try {
+            BitmapFont font = BitmapFontLoader.getInstance().load(new File(fontPath), "bmfont");
+            System.out.println(font);
+        } catch (IOException e) { e.printStackTrace(); }
+        */
+
 
         // TODO next: viewport shenanigans
 
@@ -314,7 +326,6 @@ public class Main {
         }
 
         RenderContextPreparerSystem rcps = new RenderContextPreparerSystem(space);
-        space.addSystem(new ExampleSystem(space));
         space.addSystem(new PlayerMovementSystem(space));
         space.addSystem(new PhysicsManagerSystem(space));
         space.addSystem(new ConstantRotatorSystem(space));
@@ -323,6 +334,7 @@ public class Main {
         space.addSystem(new SpriteAnimatorSystem(space));
         space.addSystem(new SpriteRendererSystem(space));
         space.addSystem(new ShapeRendererSystem(space));
+        space.addSystem(new ExampleSystem(space));
 
         RenderContext context = new RenderContext(cameraEntity, gl33.getApplicationWindow(), true);
         rcps.addRenderContext(context);

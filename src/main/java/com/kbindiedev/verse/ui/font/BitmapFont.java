@@ -1,4 +1,4 @@
-package com.kbindiedev.verse.gfx.font;
+package com.kbindiedev.verse.ui.font;
 
 import com.kbindiedev.verse.profiling.Assertions;
 
