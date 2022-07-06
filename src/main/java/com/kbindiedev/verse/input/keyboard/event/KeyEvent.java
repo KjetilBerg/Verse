@@ -3,7 +3,7 @@ package com.kbindiedev.verse.input.keyboard.event;
 /**
  * Defines an event that was generated as a result of a keyboard doing something.
  *
- * @see com.kbindiedev.verse.input.keyboard.KeyboardInputEventProcessor
+ * @see com.kbindiedev.verse.input.keyboard.KeyboardInputEventQueue
  */
 public class KeyEvent {
 
@@ -19,5 +19,10 @@ public class KeyEvent {
 
     public KeyEventType getType() { return type; }
     public int getKeycode() { return keycode; }
+
+    @Override
+    public String toString() {
+        return "KeyEvent[ type=" + type.name() + ", keycode=" + keycode + " ]";
+    }
 
 }

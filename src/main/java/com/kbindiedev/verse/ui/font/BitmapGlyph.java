@@ -4,8 +4,10 @@ import com.kbindiedev.verse.gfx.Sprite;
 
 import java.util.HashMap;
 
-/** Represents a character of some font. */
-public class Glyph {
+/** Represents a bitmap character of some font. */
+public class BitmapGlyph {
+
+    public static final BitmapGlyph EMPTY_GLYPH = new BitmapGlyph(null, 0, 1, 1, 0, 0, 0, 1);
 
     private Sprite sprite;      // atlas + x,y
     private int id;             // ascii or otherwise id
@@ -14,9 +16,9 @@ public class Glyph {
     private int xAdvance;
     private int glyphSize;      // font size, but local to glyph
 
-    private HashMap<Glyph, Integer> kernings;
+    private HashMap<BitmapGlyph, Integer> kernings;
 
-    public Glyph(Sprite sprite, int id, int width, int height, int xOffset, int yOffset, int xAdvance, int glyphSize) {
+    public BitmapGlyph(Sprite sprite, int id, int width, int height, int xOffset, int yOffset, int xAdvance, int glyphSize) {
         this.sprite = sprite;
         this.id = id;
         this.width = width;
@@ -38,8 +40,8 @@ public class Glyph {
     public int getXAdvance() { return xAdvance; }
     public int getGlyphSize() { return glyphSize; }
 
-    public void setKerning(Glyph glyph, int kerning) { kernings.put(glyph, kerning); }
-    public int getKerning(Glyph glyph) { return kernings.getOrDefault(glyph, 0); }
+    public void setKerning(BitmapGlyph glyph, int kerning) { kernings.put(glyph, kerning); }
+    public int getKerning(BitmapGlyph glyph) { return kernings.getOrDefault(glyph, 0); }
 
     @Override
     public String toString() {

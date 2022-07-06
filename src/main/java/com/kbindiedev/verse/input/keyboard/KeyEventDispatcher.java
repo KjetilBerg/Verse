@@ -1,8 +1,9 @@
 package com.kbindiedev.verse.input.keyboard;
+
 import com.kbindiedev.verse.input.keyboard.event.KeyEvent;
 import com.kbindiedev.verse.profiling.Assertions;
 
-import java.util.Queue;
+import java.util.List;
 
 /**
  * Dispatches {@link com.kbindiedev.verse.input.keyboard.event.KeyEvent}.
@@ -28,7 +29,7 @@ public class KeyEventDispatcher {
     }
 
     /** Dispatch all events from this iteration. The same events will be dispatched again if this method is called before the processor's next iteration. */
-    public void dispatch(Queue<KeyEvent> events) {
+    public void dispatch(List<KeyEvent> events) {
         if (listener == BLANK_LISTENER) return;
 
         for (KeyEvent event : events) dispatchSingleEvent(event);

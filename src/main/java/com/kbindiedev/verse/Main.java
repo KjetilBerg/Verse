@@ -208,6 +208,9 @@ public class Main {
             source2.setSound(sound2);
             exampleComponent.slashSoundSource = source2;
 
+            exampleComponent.text = "Once upon a time...";
+            exampleComponent.textSize = 6;
+
             PolygonCollider2D collider = new PolygonCollider2D();
             Polygon polygon = new Polygon();
             polygon.addPoint(new Vector3f(-7.5f, -12f, 0f).div(playerTransform.scale));

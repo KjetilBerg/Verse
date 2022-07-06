@@ -25,13 +25,13 @@ public class BMFontLoader implements IFormatLoaderImplementation<BitmapFont> {
         int lineHeight = Integer.parseInt(extractAttributes(tagData.get("common").get(0)).get("lineHeight"));
 
         HashMap<Integer, Texture> pages = loadPages(tagData.get("page"));
-        HashMap<Integer, Glyph> glyphs = loadGlyphs(pages, lineHeight, tagData.get("char"));
+        HashMap<Integer, BitmapGlyph> glyphs = loadGlyphs(pages, lineHeight, tagData.get("char"));
 
         if (tagData.containsKey("kerning")) applyKernings(glyphs, tagData.get("kerning"));
 
 
         BitmapFont font = new BitmapFont();
-        for (Glyph glyph : glyphs.values()) font.registerGlyph(glyph);
+        for (BitmapGlyph glyph : glyphs.values()) font.registerGlyph(glyph);
 
         System.out.println("kerning: " + glyphs.get("T".codePointAt(0)).getKerning(glyphs.get("o".codePointAt(0))));
         System.out.println("T".codePointAt(0) + " " + "o".codePointAt(0));
@@ -39,30 +39,30 @@ public class BMFontLoader implements IFormatLoaderImplementation<BitmapFont> {
         return font;
     }
 
-    private void applyKernings(HashMap<Integer, Glyph> glyphs, List<String> kerningTags) {
+    private void applyKernings(HashMap<Integer, BitmapGlyph> glyphs, List<String> kerningTags) {
         for (String tag : kerningTags) applyKerning(glyphs, tag);
     }
 
-    private void applyKerning(HashMap<Integer, Glyph> glyphs, String kerningTag) {
+    private void applyKerning(HashMap<Integer, BitmapGlyph> glyphs, String kerningTag) {
         Map<String, String> attributes = extractAttributes(kerningTag);
         int first = Integer.parseInt(attributes.get("first"));
         int second = Integer.parseInt(attributes.get("second"));
         int amount = Integer.parseInt(attributes.get("amount"));
 
-        Glyph gFirst = glyphs.get(first), gSecond = glyphs.get(second);
+        BitmapGlyph gFirst = glyphs.get(first), gSecond = glyphs.get(second);
         gFirst.setKerning(gSecond, amount);
     }
 
-    private HashMap<Integer, Glyph> loadGlyphs(Map<Integer, Texture> pages, int lineHeight, List<String> charTags) {
-        HashMap<Integer, Glyph> glyphs = new HashMap<>();
+    private HashMap<Integer, BitmapGlyph> loadGlyphs(Map<Integer, Texture> pages, int lineHeight, List<String> charTags) {
+        HashMap<Integer, BitmapGlyph> glyphs = new HashMap<>();
         for (String charTag : charTags) {
-            Glyph glyph = loadGlyph(pages, lineHeight, charTag);
+            BitmapGlyph glyph = loadGlyph(pages, lineHeight, charTag);
             glyphs.put(glyph.getId(), glyph);
         }
         return glyphs;
     }
 
-    private Glyph loadGlyph(Map<Integer, Texture> pages, int lineHeight, String charTag) {
+    private BitmapGlyph loadGlyph(Map<Integer, Texture> pages, int lineHeight, String charTag) {
         Map<String, String> attributes = extractAttributes(charTag);
 
         int x = Integer.parseInt(attributes.get("x")), y = Integer.parseInt(attributes.get("y")),
@@ -85,7 +85,7 @@ public class BMFontLoader implements IFormatLoaderImplementation<BitmapFont> {
         int glyphSize = 72; // TODO
 
         // TODO rename BitmapGlyph ??
-        return new Glyph(sprite, id, w, h, xOffset, lineHeight - yOffset - h, xAdvance, glyphSize); // y is down, should be up // TODO: input flag?
+        return new BitmapGlyph(sprite, id, w, h, xOffset, lineHeight - yOffset - h, xAdvance, glyphSize); // y is down, should be up // TODO: input flag?
     }
 
     private HashMap<Integer, Texture> loadPages(List<String> pageTags) {

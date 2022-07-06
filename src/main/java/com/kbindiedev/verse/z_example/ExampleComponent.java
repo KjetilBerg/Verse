@@ -13,4 +13,7 @@ public class ExampleComponent implements IComponent {
     public Source slashSoundSource;
     public Source genericSoundSource;
 
+    public String text = "";
+    public int textSize = 12;
+
 }

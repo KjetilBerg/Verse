@@ -3,19 +3,19 @@ package com.kbindiedev.verse.input.keyboard;
 import com.kbindiedev.verse.input.keyboard.event.KeyEvent;
 
 import java.util.LinkedList;
-import java.util.Queue;
+import java.util.List;
 
-/** Responsible for making and queueing {@link KeyEvent} */
+/** Responsible for making and queueing {@link KeyEvent}. */
 public class KeyboardInputEventQueue {
 
-    private Queue<KeyEvent> queue;
+    private List<KeyEvent> queue;
 
     public KeyboardInputEventQueue() {
         queue = new LinkedList<>();
     }
 
     /** Get all queued events. */
-    public Queue<KeyEvent> getQueuedEvents() { return queue; }
+    public List<KeyEvent> getQueuedEvents() { return queue; }
 
     /** Empty the queue of all events */
     public void clear() { queue.clear(); }

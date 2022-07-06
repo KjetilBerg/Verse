@@ -4,7 +4,7 @@ import com.kbindiedev.verse.input.keyboard.event.KeyEvent;
 
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.Queue;
+import java.util.List;
 
 /**
  * Keeps track of KeyEvents and allows you to check key states.
@@ -21,7 +21,7 @@ public class KeyEventTracker implements IKeyEventListener {
     private HashMap<Integer, Integer> timesTypedThisIteration = new HashMap<>(); // key code to "number of times typed this iteration".
     private HashMap<Integer, Integer> timesDownThisIteration = new HashMap<>();  // key code to "number of times down  this iteration".
     private HashMap<Integer, Integer> timesUpThisIteration = new HashMap<>();    // key code to "number of times up    this iteration".
-    private Queue<KeyEvent> allEventsThisIteration = new LinkedList<>();
+    private List<KeyEvent> allEventsThisIteration = new LinkedList<>();
 
     /**
      * Check if a key is pressed.
@@ -87,7 +87,7 @@ public class KeyEventTracker implements IKeyEventListener {
         return timesTypedThisIteration.getOrDefault(keycode, 0);
     }
 
-    public Queue<KeyEvent> getAllEventsThisIteration() { return allEventsThisIteration; }
+    public List<KeyEvent> getAllEventsThisIteration() { return allEventsThisIteration; }
 
     @Override
     public boolean keyDown(int keycode) {

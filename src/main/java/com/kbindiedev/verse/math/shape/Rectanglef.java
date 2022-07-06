@@ -2,7 +2,7 @@ package com.kbindiedev.verse.math.shape;
 
 import com.kbindiedev.verse.math.MathUtil;
 
-// TODO consider: extends Polygon
+// TODO consider: extends Polygon, implements rotation ?
 
 /** Rectangle but with floats. */
 public class Rectanglef {
