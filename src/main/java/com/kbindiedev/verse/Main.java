@@ -24,6 +24,7 @@ import com.kbindiedev.verse.sfx.Sound;
 import com.kbindiedev.verse.sfx.SoundEngineSettings;
 import com.kbindiedev.verse.sfx.Source;
 import com.kbindiedev.verse.sfx.impl.openal_10.SEOpenAL10;
+import com.kbindiedev.verse.ui.font.GlyphSequence;
 import com.kbindiedev.verse.util.condition.Condition;
 import com.kbindiedev.verse.util.condition.ConditionEqual;
 import com.kbindiedev.verse.util.condition.ConditionTrigger;
@@ -208,7 +209,7 @@ public class Main {
             source2.setSound(sound2);
             exampleComponent.slashSoundSource = source2;
 
-            exampleComponent.text = "Once upon a time...";
+            exampleComponent.text = GlyphSequence.fromString("Once upon a time...");
             exampleComponent.textSize = 6;
 
             PolygonCollider2D collider = new PolygonCollider2D();
@@ -292,6 +293,23 @@ public class Main {
 
         space.getEntityManager().instantiate(shape1, rotatorComponent, polygonTransform);
 
+
+        BitmapFont arialFont = null;
+        try {
+            arialFont = BitmapFontLoader.getInstance().load(new File("../arial.fnt"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        TextChatComponent chat = new TextChatComponent();
+        chat.target = playerTransform;
+        chat.currentText = GlyphSequence.fromString("Hello");
+        TextComponent text = new TextComponent();
+        text.fontSize = 14;
+        text.font = arialFont;
+        Transform textLocation = new Transform(); // 0,0
+        space.getEntityManager().instantiate(chat, text, textLocation);
+
         // walls around stage TODO: constraints in physics ? (enforce body >= 0 (x,y) ?)
         float x1 = -8f, y1 = 8f, x2 = 30 * 16f - 8f, y2 = 20 * 16f, thickness = 20f;
         Polygon wallLeft = new Polygon(), wallTop = new Polygon(), wallRight = new Polygon(), wallBottom = new Polygon();
@@ -338,6 +356,8 @@ public class Main {
         space.addSystem(new SpriteRendererSystem(space));
         space.addSystem(new ShapeRendererSystem(space));
         space.addSystem(new ExampleSystem(space));
+        space.addSystem(new TextChatSystem(space));
+        space.addSystem(new TextSystem(space));
 
         RenderContext context = new RenderContext(cameraEntity, gl33.getApplicationWindow(), true);
         rcps.addRenderContext(context);

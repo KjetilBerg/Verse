@@ -1,12 +1,11 @@
 package com.kbindiedev.verse.ui.font;
 
 import com.kbindiedev.verse.gfx.SpriteBatch;
-import com.kbindiedev.verse.math.shape.Rectanglef;
 import com.kbindiedev.verse.profiling.Assertions;
 import org.joml.Vector2f;
 
 import java.util.HashMap;
-import java.util.List;
+import java.util.Objects;
 
 // TODO: abstract into typeface ?
 
@@ -27,15 +26,15 @@ public class BitmapFont {
     }
 
     /** Draw a list of glyphs in order on a single line. */
-    public void drawLine(List<BitmapGlyph> glyphs, SpriteBatch batch, float x, float y, float fontSize, FlowMode flowMode) {
+    public void drawLine(GlyphSequence sequence, SpriteBatch batch, float x, float y, float fontSize, FlowMode flowMode) {
         Vector2f flow = adjustForFlowMode(FlowMode.BOTTOM_LEFT, flowMode, new Vector2f(x, y),
-                new Vector2f(40f * glyphs.size() * fontSize / glyphs.get(0).getGlyphSize(), 1f)); // TODO: getWidth(List<Glyph>) and getLineHeight()
+                new Vector2f(getWidth(sequence, fontSize), 1f)); // TODO: getWidth(List<Glyph>) and getLineHeight()
 
         float cursorX = 0;
 
         BitmapGlyph previousGlyph = BitmapGlyph.EMPTY_GLYPH;
 
-        for (BitmapGlyph glyph : glyphs) {
+        for (BitmapGlyph glyph : sequence.getGlyphs(this)) {
 
             // TODO consider: assert ?
             if (glyph == null) continue;
@@ -81,6 +80,15 @@ public class BitmapFont {
         if (mode == FlowMode.TOP_LEFT || mode == FlowMode.TOP || mode == FlowMode.TOP_RIGHT)           dy = -0.5f;
         if (mode == FlowMode.BOTTOM_LEFT || mode == FlowMode.BOTTOM || mode == FlowMode.BOTTOM_RIGHT)  dy = 0.5f;
         return new Vector2f(dx, dy);
+    }
+
+    public float getWidth(GlyphSequence sequence, float fontSize) {
+        return sequence.getGlyphIds().stream()
+                .map(this::getGlyph)
+                .filter(Objects::nonNull)
+                .map(g -> g.getWidth() * fontSize / g.getGlyphSize())
+                .reduce((a, b) -> a+b)
+                .orElse(0f);
     }
 
 }

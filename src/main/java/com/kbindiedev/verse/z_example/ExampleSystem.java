@@ -16,6 +16,7 @@ import com.kbindiedev.verse.ui.font.BitmapFont;
 import com.kbindiedev.verse.ui.font.BitmapFontLoader;
 import com.kbindiedev.verse.ui.font.Text;
 import com.kbindiedev.verse.util.Trigger;
+import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 
@@ -31,9 +32,6 @@ public class ExampleSystem extends ComponentSystem {
     private Trigger nextTrigger;
     private Trigger prevTrigger;
     private Trigger attackTrigger;
-
-    private BitmapFont font;
-    private SpriteBatch spritebatch; // TODO remove
 
     public ExampleSystem(Space space) {
         super(space);
@@ -51,19 +49,10 @@ public class ExampleSystem extends ComponentSystem {
         prevTrigger = new Trigger();
         attackTrigger = new Trigger();
 
-        try {
-            font = BitmapFontLoader.getInstance().load(new File("../arial.fnt"));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        spritebatch = new SpriteBatch(getSpace().getGfxImplementation(), 512, 8);
     }
 
     @Override
     public void update(float dt) {
-        List<KeyEvent> keyEvents = getSpace().getKeyboardTracker().getAllEventsThisIteration();
-
         Iterator<Entity> entities = query.execute().iterator();
 
         boolean next = getSpace().getKeyboardTracker().wasKeyReleasedThisIteration(Keys.KEY_L);
@@ -75,7 +64,6 @@ public class ExampleSystem extends ComponentSystem {
         if (prev) prevTrigger.trigger();
 
         if (getSpace().getKeyboardTracker().wasKeyPressedThisIteration(Keys.KEY_M)) attackTrigger.trigger();
-
 
         // TODO: messy, should have something like .didTransitionToState(playerSlash)
         boolean playSlashSound = false;
@@ -95,23 +83,6 @@ public class ExampleSystem extends ComponentSystem {
 
             if (playSlashSound) component.slashSoundSource.play();
             if (playGenericSound) component.genericSoundSource.play();
-
-            if (keyEvents.size() > 0) {
-                StringBuilder sb = new StringBuilder(component.text);
-                for (KeyEvent event : keyEvents) {
-                    System.out.println("Keyevent: " + event);
-                    if (event.getType() == KeyEvent.KeyEventType.KEYUP) continue;
-                    int keycode = event.getKeycode();
-                    if (keycode != Keys.KEY_BACKSPACE) sb.append((char)keycode);
-                    if (keycode == Keys.KEY_BACKSPACE && sb.length() > 0) {
-                        sb.setLength(sb.length() - 1);
-                    }
-                    if (keycode == Keys.KEY_W) component.textSize++;
-                    if (keycode == Keys.KEY_S) component.textSize--;
-                }
-                component.text = sb.toString();
-            }
-
 
         }
     }
@@ -168,26 +139,6 @@ public class ExampleSystem extends ComponentSystem {
 */
 
         }
-    }
-
-    @Override
-    public void render(RenderContext context) {
-
-        spritebatch.setProjectionMatrix(context.getCameraComponent().projectionMatrix);
-        spritebatch.setViewMatrix(context.getCameraComponent().viewMatrix);
-        spritebatch.setZPos(0.3f);
-        spritebatch.begin();
-
-        Iterator<Entity> entities = query.execute().iterator();
-        while (entities.hasNext()) {
-            Entity entity = entities.next();
-            Transform transform = entity.getTransform();
-            ExampleComponent component = entity.getComponent(ExampleComponent.class);
-            Text text = new Text(component.text, font, component.textSize);
-            text.draw(spritebatch, transform.position.x, transform.position.y);
-        }
-
-        spritebatch.end();
     }
 
 }
