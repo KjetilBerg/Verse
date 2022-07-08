@@ -10,6 +10,7 @@ import com.kbindiedev.verse.ecs.systems.*;
 import com.kbindiedev.verse.gfx.GraphicsEngineSettings;
 import com.kbindiedev.verse.gfx.Pixel;
 import com.kbindiedev.verse.gfx.Sprite;
+import com.kbindiedev.verse.io.net.socket.SocketManager;
 import com.kbindiedev.verse.ui.font.BitmapFont;
 import com.kbindiedev.verse.ui.font.BitmapFontLoader;
 import com.kbindiedev.verse.gfx.impl.opengl_33.GEOpenGL33;
@@ -345,6 +346,9 @@ public class Main {
         } catch (UnsupportedAudioFileException | IOException e) {
             e.printStackTrace();
         }
+
+        SocketManager socket = new SocketManager("localhost", 8080, 0);
+        try { socket.send(new byte[]{ (byte)26 }); socket.disconnect(); } catch (IOException e) { e.printStackTrace(); } // TODO: auto close when game close
 
         RenderContextPreparerSystem rcps = new RenderContextPreparerSystem(space);
         space.addSystem(new PlayerMovementSystem(space));

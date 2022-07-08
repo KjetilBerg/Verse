@@ -1,4 +1,4 @@
-package com.kbindiedev.verse.net.rest;
+package com.kbindiedev.verse.io.net.rest;
 
 /** Defines settings for RESTClientRequests */
 public class RESTClientRequestSettings {

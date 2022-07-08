@@ -6,18 +6,16 @@ import com.kbindiedev.verse.gfx.impl.opengl_33.GLTexture;
 import com.kbindiedev.verse.input.keyboard.IKeyEventListener;
 import com.kbindiedev.verse.input.mouse.IMouseInputProcessor;
 import com.kbindiedev.verse.io.files.Files;
-import com.kbindiedev.verse.net.rest.*;
+import com.kbindiedev.verse.io.net.rest.*;
 import com.kbindiedev.verse.sfx.Sound;
 import com.kbindiedev.verse.sfx.SoundEngineSettings;
 import com.kbindiedev.verse.sfx.Source;
 import com.kbindiedev.verse.sfx.impl.openal_10.SEOpenAL10;
 import org.joml.Matrix4f;
-import org.lwjgl.BufferUtils;
 
 import java.io.*;
 import java.net.HttpCookie;
 import java.net.URI;
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
 

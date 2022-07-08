@@ -1,4 +1,4 @@
-package com.kbindiedev.verse.net.rest;
+package com.kbindiedev.verse.io.net.rest;
 
 import com.kbindiedev.verse.profiling.Assertions;
 import com.kbindiedev.verse.util.IOutputStreamWriter;
