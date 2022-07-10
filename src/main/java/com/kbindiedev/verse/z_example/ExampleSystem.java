@@ -77,12 +77,16 @@ public class ExampleSystem extends ComponentSystem {
             ExampleComponent component = entity.getComponent(ExampleComponent.class);
             SpriteAnimator animator = entity.getComponent(SpriteAnimator.class);
 
-            animator.controller.getContext().getProperties().put("next", nextTrigger);
-            animator.controller.getContext().getProperties().put("prev", prevTrigger);
-            animator.controller.getContext().getProperties().put("attack", attackTrigger);
+            if (animator.controller != null) {
+                animator.controller.getContext().getProperties().put("next", nextTrigger);
+                animator.controller.getContext().getProperties().put("prev", prevTrigger);
+                animator.controller.getContext().getProperties().put("attack", attackTrigger);
+            }
 
-            if (playSlashSound) component.slashSoundSource.play();
-            if (playGenericSound) component.genericSoundSource.play();
+            if (component.slashSoundSource != null && playSlashSound)
+                 component.slashSoundSource.play();
+            if (component.genericSoundSource != null && playGenericSound)
+                component.genericSoundSource.play();
 
         }
     }

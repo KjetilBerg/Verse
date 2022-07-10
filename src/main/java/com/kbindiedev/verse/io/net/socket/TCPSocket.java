@@ -6,7 +6,7 @@ import java.net.Socket;
 import java.nio.ByteBuffer;
 
 /** A connection over TCP. */
-public class TCPSocket {
+public class TCPSocket implements IPayloadOffice {
 
     private String location;
     private int port;
@@ -41,10 +41,19 @@ public class TCPSocket {
      */
     public boolean terminate() { try { disconnect(); return true; } catch (IOException e) { return false; } }
 
+    @Override
     public void send(byte[] data) throws IOException {
         if (!isConnected()) throw new IOException("not connected");
         socket.getOutputStream().write(data);
     }
+
+    @Override
+    public byte[] retrieve(boolean wait) throws IOException {
+        return receiveMessage(); // TODO wait is not considered: always blocking
+    }
+
+    @Override
+    public void close() throws IOException { disconnect(); }
 
     public byte[] receive(int numBytes) throws IOException {
         if (!isConnected()) throw new IOException("not connected");

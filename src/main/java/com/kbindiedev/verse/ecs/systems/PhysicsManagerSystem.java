@@ -134,6 +134,7 @@ public class PhysicsManagerSystem extends ComponentSystem implements IPhysicsCol
             List<PolygonCollider2D> colliders = entity.getComponents(PolygonCollider2D.class);
             if (colliders == null) continue;
             for (PolygonCollider2D collider : colliders) {
+                if (collider.polygon == null) continue; // TODO
                 drawer.drawOutlineConvexPolygon(new Vector3f(), collider.polygon.getPoints(), Pixel.RED);
             }
 

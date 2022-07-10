@@ -4,7 +4,7 @@ import com.kbindiedev.verse.ecs.datastore.IConstantSize;
 
 /**
  * Represents a component that may exist on an entity.
- * Components should only contain data, with the exception of HECSScript.
+ * Components should only contain data, with the exception of {@link HECSScript} and {@link ISerializable} details.
  *
  * Components should not implement .equals():
  * Components are only equal when they share the same identity (.equals() is the same as ==).

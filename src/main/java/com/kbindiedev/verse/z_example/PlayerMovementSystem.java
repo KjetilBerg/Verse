@@ -101,15 +101,20 @@ public class PlayerMovementSystem extends ComponentSystem {
 
             boolean moving = (dx != 0 || dy != 0);
 
-            if (player.wasMoving && !moving) {
-                player.walkSound.stop();
-            } else if (moving && !player.wasMoving) {
-                player.walkSound.play();
+            if (player.walkSound != null) {
+                if (player.wasMoving && !moving) {
+                    player.walkSound.stop();
+                } else if (moving && !player.wasMoving) {
+                    player.walkSound.play();
+                }
             }
+
 
             player.wasMoving = moving;
 
-            Properties properties = animator.controller.getContext().getProperties();
+            Properties properties = new Properties();
+            if (animator.controller != null) properties = animator.controller.getContext().getProperties();
+
 
             properties.put("moving", moving);
             properties.put("attack", attackTrigger);

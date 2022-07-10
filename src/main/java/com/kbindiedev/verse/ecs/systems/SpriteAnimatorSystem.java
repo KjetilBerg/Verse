@@ -32,6 +32,8 @@ public class SpriteAnimatorSystem extends ComponentSystem {
 
             AnimationController<SpriteAnimation> controller = animator.controller;
 
+            if (controller == null) { continue; } // TODO
+
             controller.getContext().setDeltaTime(dt);
             SpriteAnimation animation = controller.pickAnimation();
 

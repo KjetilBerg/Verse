@@ -7,7 +7,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 /** Manages a single Socket connection. */
-public class SocketManager {
+public class SocketManager implements IPayloadOffice {
 
     private TCPSocket socket;
 
@@ -49,6 +49,19 @@ public class SocketManager {
     public void send(byte[] data) throws IOException {
         if (!socket.isConnected()) toSend.add(pack(data));
         else socket.sendMessage(data); // TODO: abstract this into socket ?
+    }
+
+    @Override
+    public byte[] retrieve(boolean wait) throws IOException {
+        while (!hasMessage()) {
+            try { Thread.sleep(50); } catch (InterruptedException e) { e.printStackTrace(); } // TODO: very bad
+        }
+        return read();
+    }
+
+    @Override
+    public void close() throws IOException {
+        disconnect();
     }
 
     public boolean hasMessage() { return received.size() > 0; }

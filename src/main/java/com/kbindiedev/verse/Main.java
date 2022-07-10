@@ -6,10 +6,12 @@ import com.kbindiedev.verse.ecs.RenderContext;
 import com.kbindiedev.verse.ecs.Space;
 import com.kbindiedev.verse.ecs.components.*;
 import com.kbindiedev.verse.ecs.generators.TilemapToEntitiesGenerator;
+import com.kbindiedev.verse.ecs.net.NetworkManager;
 import com.kbindiedev.verse.ecs.systems.*;
 import com.kbindiedev.verse.gfx.GraphicsEngineSettings;
 import com.kbindiedev.verse.gfx.Pixel;
 import com.kbindiedev.verse.gfx.Sprite;
+import com.kbindiedev.verse.io.net.socket.ResponseSocket;
 import com.kbindiedev.verse.io.net.socket.SocketManager;
 import com.kbindiedev.verse.ui.font.BitmapFont;
 import com.kbindiedev.verse.ui.font.BitmapFontLoader;
@@ -36,6 +38,7 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -54,6 +57,8 @@ public class Main {
         runECSTest();
 
     }
+
+    public static Sprite playerSprite = null; // TODO very temp
 
     private static void runECSTest() {
         GEOpenGL33 gl33 = new GEOpenGL33();
@@ -95,6 +100,7 @@ public class Main {
         //space.getEntityManager().instantiate(sprite2, transform);
 
         Transform playerTransform = new Transform();
+        Entity playerEntity = null;
         try {
             Tilemap testTileMap = TileMapLoader.loadTileMap(new File("./../spritepack_demo/paths.tmx"));
             TilemapToEntitiesGenerator.generateEntities(space.getEntityManager(), testTileMap);
@@ -225,6 +231,8 @@ public class Main {
             SpriteRenderer renderer = new SpriteRenderer();
             renderer.offset.set(0f, 6f);
 
+            playerSprite = animator.controller.pickAnimation().getCurrentSprite();
+
             PlayerComponent playerComponent = new PlayerComponent();
             try {
                 Sound x = al10.createSound("../grass-walk.wav");
@@ -234,7 +242,7 @@ public class Main {
                 playerComponent.defaultWalkSound = y;
             } catch (Exception e) { throw new RuntimeException(e); }
 
-            space.getEntityManager().instantiate(exampleComponent, animator, renderer, playerTransform, playerComponent, collider, new RigidBody2D());
+            playerEntity = space.getEntityManager().instantiate(exampleComponent, animator, renderer, playerTransform, playerComponent, collider, new RigidBody2D());
 
             PolygonCollider2D collider2 = new PolygonCollider2D();
             Polygon polygon2 = new Polygon();
@@ -348,7 +356,11 @@ public class Main {
         }
 
         SocketManager socket = new SocketManager("localhost", 8080, 0);
-        try { socket.send(new byte[]{ (byte)26 }); socket.disconnect(); } catch (IOException e) { e.printStackTrace(); } // TODO: auto close when game close
+        ResponseSocket responseSocket = new ResponseSocket(socket); // TODO: auto close when game close
+        NetworkManager networkManager = new NetworkManager(space, responseSocket);
+        try { Thread.sleep(100); } catch (InterruptedException e) { e.printStackTrace(); }
+
+        space.setNetworkManager(networkManager);
 
         RenderContextPreparerSystem rcps = new RenderContextPreparerSystem(space);
         space.addSystem(new PlayerMovementSystem(space));
@@ -362,6 +374,11 @@ public class Main {
         space.addSystem(new ExampleSystem(space));
         space.addSystem(new TextChatSystem(space));
         space.addSystem(new TextSystem(space));
+
+        try { networkManager.makeNetworkEntity(playerEntity); } catch (IOException e) {
+            System.out.println("failed to make player a network entity");
+            e.printStackTrace();
+        }
 
         RenderContext context = new RenderContext(cameraEntity, gl33.getApplicationWindow(), true);
         rcps.addRenderContext(context);

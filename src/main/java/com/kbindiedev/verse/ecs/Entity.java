@@ -212,6 +212,19 @@ public class Entity {
         return comps;
     }
 
+    /**
+     * Get a list of all components on this entity, or null if none exist.
+     * The order of the components will be the same as their registration-order.
+     * The returned list will never be empty (but may ne null).
+     * @return a list of all components on this entity, ordered by registration-order, or null if no components exist on this entity.
+     */
+    public @Nullable List<IComponent> getAllComponents() {
+        if (components.size() == 0) return null;
+        List<IComponent> comps = new ArrayList<>();
+        for (FastList<IComponent> list : components.values()) comps.addAll(list);
+        return comps;
+    }
+
     @Override
     public String toString() {
         return String.format("{ hashCode: %d, manager: %s, archetype: %s, components: %s }", hashCode(), manager.toString(), archetype.toString(), components.toString());

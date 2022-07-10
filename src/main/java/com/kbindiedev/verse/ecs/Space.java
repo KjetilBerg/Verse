@@ -1,6 +1,7 @@
 package com.kbindiedev.verse.ecs;
 
 import com.kbindiedev.verse.ecs.event.ICollisionListener;
+import com.kbindiedev.verse.ecs.net.NetworkManager;
 import com.kbindiedev.verse.ecs.systems.ComponentSystem;
 import com.kbindiedev.verse.gfx.GraphicsEngine;
 import com.kbindiedev.verse.gfx.Mesh;
@@ -41,6 +42,8 @@ public class Space implements ICollisionListener {
 
     private ShapeDrawer shapeDrawer;
 
+    private NetworkManager networkManager;
+
     public Space(GraphicsEngine gfxImplementation) { this(gfxImplementation, new InputSystem()); }
     public Space(GraphicsEngine gfxImplementation, InputSystem input) { this(gfxImplementation, input, new EntityManager()); }
     public Space(GraphicsEngine gfxImplementation, InputSystem input, EntityManager entityManager) { // TODO: remove manager ?
@@ -51,12 +54,16 @@ public class Space implements ICollisionListener {
         systems = new FastList<>();
         lastTimestamp = System.currentTimeMillis();
 
+        networkManager = null; // TODO TEMP
+
         // TODO numbers
         PolygonBatch triangleBatch = new PolygonBatch(gfxImplementation, 2048, 2048, Mesh.RenderMode.TRIANGLES);
         PolygonBatch lineBatch = new PolygonBatch(gfxImplementation, 2048, 2048, Mesh.RenderMode.LINES);
         PolygonBatch pointBatch = new PolygonBatch(gfxImplementation, 2048, 2048, Mesh.RenderMode.POINTS);
         shapeDrawer = new ShapeDrawer(triangleBatch, lineBatch, pointBatch);
     }
+
+    public void setNetworkManager(NetworkManager manager) { networkManager = manager; }
 
     public PhysicsEnvironment getPhysicsEnvironment() { return physicsEnvironment; }
 
@@ -100,6 +107,8 @@ public class Space implements ICollisionListener {
         lastTimestamp = timestamp;
 
         input.iterate();
+
+        if (networkManager != null) networkManager.poll();
 
         accumulator += dt;
         while (accumulator >= 1/60f) {
