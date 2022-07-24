@@ -1,217 +1,172 @@
 package com.kbindiedev.verse.ecs.net;
 
-import com.kbindiedev.verse.AssetPool;
 import com.kbindiedev.verse.Main;
 import com.kbindiedev.verse.ecs.Entity;
 import com.kbindiedev.verse.ecs.Space;
 import com.kbindiedev.verse.ecs.components.IComponent;
 import com.kbindiedev.verse.ecs.components.SpriteRenderer;
-import com.kbindiedev.verse.io.net.socket.ResponseSocket;
+import com.kbindiedev.verse.io.comms.ICommunicationChannel;
 import com.kbindiedev.verse.profiling.Assertions;
-import com.kbindiedev.verse.profiling.exceptions.UnsupportedFormatException;
 import com.kbindiedev.verse.system.BiHashMap;
 import com.kbindiedev.verse.system.ISerializable;
-import com.sun.xml.internal.messaging.saaj.util.ByteInputStream;
-import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream;
+import com.kbindiedev.verse.util.CompressedLong;
+import com.kbindiedev.verse.util.StreamUtil;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /** Connects an ECS environment to some networking functionality */
 public class NetworkManager {
 
     private Space space;
-    private ResponseSocket socket;
 
-    BiHashMap<Long, Entity> entityMap;
+    private ICommunicationChannel channel;
 
-    public NetworkManager(Space space, ResponseSocket socket) {
+    private BiHashMap<Long, Entity> entityMap;
+    private HashSet<Long> externalEntities;
+
+    private ConcurrentLinkedQueue<Runnable> syncTasks;
+
+    // TODO: removed socket temporarily
+    public NetworkManager(Space space, ICommunicationChannel channel) {
         this.space = space;
-        this.socket = socket;
+        this.channel = channel;
 
         entityMap = new BiHashMap<>();
+        externalEntities = new HashSet<>();
+
+        syncTasks = new ConcurrentLinkedQueue<>();
     }
 
-    // make an entity appear to others
-    public long makeNetworkEntity(Entity entity) throws IOException {
-        ByteOutputStream stream = new ByteOutputStream();
+    // update by main thread, before render
+    public void update() {
+        Runnable task = syncTasks.poll();
+        while (task != null) {
+            task.run();
+            task = syncTasks.poll();
+        }
+    }
 
-        stream.write(1); // identifier = spawn network entity
+    private long getNewId() {
+        return (long)(Math.random() * 0xFFFFFFFFL);
+    }
 
-        long entityId = (long)(Math.random() * Long.MAX_VALUE);
-        byte[] idBytes = ByteBuffer.allocate(8).putLong(entityId).array();
-        stream.write(idBytes);
+    public boolean doIOwnEntity(Entity entity) {
+        if (!entityMap.containsValue(entity)) return true;
+        long id = entityMap.getForValue(entity);
+        return !externalEntities.contains(id);
+    }
+
+    // make an entity appear to others (spawn or update)
+    public long synchronizeEntity(Entity entity) throws IOException {
+        OutputStream stream = channel.getWritingStream();
+
+        stream.write(1); // identifier = change data of network entity (or spawn if not exist)
+
+        long id;
+        if (entityMap.containsValue(entity)) id = entityMap.getForValue(entity);
+        else id = getNewId();
+
+        CompressedLong.serialize(id, stream); // id of entity
+
+        CompressedLong.serialize(entity.getAllComponents().size(), stream); // number of components // TODO: consider if component cannot be serialized
 
         for (IComponent component : entity.getAllComponents()) {
             if (!(component instanceof ISerializable)) {
                 Assertions.warn("component not serializable: " + component.getClass().getCanonicalName());
-                return -1;
+                return -1; // TODO: intermediary stream ?
             }
 
-            stream.write(component.getClass().getCanonicalName().getBytes(StandardCharsets.UTF_8));
-            stream.write(0);
+            StreamUtil.writeString(component.getClass().getCanonicalName(), stream);
             ((ISerializable)component).serialize(stream);
         }
 
-        byte[] data = stream.getBytes();
-        long netId = socket.send(data);
-        stream.close();
-        byte[] response = socket.retrieveBlocking(netId); // "ok"
-
-//        long entityId = ByteBuffer.wrap(response).getLong();
-        entityMap.put(entityId, entity);
-        return entityId;
+        entityMap.put(id, entity);
+        return id;
     }
 
     public void destroyNetworkEntity(Entity entity) throws IOException {
-        long entityId = entityMap.getForValue(entity);
-
-        ByteOutputStream stream = new ByteOutputStream();
+        OutputStream stream = channel.getWritingStream();
 
         stream.write(2); // identifier = destroy network entity
-        byte[] entityIdData = ByteBuffer.allocate(8).putLong(entityId).array();
-        stream.write(entityIdData);
 
-        byte[] toSend = stream.getBytes();
-        long netId = socket.send(toSend);
-        stream.close();
-        socket.retrieveBlocking(netId); // "ok"
+        long id = entityMap.getForValue(entity);
+        CompressedLong.serialize(id, stream); // id of entity
     }
 
-    public void updateNetworkEntity(Entity entity) throws IOException {
-        long entityId = entityMap.getForValue(entity);
-        if (!entityMap.containsValue(entity)) {
-            Assertions.warn("entity is not network managed");
-            return;
+    /** Process the ICommunicationChannel. */
+    public void processStream() throws IOException { // TODO TEMP: public
+        InputStream stream = channel.getReadingStream();
+        int identifier = stream.read();
+        switch (identifier) {
+            case 1: onSyncNetworkEntity(stream); break;
+            case 2: onDestroyNetworkEntity(stream); break;
+            default: Assertions.warn("unknown identifier: %d", identifier);
         }
-
-        ByteOutputStream stream = new ByteOutputStream();
-
-        stream.write(3); // identifier = update network entity
-        byte[] entityIdData = ByteBuffer.allocate(8).putLong(entityId).array();
-        stream.write(entityIdData);
-
-        // assume all are in order
-        for (IComponent component : entity.getAllComponents()) {
-            ((ISerializable)component).serialize(stream);
-        }
-
-        byte[] toSend = stream.getBytes();
-        long netId = socket.send(toSend);
-        stream.close();
-        socket.retrieveBlocking(netId); // "ok"
     }
 
-    public void onMakeNetworkEntity(byte[] data) {
-        List<IComponent> components = new ArrayList<>();
+    public void onSyncNetworkEntity(InputStream stream) throws IOException {
 
-        ByteInputStream stream = new ByteInputStream(data, data.length);
+        long entityId = CompressedLong.deserialize(stream);
+        long componentCount = CompressedLong.deserialize(stream);
 
-        byte[] l = new byte[8];
-        try { stream.read(l); } catch (IOException e) { e.printStackTrace(); }
-        long entityId = ByteBuffer.wrap(l).getLong();
+        IComponent[] components = new IComponent[(int)componentCount];
 
-        while (true) {
-            String clazz = readNullTerminatedString(stream);
-            if (clazz.isEmpty()) break; // null-terminated or EOF string.
+        for (int i = 0; i < componentCount; ++i) {
+            String className = StreamUtil.readString(stream);
             try {
-                Object o = Class.forName(clazz).newInstance();
-                if (!(o instanceof IComponent) || !(o instanceof ISerializable)) {
-                    Assertions.warn("class not IComponent and ISerializable: %s", o.getClass().getCanonicalName());
-                    return;
-                }
-                IComponent component = (IComponent)o;
+                Object o = Class.forName(className).newInstance();
                 ((ISerializable)o).deserialize(stream);
-
-                // TODO TEMP
-                if (component instanceof SpriteRenderer) {
-                    ((SpriteRenderer)component).sprite = Main.playerSprite;
-                }
-                components.add(component);
+                components[i] = (IComponent)o;
             } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+                Assertions.warn("could not instantiate class: %s", className);
                 e.printStackTrace();
-                return;
+            } catch (ClassCastException e) {
+                Assertions.warn("could not cast class: '%s' into ISerializable or IComponent", className);
+                e.printStackTrace();
             }
         }
 
-        Entity entity = space.getEntityManager().instantiate(components.toArray(new IComponent[0]));
-        entityMap.put(entityId, entity);
-        try { stream.close(); } catch (IOException e) { e.printStackTrace(); }
-        System.out.println("Spawned entity by network request. id: " + entityId);
-    }
-
-    public void onDestroyNetworkEntity(byte[] data) {
-        ByteInputStream stream = new ByteInputStream(data, data.length);
-        byte[] l = new byte[8];
-        try { stream.read(l); } catch (IOException e) { e.printStackTrace(); }
-        long entityId = ByteBuffer.wrap(l).getLong();
-        try { stream.close(); } catch (IOException e) { e.printStackTrace(); }
-        Entity entity = entityMap.remove(entityId);
-        space.getEntityManager().destroy(entity);
-        System.out.println("Destroyed entity by network request");
-    }
-
-    public void onUpdateNetworkEntity(byte[] data) {
-        ByteInputStream stream = new ByteInputStream(data, data.length);
-        byte[] l = new byte[8];
-        try { stream.read(l); } catch (IOException e) { e.printStackTrace(); }
-        long entityId = ByteBuffer.wrap(l).getLong();
-
-        Entity entity = entityMap.get(entityId);
-        if (entity == null) {
-            Assertions.warn("entity does not exist for id: %d", entityId);
-            return;
-        }
-
-        // temp, assume order is maintained
-        for (IComponent component : entity.getAllComponents()) {
-            ((ISerializable)component).deserialize(stream);
-        }
-    }
-
-    public void poll() {
-        while (socket.hasUnmarkedPackage()) {
-            byte[] data = socket.getUnmarkedPackage();
-            byte identifier = data[0];
-            byte[] newData = new byte[data.length - 1];
-            System.arraycopy(data, 1, newData, 0, newData.length);
-
-            switch (identifier) {
-                case 1: // spawn entity
-                    onMakeNetworkEntity(newData);
-                    break;
-                case 2: // remove entity
-                    onDestroyNetworkEntity(newData);
-                    break;
-                case 3: // update entity
-                    onUpdateNetworkEntity(newData);
-                    break;
-                default:
-                    Assertions.warn("unknown identifier: %d", identifier);
-                    break;
+        // TODO TEMP
+        for (IComponent component : components) {
+            if (component instanceof SpriteRenderer) {
+                ((SpriteRenderer)component).sprite = Main.playerSprite;
             }
         }
 
-        if (counter++ % 120 == 0) {
-            try {
-                for (Entity entity : entityMap.values()) updateNetworkEntity(entity);
-            } catch (IOException e) { e.printStackTrace(); }
-        }
+        Runnable sync = () -> {
+            if (!entityMap.containsKey(entityId)) {
+                Entity entity = space.getEntityManager().instantiate(components);
+                entityMap.put(entityId, entity);
+                externalEntities.add(entityId);
+            } else {
+                Entity entity = entityMap.get(entityId);
+                //TODO TEMP: really heavy
+                entity.removeComponents(entity.getAllComponents());
+                entity.putComponents(Arrays.asList(components));
+            }
+
+            //System.out.println("Synchronized entity by network request. id: " + entityId);
+        };
+
+        syncTasks.add(sync);
 
     }
 
-    private int counter = 0;
+    public void onDestroyNetworkEntity(InputStream stream) throws IOException {
+        long id = CompressedLong.deserialize(stream);
 
-    private String readNullTerminatedString(ByteInputStream stream) {
-        List<Byte> bytes = new ArrayList<>();
-        int d;
-        while ((d = stream.read()) != -1 && d != 0) bytes.add((byte)d);
-        byte[] b = new byte[bytes.size()];
-        for (int i = 0; i < b.length; ++i) b[i] = bytes.get(i);
-        return new String(b, StandardCharsets.UTF_8);
+        Runnable sync = () -> {
+            Entity entity = entityMap.remove(id);
+            space.getEntityManager().destroy(entity);
+            //System.out.println("Destroyed entity by network request: " + id);
+        };
+
+        syncTasks.add(sync);
+
     }
 
 }

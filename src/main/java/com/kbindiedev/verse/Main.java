@@ -1,6 +1,7 @@
 package com.kbindiedev.verse;
 
 import com.kbindiedev.verse.animation.*;
+import com.kbindiedev.verse.async.ThreadPool;
 import com.kbindiedev.verse.ecs.Entity;
 import com.kbindiedev.verse.ecs.RenderContext;
 import com.kbindiedev.verse.ecs.Space;
@@ -11,8 +12,7 @@ import com.kbindiedev.verse.ecs.systems.*;
 import com.kbindiedev.verse.gfx.GraphicsEngineSettings;
 import com.kbindiedev.verse.gfx.Pixel;
 import com.kbindiedev.verse.gfx.Sprite;
-import com.kbindiedev.verse.io.net.socket.ResponseSocket;
-import com.kbindiedev.verse.io.net.socket.SocketManager;
+import com.kbindiedev.verse.io.net.socket.TCPSocket;
 import com.kbindiedev.verse.ui.font.BitmapFont;
 import com.kbindiedev.verse.ui.font.BitmapFontLoader;
 import com.kbindiedev.verse.gfx.impl.opengl_33.GEOpenGL33;
@@ -28,6 +28,7 @@ import com.kbindiedev.verse.sfx.SoundEngineSettings;
 import com.kbindiedev.verse.sfx.Source;
 import com.kbindiedev.verse.sfx.impl.openal_10.SEOpenAL10;
 import com.kbindiedev.verse.ui.font.GlyphSequence;
+import com.kbindiedev.verse.util.StreamUtil;
 import com.kbindiedev.verse.util.condition.Condition;
 import com.kbindiedev.verse.util.condition.ConditionEqual;
 import com.kbindiedev.verse.util.condition.ConditionTrigger;
@@ -37,8 +38,9 @@ import org.joml.Vector3f;
 import javax.sound.sampled.UnsupportedAudioFileException;
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -59,6 +61,7 @@ public class Main {
     }
 
     public static Sprite playerSprite = null; // TODO very temp
+    public static BitmapFont TEMP_GLOBAL_FONT = null; // TODO very temp
 
     private static void runECSTest() {
         GEOpenGL33 gl33 = new GEOpenGL33();
@@ -67,7 +70,7 @@ public class Main {
         SEOpenAL10 al10 = new SEOpenAL10();
         al10.initialize(new SoundEngineSettings());
 
-        Space space = new Space(gl33);
+        space = new Space(gl33);
 
         // TODO: something like applicationWindow.attachInputs(space) may be ideal.
         space.getInput().getKeyboardPipeline().setQueue(gl33.getApplicationWindow().getKeyboardQueue());
@@ -306,6 +309,7 @@ public class Main {
         BitmapFont arialFont = null;
         try {
             arialFont = BitmapFontLoader.getInstance().load(new File("../arial.fnt"));
+            TEMP_GLOBAL_FONT = arialFont;
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -348,22 +352,17 @@ public class Main {
         // play ambient sound
         try {
             Source s = al10.createSource(true);
-            Sound so = al10.createSound("../ambience.wav");
+            Sound so = al10.createSound("../day-ambience.wav");
             s.setSound(so);
             s.play();
         } catch (UnsupportedAudioFileException | IOException e) {
             e.printStackTrace();
         }
 
-        SocketManager socket = new SocketManager("localhost", 8080, 0);
-        ResponseSocket responseSocket = new ResponseSocket(socket); // TODO: auto close when game close
-        NetworkManager networkManager = new NetworkManager(space, responseSocket);
-        try { Thread.sleep(100); } catch (InterruptedException e) { e.printStackTrace(); }
-
-        space.setNetworkManager(networkManager);
 
         RenderContextPreparerSystem rcps = new RenderContextPreparerSystem(space);
         space.addSystem(new PlayerMovementSystem(space));
+        space.addSystem(new PlayerNetSyncSystem(space));
         space.addSystem(new PhysicsManagerSystem(space));
         space.addSystem(new ConstantRotatorSystem(space));
         space.addSystem(rcps);
@@ -374,11 +373,6 @@ public class Main {
         space.addSystem(new ExampleSystem(space));
         space.addSystem(new TextChatSystem(space));
         space.addSystem(new TextSystem(space));
-
-        try { networkManager.makeNetworkEntity(playerEntity); } catch (IOException e) {
-            System.out.println("failed to make player a network entity");
-            e.printStackTrace();
-        }
 
         RenderContext context = new RenderContext(cameraEntity, gl33.getApplicationWindow(), true);
         rcps.addRenderContext(context);
@@ -393,7 +387,46 @@ public class Main {
                 space.tick();
                 space.render(context); // TODO: render MUST happen during .render. throw assertion if called at another time
             } // TODO: remove render?
+
+            @Override
+            public void shutdown() {
+                System.out.println("Shutting down engine...");
+                al10.close();
+                ThreadPool.INSTANCE.shutdown();
+                try {
+                    if (socket != null) socket.disconnect();
+                } catch (IOException e) { e.printStackTrace(); socket.terminate(); }
+            }
         });
+    }
+
+    private static Space space;
+    private static TCPSocket socket = null;
+
+    public static void tempActivateServerMode(String text) {
+        if (socket != null) return;
+
+        URL url;
+        try { url = new URL(text); } catch (MalformedURLException e) { return; }
+
+        socket = new TCPSocket(url.getHost(), url.getPort());
+        System.out.println("Attempting to connect to: " + url.getHost() + ":" + url.getPort());
+        try { socket.connect(); } catch (IOException e) { e.printStackTrace(); }
+
+        if (!socket.isConnected()) { socket = null; return; }
+
+        NetworkManager networkManager = new NetworkManager(space, socket);
+
+        ThreadPool.INSTANCE.submitContinous(() -> {
+            try {
+                networkManager.processStream();
+            } catch (IOException e) {
+                space.setNetworkManager(null);
+                throw new RuntimeException(e);
+            }
+        });
+
+        space.setNetworkManager(networkManager);
     }
 
 }

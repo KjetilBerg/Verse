@@ -16,4 +16,6 @@ public abstract class SoundEngine {
 
     public abstract Listener createListener();
 
+    public abstract void close();
+
 }

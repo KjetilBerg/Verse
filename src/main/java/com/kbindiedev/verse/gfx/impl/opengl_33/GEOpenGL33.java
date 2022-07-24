@@ -78,6 +78,8 @@ public class GEOpenGL33 extends GraphicsEngine {
             glfwPollEvents();
         }
 
+        core.shutdown();
+
         glfwFreeCallbacks(window);
         glfwDestroyWindow(window);
 
@@ -245,6 +247,7 @@ public class GEOpenGL33 extends GraphicsEngine {
     public interface IRenderable {
         void update(float dt);
         void render();
+        void shutdown();
     }
 
 

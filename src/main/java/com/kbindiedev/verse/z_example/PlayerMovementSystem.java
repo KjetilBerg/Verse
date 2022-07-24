@@ -120,7 +120,7 @@ public class PlayerMovementSystem extends ComponentSystem {
             properties.put("attack", attackTrigger);
             // TODO BUG: can transition from slash to run for some reason
 
-            if (count++ % 60 == 0) System.out.println("Player pos: " + transform.position.x + " " + transform.position.y + " " + transform.position.z);
+            //if (count++ % 60 == 0) System.out.println("Player pos: " + transform.position.x + " " + transform.position.y + " " + transform.position.z);
 
             Transform actualTransform = entity.getComponent(Transform.class);
             if (actualTransform == null) continue;
@@ -157,7 +157,7 @@ public class PlayerMovementSystem extends ComponentSystem {
     // TODO: some physicsManagerSystem.getAllCollidingEntities(entity) would be better (in .fixedUpdate())
     private void updateWalkSound(PlayerComponent player, Source source) {
         if (player.walkSound == source) return;
-        System.out.println("update walk sound: " + player.walkSound + " " + source);
+        //System.out.println("update walk sound: " + player.walkSound + " " + source); // TODO: selection (physics system) is buggy about this
         boolean playing = player.walkSound.isPlaying();
         player.walkSound.stop();
         player.walkSound = source;

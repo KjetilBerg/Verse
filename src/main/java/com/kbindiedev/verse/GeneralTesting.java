@@ -142,6 +142,8 @@ public class GeneralTesting implements GEOpenGL33.IRenderable, IKeyEventListener
 
     }
 
+    @Override public void shutdown() {}
+
     @Override
     public boolean keyDown(int keycode) {
         switch (keycode) {

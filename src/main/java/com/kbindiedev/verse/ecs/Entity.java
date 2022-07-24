@@ -83,7 +83,7 @@ public class Entity {
      * @param list - The list of components to add.
      * @return whether or not any component was successfully added.
      */
-    public boolean putComponents(List<IComponent> list) {
+    public boolean putComponents(List<IComponent> list) { // TODO: make accept arrays
         List<IComponent> added = new ArrayList<>(list.size());
 
         for (IComponent component : list) {

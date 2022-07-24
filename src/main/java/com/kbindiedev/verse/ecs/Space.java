@@ -64,6 +64,7 @@ public class Space implements ICollisionListener {
     }
 
     public void setNetworkManager(NetworkManager manager) { networkManager = manager; }
+    public NetworkManager getNetworkManager() { return networkManager; }
 
     public PhysicsEnvironment getPhysicsEnvironment() { return physicsEnvironment; }
 
@@ -108,7 +109,7 @@ public class Space implements ICollisionListener {
 
         input.iterate();
 
-        if (networkManager != null) networkManager.poll();
+        if (networkManager != null) networkManager.update();
 
         accumulator += dt;
         while (accumulator >= 1/60f) {
@@ -130,7 +131,7 @@ public class Space implements ICollisionListener {
 
         shapeDrawer.begin();
         for (ComponentSystem system : systems) system.render(context);
-        for (ComponentSystem system : systems) system.onDrawGizmos(context);
+        //for (ComponentSystem system : systems) system.onDrawGizmos(context);
         shapeDrawer.end();
     }
 

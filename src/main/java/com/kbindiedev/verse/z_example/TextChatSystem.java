@@ -1,17 +1,21 @@
 package com.kbindiedev.verse.z_example;
 
+import com.kbindiedev.verse.Main;
 import com.kbindiedev.verse.ecs.*;
 import com.kbindiedev.verse.ecs.components.Transform;
+import com.kbindiedev.verse.ecs.net.NetworkManager;
 import com.kbindiedev.verse.ecs.systems.ComponentSystem;
 import com.kbindiedev.verse.input.keyboard.KeyEventTracker;
 import com.kbindiedev.verse.input.keyboard.Keys;
 import com.kbindiedev.verse.input.keyboard.event.KeyEvent;
+import com.kbindiedev.verse.profiling.Assertions;
 import com.kbindiedev.verse.ui.font.BitmapFont;
 import com.kbindiedev.verse.ui.font.FlowMode;
 import com.kbindiedev.verse.ui.font.GlyphSequence;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 
@@ -60,6 +64,7 @@ public class TextChatSystem extends ComponentSystem {
                 if (keys.isKeyDown(Keys.KEY_LEFT_SHIFT)) {
                     if (keycode == Keys.KEY_PERIOD) keycode = 58; // TODO: no colon key
                     if (keycode == Keys.KEY_COMMA) keycode = Keys.KEY_SEMICOLON;
+                    if (keycode == Keys.KEY_7) keycode = Keys.KEY_SLASH;
                 }
 
                 chat.currentText.addGlyphIfValid((char)keycode, text.font);
@@ -75,6 +80,16 @@ public class TextChatSystem extends ComponentSystem {
 
     private void publishMessage(TextChatComponent component, BitmapFont font) {
 
+        StringBuilder s = new StringBuilder();
+        for (int i : component.currentText.getGlyphIds()) s.append((char)i);
+        String text = s.toString();
+        if (text.startsWith("c ")) {
+            text = text.substring(2);
+            component.currentText.clear();
+            Main.tempActivateServerMode(text);
+            return;
+        }
+
         TextComponent textComp = new TextComponent();
         textComp.flowmode = FlowMode.CENTER;
         textComp.fontSize = 6;
@@ -89,8 +104,14 @@ public class TextChatSystem extends ComponentSystem {
 
         Entity entity = getSpace().getEntityManager().instantiate(textComp, transform); // TODO: target = parent, transform = (0,0)
 
+        NetworkManager network = getSpace().getNetworkManager();
+        if (network != null) {
+            try { network.synchronizeEntity(entity); } catch (IOException e) { Assertions.warn("unable to publish message (synchronize entity) to network: "); e.printStackTrace(); }
+        }
+
         Thread destroyer = new Thread(() -> {
             try { Thread.sleep(5000); } catch (InterruptedException e) { e.printStackTrace(); }
+            try { if (network != null) network.destroyNetworkEntity(entity); } catch (IOException e) { Assertions.warn("unable to destroy message on network: "); e.printStackTrace(); }
             getSpace().getEntityManager().destroy(entity);
         });
 

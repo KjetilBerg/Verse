@@ -26,6 +26,7 @@ public class SEOpenAL10 extends SoundEngine {
     // TODO: support mp3
 
     private long device; // TODO TEMP (1 device)
+    private long context;
 
     @Override
     public void initialize(SoundEngineSettings settings) {
@@ -44,7 +45,7 @@ public class SEOpenAL10 extends SoundEngine {
         contextAttributeList.put(2);
         contextAttributeList.put(0);
         contextAttributeList.flip();
-        long context = ALC10.alcCreateContext(device, contextAttributeList);
+        context = ALC10.alcCreateContext(device, contextAttributeList);
         if (!ALC10.alcMakeContextCurrent(context)) throw new RuntimeException("failed to make audio context current");
         AL.createCapabilities(capabilities);
 
@@ -168,5 +169,12 @@ public class SEOpenAL10 extends SoundEngine {
 
         //and return the rough notion of length for the audio stream!
         return (long)(1000f * stream.getFrameLength() / format.getFrameRate());
+    }
+
+    @Override
+    public void close() {
+        // TODO: delete sources and buffers
+        alcDestroyContext(context);
+        alcCloseDevice(device);
     }
 }
