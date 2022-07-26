@@ -1,4 +1,4 @@
-package com.kbindiedev.verse.z_example;
+package com.kbindiedev.verse.ecs.components;
 
 import com.kbindiedev.verse.Main;
 import com.kbindiedev.verse.ecs.components.IComponent;
@@ -14,27 +14,25 @@ import java.io.OutputStream;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class TextComponent implements IComponent, ISerializable {
+public class TextRenderer implements IComponent, ISerializable {
 
     public GlyphSequence sequence       = new GlyphSequence();
     public FlowMode flowmode            = FlowMode.BOTTOM_LEFT;
+    public boolean screenMode           = true; // false = draw in world space, true = screen space
     public int fontSize                 = 12;
     public BitmapFont font              = null;
 
-    public boolean screenMode           = true; // false = draw in world space, true = screen space
 
     @Override
     public void serialize(OutputStream stream) throws IOException {
         // temp impl
-        StringBuilder text = new StringBuilder();
-        for (int i : sequence.getGlyphIds()) text.append((char)i);
         int mask = 0; FlowMode[] values = FlowMode.values();
         for (int i = 0; i < values.length; ++i) {
-            if (flowmode == values[i]) { mask = i; break; } // 0 <= mask <= 9 (4 bits)
+            if (flowmode == values[i]) { mask = i; break; } // 0 <= mask <= 8 (4 bits)
         }
         if (screenMode) mask |= 0b00010000; // 5th bit
 
-        StreamUtil.writeString(text.toString(), stream);
+        StreamUtil.writeString(sequence.getStringValue(), stream);
         stream.write((byte)fontSize);
         stream.write((byte)mask);
     }
@@ -42,7 +40,7 @@ public class TextComponent implements IComponent, ISerializable {
     @Override
     public void deserialize(InputStream stream) throws IOException {
         String text = StreamUtil.readString(stream);
-        sequence = GlyphSequence.fromString(text);
+        sequence = new GlyphSequence(text);
 
         fontSize = stream.read();
         int mask = stream.read();

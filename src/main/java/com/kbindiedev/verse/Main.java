@@ -28,7 +28,6 @@ import com.kbindiedev.verse.sfx.SoundEngineSettings;
 import com.kbindiedev.verse.sfx.Source;
 import com.kbindiedev.verse.sfx.impl.openal_10.SEOpenAL10;
 import com.kbindiedev.verse.ui.font.GlyphSequence;
-import com.kbindiedev.verse.util.StreamUtil;
 import com.kbindiedev.verse.util.condition.Condition;
 import com.kbindiedev.verse.util.condition.ConditionEqual;
 import com.kbindiedev.verse.util.condition.ConditionTrigger;
@@ -219,7 +218,7 @@ public class Main {
             source2.setSound(sound2);
             exampleComponent.slashSoundSource = source2;
 
-            exampleComponent.text = GlyphSequence.fromString("Once upon a time...");
+            exampleComponent.text = new GlyphSequence("Once upon a time...");
             exampleComponent.textSize = 6;
 
             PolygonCollider2D collider = new PolygonCollider2D();
@@ -316,8 +315,8 @@ public class Main {
 
         TextChatComponent chat = new TextChatComponent();
         chat.target = playerTransform;
-        chat.currentText = GlyphSequence.fromString("Hello");
-        TextComponent text = new TextComponent();
+        chat.currentText = new GlyphSequence("Hello");
+        TextRenderer text = new TextRenderer();
         text.fontSize = 14;
         text.font = arialFont;
         Transform textLocation = new Transform(); // 0,0
@@ -372,7 +371,7 @@ public class Main {
         space.addSystem(new ShapeRendererSystem(space));
         space.addSystem(new ExampleSystem(space));
         space.addSystem(new TextChatSystem(space));
-        space.addSystem(new TextSystem(space));
+        space.addSystem(new TextRendererSystem(space));
 
         RenderContext context = new RenderContext(cameraEntity, gl33.getApplicationWindow(), true);
         rcps.addRenderContext(context);

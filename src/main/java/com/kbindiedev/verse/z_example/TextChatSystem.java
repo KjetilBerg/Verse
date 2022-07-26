@@ -2,6 +2,7 @@ package com.kbindiedev.verse.z_example;
 
 import com.kbindiedev.verse.Main;
 import com.kbindiedev.verse.ecs.*;
+import com.kbindiedev.verse.ecs.components.TextRenderer;
 import com.kbindiedev.verse.ecs.components.Transform;
 import com.kbindiedev.verse.ecs.net.NetworkManager;
 import com.kbindiedev.verse.ecs.systems.ComponentSystem;
@@ -22,6 +23,7 @@ import java.util.List;
 public class TextChatSystem extends ComponentSystem {
 
     private EntityQuery query;
+    private FlowMode tempFlowMode = FlowMode.TOP_LEFT;
 
     public TextChatSystem(Space space) {
         super(space);
@@ -29,7 +31,7 @@ public class TextChatSystem extends ComponentSystem {
 
     @Override
     public void start() {
-        EntityQueryDesc desc = new EntityQueryDesc(new ComponentTypeGroup(TextChatComponent.class, TextComponent.class), null, null);
+        EntityQueryDesc desc = new EntityQueryDesc(new ComponentTypeGroup(TextChatComponent.class, TextRenderer.class), null, null);
         query = desc.compile(getSpace().getEntityManager());
     }
 
@@ -39,11 +41,20 @@ public class TextChatSystem extends ComponentSystem {
         KeyEventTracker keys = getSpace().getKeyboardTracker();
         List<KeyEvent> keyEvents = keys.getAllEventsThisIteration();
 
+        // in-game adjustment of flowmode
+        if (keys.wasKeyReleasedThisIteration(Keys.KEY_P)) {
+            int i = 0;
+            for (FlowMode mode : FlowMode.values()) { if (mode == tempFlowMode) break; i++; }
+            i += 1;
+            i %= FlowMode.values().length;
+            tempFlowMode = FlowMode.values()[i];
+        }
+
         Iterator<Entity> entities = query.execute().iterator();
         while (entities.hasNext()) {
             Entity entity = entities.next();
             TextChatComponent chat = entity.getComponent(TextChatComponent.class);
-            TextComponent text = entity.getComponent(TextComponent.class);
+            TextRenderer text = entity.getComponent(TextRenderer.class);
 
             for (KeyEvent event : keyEvents) {
                 if (event.getType() == KeyEvent.KeyEventType.KEYUP) continue;
@@ -67,8 +78,8 @@ public class TextChatSystem extends ComponentSystem {
                     if (keycode == Keys.KEY_7) keycode = Keys.KEY_SLASH;
                 }
 
-                chat.currentText.addGlyphIfValid((char)keycode, text.font);
-                if (keycode == Keys.KEY_BACKSPACE && chat.currentText.size() > 0) {
+                chat.currentText.addGlyphIfValid(keycode, text.font);
+                if (keycode == Keys.KEY_BACKSPACE && chat.currentText.count() > 0) {
                     chat.currentText.remove(1);
                 }
             }
@@ -80,9 +91,7 @@ public class TextChatSystem extends ComponentSystem {
 
     private void publishMessage(TextChatComponent component, BitmapFont font) {
 
-        StringBuilder s = new StringBuilder();
-        for (int i : component.currentText.getGlyphIds()) s.append((char)i);
-        String text = s.toString();
+        String text = component.currentText.getStringValue();
         if (text.startsWith("c ")) {
             text = text.substring(2);
             component.currentText.clear();
@@ -90,8 +99,9 @@ public class TextChatSystem extends ComponentSystem {
             return;
         }
 
-        TextComponent textComp = new TextComponent();
-        textComp.flowmode = FlowMode.CENTER;
+        TextRenderer textComp = new TextRenderer();
+        //textComp.flowmode = FlowMode.CENTER;
+        textComp.flowmode = tempFlowMode;
         textComp.fontSize = 6;
         textComp.sequence = GlyphSequence.copy(component.currentText);
         textComp.font = font;

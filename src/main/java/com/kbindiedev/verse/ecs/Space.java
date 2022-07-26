@@ -131,7 +131,7 @@ public class Space implements ICollisionListener {
 
         shapeDrawer.begin();
         for (ComponentSystem system : systems) system.render(context);
-        //for (ComponentSystem system : systems) system.onDrawGizmos(context);
+        for (ComponentSystem system : systems) system.onDrawGizmos(context);
         shapeDrawer.end();
     }
 

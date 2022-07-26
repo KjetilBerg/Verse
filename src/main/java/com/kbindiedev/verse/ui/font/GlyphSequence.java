@@ -8,24 +8,24 @@ import java.util.stream.Collectors;
 /** A sequence of glyph ids. */
 public class GlyphSequence {
 
-    public static GlyphSequence fromString(String string) {
-        List<Integer> ids = string.codePoints().mapToObj(i -> i).collect(Collectors.toList());
-        GlyphSequence sequence = new GlyphSequence(ids.size());
-        for (int id : ids) sequence.addGlyphId(id);
-        return sequence;
-    }
-
     public static GlyphSequence copy(GlyphSequence sequence) {
-        GlyphSequence newSequence = new GlyphSequence(sequence.size());
+        GlyphSequence newSequence = new GlyphSequence(sequence.count());
         for (int id : sequence.getGlyphIds()) newSequence.addGlyphId(id);
         return newSequence;
     }
 
     private List<Integer> glyphIds;
+    private StringBuilder stringValue;
 
     public GlyphSequence() { this(-1); }
     public GlyphSequence(int initialCapacity) {
         if (initialCapacity < 0) glyphIds = new ArrayList<>(); else glyphIds = new ArrayList<>(initialCapacity);
+        stringValue = new StringBuilder();
+    }
+
+    public GlyphSequence(String text) {
+        this(text.codePointCount(0, text.length()));
+        text.codePoints().forEach(glyphIds::add);
     }
 
     public List<Integer> getGlyphIds() { return glyphIds; }
@@ -33,17 +33,19 @@ public class GlyphSequence {
         return glyphIds.stream().map(font::getGlyph).collect(Collectors.toList());
     }
 
-    /** @return the number of stored glyphs (ids). */
-    public int size() { return glyphIds.size(); }
+    public String getStringValue() { return stringValue.toString(); }
 
-    public void addGlyphId(int id) { glyphIds.add(id); }
+    /** @return the number of stored glyphs (ids). */
+    public int count() { return glyphIds.size(); }
+
+    public void addGlyphId(int id) { glyphIds.add(id); stringValue.append((char)id); }
     public void addGlyphIfValid(int id, BitmapFont font) {
         if (font.getGlyph(id) != null) addGlyphId(id);
     }
 
     /** Remove the last "n" stored glyphs (ids). */
     public void remove(int n) {
-        if (n > glyphIds.size()) { glyphIds.clear(); return; }
+        if (n > glyphIds.size()) { clear(); return; }
 
         Iterator it = glyphIds.listIterator(glyphIds.size() - n);
         while (it.hasNext()) {
@@ -53,6 +55,6 @@ public class GlyphSequence {
     }
 
     /** Empty the sequence of all glyphs. */
-    public void clear() { glyphIds.clear(); }
+    public void clear() { glyphIds.clear(); stringValue.setLength(0); }
 
 }

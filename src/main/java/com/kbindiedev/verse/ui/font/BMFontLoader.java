@@ -16,25 +16,24 @@ public class BMFontLoader implements IFormatLoaderImplementation<BitmapFont> {
     @Override
     public BitmapFont load(InputStream stream) {
 
-
         List<String> lines = extractLines(stream);
         Map<String, List<String>> tagData = extractTags(lines);
 
         integrityCheck(tagData);
 
-        int lineHeight = Integer.parseInt(extractAttributes(tagData.get("common").get(0)).get("lineHeight"));
+        Map<String, String> info = extractAttributes(tagData.get("info").get(0));
+        Map<String, String> common = extractAttributes(tagData.get("common").get(0));
+        int fontSize = Integer.parseInt(info.get("size"));
+        int lineHeight = Integer.parseInt(common.get("lineHeight"));
+        int base = Integer.parseInt(common.get("base"));
 
         HashMap<Integer, Texture> pages = loadPages(tagData.get("page"));
         HashMap<Integer, BitmapGlyph> glyphs = loadGlyphs(pages, lineHeight, tagData.get("char"));
 
         if (tagData.containsKey("kerning")) applyKernings(glyphs, tagData.get("kerning"));
 
-
-        BitmapFont font = new BitmapFont();
+        BitmapFont font = new BitmapFont(fontSize, lineHeight, lineHeight - base); // TODO: y is down (flag?)
         for (BitmapGlyph glyph : glyphs.values()) font.registerGlyph(glyph);
-
-        System.out.println("kerning: " + glyphs.get("T".codePointAt(0)).getKerning(glyphs.get("o".codePointAt(0))));
-        System.out.println("T".codePointAt(0) + " " + "o".codePointAt(0));
 
         return font;
     }
@@ -82,10 +81,8 @@ public class BMFontLoader implements IFormatLoaderImplementation<BitmapFont> {
         int id = Integer.parseInt(attributes.get("id"));
         int xOffset = Integer.parseInt(attributes.get("xoffset")), yOffset = Integer.parseInt(attributes.get("yoffset"));
         int xAdvance = Integer.parseInt(attributes.get("xadvance"));
-        int glyphSize = 72; // TODO
 
-        // TODO rename BitmapGlyph ??
-        return new BitmapGlyph(sprite, id, w, h, xOffset, lineHeight - yOffset - h, xAdvance, glyphSize); // y is down, should be up // TODO: input flag?
+        return new BitmapGlyph(sprite, id, w, h, xOffset, lineHeight - yOffset - h, xAdvance); // y is down, should be up // TODO: input flag?
     }
 
     private HashMap<Integer, Texture> loadPages(List<String> pageTags) {
@@ -129,7 +126,6 @@ public class BMFontLoader implements IFormatLoaderImplementation<BitmapFont> {
             if (!map.containsKey(tag)) map.put(tag, new ArrayList<>());
             map.get(tag).add(line);
         }
-        System.out.println(lines);
         return map;
     }
 
